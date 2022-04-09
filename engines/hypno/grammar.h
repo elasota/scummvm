@@ -366,6 +366,27 @@ public:
 	uint32 length;
 };
 
+enum ScriptMode {
+	Interactive = 1,
+	NonInteractive,
+};
+
+class ScriptInfo {
+public:
+	ScriptInfo(uint32 time_, uint32 mode_, uint32 actor_, uint32 cursor_) {
+		time = time_;
+		mode = ScriptMode(mode_);
+		actor = actor_;
+		cursor = cursor_;
+	}
+	uint32 time;
+	ScriptMode mode;
+	uint32 actor;
+	uint32 cursor;
+};
+
+typedef Common::List<ScriptInfo> Script;
+
 class Shoot {
 public:
 	Shoot() {
@@ -376,10 +397,12 @@ public:
 		attackWeight = 0;
 		paletteOffset = 0;
 		paletteSize = 0;
+		missedAnimation = 0;
 		objKillsCount = 0;
 		objMissesCount = 0;
 		animation = "NONE";
 		explosionAnimation = "";
+		startFrame = 0;
 		lastFrame = 1024;
 		noEnemySound = false;
 	}
@@ -402,6 +425,9 @@ public:
 	uint32 paletteOffset;
 	uint32 paletteSize;
 
+	// Mask
+	uint32 missedAnimation;
+
 	// Sounds
 	Filename enemySound;
 	Filename deathSound;
@@ -411,6 +437,7 @@ public:
 	Common::List<uint32> attackFrames;
 	Common::Array<FrameInfo> bodyFrames;
 	Common::Array<FrameInfo> explosionFrames;
+	uint32 startFrame;
 	uint32 lastFrame;
 	Filename explosionAnimation;
 	bool destroyed;
@@ -472,7 +499,6 @@ public:
 	ArcadeShooting()  {
 		type = ArcadeLevel;
 		health = 100;
-		transitionTime = 0;
 		id = 0;
 		objKillsRequired[0] = 0;
 		objKillsRequired[1] = 0;
@@ -480,19 +506,46 @@ public:
 		objMissesAllowed[1] = 0;
 		frameDelay = 0;
 	}
+	void clear() {
+		nextLevelVideo.clear();
+		backgroundVideo.clear();
+		transitionVideos.clear();
+		transitionTimes.clear();
+		transitionPalettes.clear();
+		maskVideo.clear();
+		player.clear();
+		shoots.clear();
+		intros.clear();
+		defeatNoEnergyFirstVideo.clear();
+		defeatMissBossVideo.clear();
+		defeatNoEnergySecondVideo.clear();
+		missBoss1Video.clear();
+		missBoss2Video.clear();
+		hitBoss1Video.clear();
+		hitBoss2Video.clear();
+		beforeVideo.clear();
+		briefingVideo.clear();
+		additionalVideo.clear();
+		segments.clear();
+		script.clear();
+	}
+
 	uint32 id;
 	uint32 frameDelay;
 	Common::String mode;
-	uint32 transitionTime;
+	Common::List<uint32> transitionTimes;
 	Segments segments;
 
 	// Objectives
 	uint32 objKillsRequired [2];
 	uint32 objMissesAllowed [2];
 
+	// Script
+	Script script;
+
 	// Videos
-	Filename transitionVideo;
-	Filename transitionPalette;
+	Common::List<Filename> transitionVideos;
+	Common::List<Filename> transitionPalettes;
 	Filename nextLevelVideo;
 	Filename defeatNoEnergyFirstVideo;
 	Filename defeatNoEnergySecondVideo;
@@ -507,6 +560,7 @@ public:
 
 	Filename backgroundVideo;
 	Filename backgroundPalette;
+	Filename maskVideo;
 	Filename player;
 	int health;
 	Shoots shoots;

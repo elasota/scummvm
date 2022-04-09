@@ -74,39 +74,46 @@ extern int HYPNO_ARC_debug;
     NUM = 267,                     /* NUM  */
     BYTE = 268,                    /* BYTE  */
     COMMENT = 269,                 /* COMMENT  */
-    CTOK = 270,                    /* CTOK  */
-    DTOK = 271,                    /* DTOK  */
-    HTOK = 272,                    /* HTOK  */
-    HETOK = 273,                   /* HETOK  */
-    HLTOK = 274,                   /* HLTOK  */
-    H12TOK = 275,                  /* H12TOK  */
-    HUTOK = 276,                   /* HUTOK  */
-    RETTOK = 277,                  /* RETTOK  */
-    QTOK = 278,                    /* QTOK  */
-    RESTOK = 279,                  /* RESTOK  */
-    PTOK = 280,                    /* PTOK  */
-    FTOK = 281,                    /* FTOK  */
-    TTOK = 282,                    /* TTOK  */
-    TPTOK = 283,                   /* TPTOK  */
-    ATOK = 284,                    /* ATOK  */
-    VTOK = 285,                    /* VTOK  */
-    OTOK = 286,                    /* OTOK  */
-    LTOK = 287,                    /* LTOK  */
-    NTOK = 288,                    /* NTOK  */
-    NSTOK = 289,                   /* NSTOK  */
-    RTOK = 290,                    /* RTOK  */
-    R01TOK = 291,                  /* R01TOK  */
-    ITOK = 292,                    /* ITOK  */
-    I1TOK = 293,                   /* I1TOK  */
-    JTOK = 294,                    /* JTOK  */
-    ZTOK = 295,                    /* ZTOK  */
-    NONETOK = 296,                 /* NONETOK  */
-    A0TOK = 297,                   /* A0TOK  */
-    P0TOK = 298,                   /* P0TOK  */
-    WTOK = 299,                    /* WTOK  */
-    XTOK = 300,                    /* XTOK  */
-    CB3TOK = 301,                  /* CB3TOK  */
-    C02TOK = 302                   /* C02TOK  */
+    AVTOK = 270,                   /* AVTOK  */
+    ABTOK = 271,                   /* ABTOK  */
+    CTOK = 272,                    /* CTOK  */
+    DTOK = 273,                    /* DTOK  */
+    HTOK = 274,                    /* HTOK  */
+    HETOK = 275,                   /* HETOK  */
+    HLTOK = 276,                   /* HLTOK  */
+    H12TOK = 277,                  /* H12TOK  */
+    HUTOK = 278,                   /* HUTOK  */
+    RETTOK = 279,                  /* RETTOK  */
+    QTOK = 280,                    /* QTOK  */
+    RESTOK = 281,                  /* RESTOK  */
+    PTOK = 282,                    /* PTOK  */
+    FTOK = 283,                    /* FTOK  */
+    TTOK = 284,                    /* TTOK  */
+    TPTOK = 285,                   /* TPTOK  */
+    ATOK = 286,                    /* ATOK  */
+    VTOK = 287,                    /* VTOK  */
+    OTOK = 288,                    /* OTOK  */
+    LTOK = 289,                    /* LTOK  */
+    MTOK = 290,                    /* MTOK  */
+    NTOK = 291,                    /* NTOK  */
+    NSTOK = 292,                   /* NSTOK  */
+    RTOK = 293,                    /* RTOK  */
+    R01TOK = 294,                  /* R01TOK  */
+    ITOK = 295,                    /* ITOK  */
+    I1TOK = 296,                   /* I1TOK  */
+    GTOK = 297,                    /* GTOK  */
+    JTOK = 298,                    /* JTOK  */
+    J0TOK = 299,                   /* J0TOK  */
+    KTOK = 300,                    /* KTOK  */
+    UTOK = 301,                    /* UTOK  */
+    ZTOK = 302,                    /* ZTOK  */
+    NONETOK = 303,                 /* NONETOK  */
+    A0TOK = 304,                   /* A0TOK  */
+    P0TOK = 305,                   /* P0TOK  */
+    WTOK = 306,                    /* WTOK  */
+    XTOK = 307,                    /* XTOK  */
+    CB3TOK = 308,                  /* CB3TOK  */
+    C02TOK = 309                   /* C02TOK  */
   };
   typedef enum HYPNO_ARC_tokentype HYPNO_ARC_token_kind_t;
 #endif
@@ -115,12 +122,12 @@ extern int HYPNO_ARC_debug;
 #if ! defined HYPNO_ARC_STYPE && ! defined HYPNO_ARC_STYPE_IS_DECLARED
 union HYPNO_ARC_STYPE
 {
-#line 54 "engines/hypno/grammar_arc.y"
+#line 53 "engines/hypno/grammar_arc.y"
 
 	char *s; /* string value */
 	int i;	 /* integer value */
 
-#line 124 "engines/hypno/tokens_arc.h"
+#line 131 "engines/hypno/tokens_arc.h"
 
 };
 typedef union HYPNO_ARC_STYPE HYPNO_ARC_STYPE;

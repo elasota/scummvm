@@ -92,14 +92,17 @@ public:
 	~SpriteCache();
 
 	// Loads sprite reference information and inits sprite stream
-	HError   InitFile(const Shared::String &filename, const Shared::String &sprindex_filename);
+	HError      InitFile(const Shared::String &filename, const Shared::String &sprindex_filename);
 	// Saves current cache contents to the file
-	int         SaveToFile(const Shared::String &filename, bool compressOutput, SpriteFileIndex &index);
+	int         SaveToFile(const Shared::String &filename, int store_flags, SpriteCompression compress, SpriteFileIndex &index);
 	// Closes an active sprite file stream
 	void        DetachFile();
 
-	inline bool IsFileCompressed() const {
-		return _file.IsFileCompressed();
+	inline int GetStoreFlags() const {
+		return _file.GetStoreFlags();
+	}
+	inline SpriteCompression GetSpriteCompression() const {
+		return _file.GetSpriteCompression();
 	}
 
 	// Tells if there is a sprite registered for the given index;
@@ -153,7 +156,6 @@ private:
 	void        DisposeOldest();
 
 	// Information required for the sprite streaming
-	// TODO: split into sprite cache and sprite stream data
 	struct SpriteData {
 		size_t          Size; // to track cache size
 		uint32_t        Flags;

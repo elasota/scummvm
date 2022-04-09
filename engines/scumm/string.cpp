@@ -36,7 +36,7 @@
 #include "scumm/resource.h"
 #include "scumm/scumm.h"
 #include "scumm/scumm_v6.h"
-#include "scumm/scumm_v8.h"
+#include "scumm/scumm_v7.h"
 #include "scumm/verbs.h"
 #include "scumm/he/sound_he.h"
 
@@ -88,17 +88,6 @@ void ScummEngine::printString(int m, const byte *msg) {
 	}
 }
 
-#ifdef ENABLE_SCUMM_7_8
-void ScummEngine_v8::printString(int m, const byte *msg) {
-	if (m == 4) {
-		const StringTab &st = _string[m];
-		enqueueText(msg, st.xpos, st.ypos, st.color, st.charset, st.center, st.wrapping);
-	} else {
-		ScummEngine::printString(m, msg);
-	}
-}
-#endif
-
 void ScummEngine::debugMessage(const byte *msg) {
 	byte buffer[500];
 	convertMessageToString(msg, buffer, sizeof(buffer));
@@ -139,182 +128,6 @@ void ScummEngine::showMessageDialog(const byte *msg) {
 	VAR(VAR_KEYPRESS) = runDialog(dialog);
 }
 
-
-#pragma mark -
-#pragma mark --- V6 blast text queue code ---
-#pragma mark -
-
-
-void ScummEngine_v6::enqueueText(const byte *text, int x, int y, byte color, byte charset, bool center, bool wrapped) {
-	BlastText &bt = _blastTextQueue[_blastTextQueuePos++];
-	assert(_blastTextQueuePos <= ARRAYSIZE(_blastTextQueue));
-
-	if (_useCJKMode) {
-		// The Dig expressly checks for x == 160 && y == 189 && charset == 3. Usually, if the game wants to print CJK text at the bottom
-		// of the screen it will use y = 183. So maybe this is a hack to fix some script texts that weren forgotten in the CJK converting
-		// process.
-		if (_game.id == GID_DIG && x == 160 && y == 189 && charset == 3)
-			y -= 6;
-		// COMI always adds a y-offset of 2 in CJK mode.
-		if (_game.id == GID_CMI)
-			y += 2;
-	}
-
-	convertMessageToString(text, bt.text, sizeof(bt.text));
-
-	// HACK: This corrects the vertical placement of the object descriptions in COMI. The original text renderer does this in the same way
-	// we do in smush_font.cpp, lines 338 - 344: The dimensions of the whole block of text get measured first and then the necessary changes
-	// will be made before printing. Unfortunately, the way our ScummEngine_v7::CHARSET_1() is implemented we can't properly adjust
-	// the y postion there: If we have already printed several lines of text and then realize that we're getting out of bounds then it is too
-	// late, we can't move up the text we've already printed. The same applies to horizontal fixes: if we have already printed several lines
-	// and then encounter a line that is out of bounds we can't move the whole block to the left or right any more (as we should).
-	// Possible TODO: moving the measuring logic contained in SmushFont::drawStringWrap() to ScummEngine_v6 to make it available here, too.
-	if (_game.id == GID_CMI && wrapped) {
-		int of = _charset->getCurID();
-		_charset->setCurID(charset);
-		// Note that this won't detect (and measure correctly) 1-byte characters contained
-		// in 2-byte strings. For now, I trust that it won't happen with the object strings.
-		int clipHeight = _charset->getCharHeight(*bt.text) + 1;
-		_charset->setCurID(of);
-
-		clipHeight = clipHeight + clipHeight / 2;
-		y = MIN<int>(y, 470 - clipHeight);
-	}
-
-	bt.xpos = x;
-	bt.ypos = y;
-	bt.color = color;
-	bt.charset = charset;
-	bt.center = center;
-}
-
-void ScummEngine_v6::drawBlastTexts() {
-	byte *buf;
-	int c;
-	int i;
-
-	for (i = 0; i < _blastTextQueuePos; i++) {
-
-		buf = _blastTextQueue[i].text;
-
-		_charset->_top = _blastTextQueue[i].ypos + _screenTop;
-		_charset->_right = _screenWidth - 1;
-		_charset->_center = _blastTextQueue[i].center;
-		_charset->setColor(_blastTextQueue[i].color);
-		_charset->_disableOffsX = _charset->_firstChar = true;
-		_charset->setCurID(_blastTextQueue[i].charset);
-
-		if (_game.version >= 7 && _language == Common::HE_ISR) {
-			fakeBidiString(buf, false);
-		}
-
-		do {
-			_charset->_left = _blastTextQueue[i].xpos;
-
-			// Center text if necessary
-			if (_charset->_center) {
-				_charset->_left -= _charset->getStringWidth(0, buf) / 2;
-				if (_charset->_left < 0)
-					_charset->_left = 0;
-			}
-
-			do {
-				c = *buf++;
-
-				// FIXME: This is a workaround for bugs #1347 and #2440:
-				// In COMI, some text contains ASCII character 11 = 0xB. It's
-				// not quite clear what it is good for; so for now we just ignore
-				// it, which seems to match the original engine (BTW, traditionally,
-				// this is a 'vertical tab').
-				if (c == 0x0B)
-					continue;
-
-				// Some localizations may override colors
-				// See credits in Chinese COMI
-				if (_game.id == GID_CMI && _language == Common::ZH_TWN &&
-				      c == '^' && (buf == _blastTextQueue[i].text + 1)) {
-					if (*buf == 'c') {
-						int color = buf[3] - '0' + 10 *(buf[2] - '0');
-						_charset->setColor(color);
-
-						buf += 4;
-						c = *buf++;
-					}
-				}
-
-				if (c != 0 && c != 0xFF && c != '\n' && c != _newLineCharacter) {
-					if (c & 0x80 && _useCJKMode) {
-						if (_language == Common::JA_JPN && !checkSJISCode(c)) {
-							c = 0x20; //not in S-JIS
-						} else {
-							c += *buf++ * 256;
-						}
-					}
-					_charset->printChar(c, true);
-				}
-			} while (c && c != '\n');
-
-			_charset->_top += _charset->getFontHeight();
-		} while (c);
-
-		_blastTextQueue[i].rect = _charset->_str;
-	}
-}
-
-void ScummEngine_v6::removeBlastTexts() {
-	int i;
-
-	for (i = 0; i < _blastTextQueuePos; i++) {
-		restoreBackground(_blastTextQueue[i].rect);
-	}
-	_blastTextQueuePos = 0;
-}
-
-
-#pragma mark -
-#pragma mark --- V7 subtitle queue code ---
-#pragma mark -
-
-
-#ifdef ENABLE_SCUMM_7_8
-void ScummEngine_v7::processSubtitleQueue() {
-	for (int i = 0; i < _subtitleQueuePos; ++i) {
-		SubtitleText *st = &_subtitleQueue[i];
-		if (!st->actorSpeechMsg && (!ConfMan.getBool("subtitles") || VAR(VAR_VOICE_MODE) == 0))
-			// no subtitles and there's a speech variant of the message, don't display the text
-			continue;
-		enqueueText(st->text, st->xpos, st->ypos, st->color, st->charset, false);
-	}
-}
-
-void ScummEngine_v7::addSubtitleToQueue(const byte *text, const Common::Point &pos, byte color, byte charset) {
-	if (text[0] && strcmp((const char *)text, " ") != 0) {
-		assert(_subtitleQueuePos < ARRAYSIZE(_subtitleQueue));
-		SubtitleText *st = &_subtitleQueue[_subtitleQueuePos];
-		int i = 0;
-		while (1) {
-			st->text[i] = text[i];
-			if (!text[i])
-				break;
-			++i;
-		}
-		st->xpos = pos.x;
-		st->ypos = pos.y;
-		st->color = color;
-		st->charset = charset;
-		st->actorSpeechMsg = _haveActorSpeechMsg;
-		++_subtitleQueuePos;
-	}
-}
-
-void ScummEngine_v7::clearSubtitleQueue() {
-	memset(_subtitleQueue, 0, sizeof(_subtitleQueue));
-	_subtitleQueuePos = 0;
-}
-#endif
-
-
-
 #pragma mark -
 #pragma mark --- Core message/subtitle code ---
 #pragma mark -
@@ -350,7 +163,7 @@ bool ScummEngine::handleNextCharsetCode(Actor *a, int *code) {
 			endLoop = true;
 			break;
 		case 3:
-			_haveMsg = (_game.version >= 7) ? 1 : 0xFF;
+			_haveMsg = _game.version == 7 && !(_game.id == GID_FT && _game.features & GF_DEMO) ? 1 : 0xFF;
 			_keepText = false;
 			_msgCount = 0;
 			endLoop = true;
@@ -620,16 +433,6 @@ void ScummEngine::fakeBidiString(byte *ltext, bool ignoreVerb) const {
 
 void ScummEngine::CHARSET_1() {
 	Actor *a;
-#ifdef ENABLE_SCUMM_7_8
-	byte subtitleBuffer[200];
-	byte *subtitleLine = subtitleBuffer;
-	Common::Point subtitlePos;
-
-	if (_game.version >= 7) {
-		((ScummEngine_v7 *)this)->processSubtitleQueue();
-	}
-#endif
-
 	if (_game.heversion >= 70 && _haveMsg == 3) {
 		stopTalk();
 		return;
@@ -730,20 +533,12 @@ void ScummEngine::CHARSET_1() {
 	_talkDelay = (VAR_DEFAULT_TALK_DELAY != 0xFF) ? VAR(VAR_DEFAULT_TALK_DELAY) : 60;
 
 	if (!_keepText) {
-		if (_game.version >= 7) {
-#ifdef ENABLE_SCUMM_7_8
-			((ScummEngine_v7 *)this)->clearSubtitleQueue();
-			_nextLeft = _string[0].xpos;
-			_nextTop = _string[0].ypos + _screenTop;
-#endif
-		} else {
 #ifndef DISABLE_TOWNS_DUAL_LAYER_MODE
 			if (_game.platform == Common::kPlatformFMTowns)
 				towns_restoreCharsetBg();
 			else
 #endif
 				restoreCharsetBg();
-		}
 		_msgCount = 0;
 	} else if (_game.version <= 2) {
 		_talkDelay += _msgCount * _defaultTalkDelay;
@@ -784,19 +579,13 @@ void ScummEngine::CHARSET_1() {
 	while (handleNextCharsetCode(a, &c)) {
 		if (c == 0) {
 			// End of text reached, set _haveMsg accordingly
-			_haveMsg = (_game.version >= 7) ? 2 : 1;
+			_haveMsg = 1;
 			_keepText = false;
 			_msgCount = 0;
 			break;
 		}
 
 		if (c == 13) {
-#ifdef ENABLE_SCUMM_7_8
-			if (_game.version >= 7 && subtitleLine != subtitleBuffer) {
-				((ScummEngine_v7 *)this)->addSubtitleToQueue(subtitleBuffer, subtitlePos, _charsetColor, _charset->getCurID());
-				subtitleLine = subtitleBuffer;
-			}
-#endif
 			if (!newLine())
 				break;
 			continue;
@@ -822,44 +611,32 @@ void ScummEngine::CHARSET_1() {
 			drawTextBox = true;
 		}
 
-		if (_game.version >= 7) {
-#ifdef ENABLE_SCUMM_7_8
-			if (subtitleLine == subtitleBuffer) {
-				subtitlePos.x = _charset->_left;
-				// BlastText position is relative to the top of the screen, adjust y-coordinate
-				subtitlePos.y = _charset->_top - _screenTop;
+		if (c & 0x80 && _useCJKMode) {
+			if (is2ByteCharacter(_language, c)) {
+				byte *buffer = _charsetBuffer + _charsetBufPos;
+				c += *buffer++ * 256; //LE
+				_charsetBufPos = buffer - _charsetBuffer;
 			}
-			*subtitleLine++ = c;
-			*subtitleLine = '\0';
-#endif
-		} else {
-			if (c & 0x80 && _useCJKMode) {
-				if (is2ByteCharacter(_language, c)) {
-					byte *buffer = _charsetBuffer + _charsetBufPos;
-					c += *buffer++ * 256; //LE
-					_charsetBufPos = buffer - _charsetBuffer;
-				}
-			}
-			if (_game.version <= 3) {
-				_charset->printChar(c, false);
-				_msgCount += 1;
-			} else {
-				if (_game.features & GF_16BIT_COLOR) {
-					// HE games which use sprites for subtitles
-				} else if (_game.heversion >= 60 && !ConfMan.getBool("subtitles") && _sound->isSoundRunning(1)) {
-					// Special case for HE games
-				} else if (_game.id == GID_LOOM && !ConfMan.getBool("subtitles") && (_sound->pollCD())) {
-					// Special case for Loom (CD), since it only uses CD audio.for sound
-				} else if (!ConfMan.getBool("subtitles") && (!_haveActorSpeechMsg || _mixer->isSoundHandleActive(*_sound->_talkChannelHandle))) {
-					// Subtitles are turned off, and there is a voice version
-					// of this message -> don't print it.
-				} else {
-					_charset->printChar(c, false);
-				}
-			}
-			_nextLeft = _charset->_left;
-			_nextTop = _charset->_top;
 		}
+		if (_game.version <= 3) {
+			_charset->printChar(c, false);
+			_msgCount += 1;
+		} else {
+			if (_game.features & GF_16BIT_COLOR) {
+				// HE games which use sprites for subtitles
+			} else if (_game.heversion >= 60 && !ConfMan.getBool("subtitles") && _sound->isSoundRunning(1)) {
+				// Special case for HE games
+			} else if (_game.id == GID_LOOM && !ConfMan.getBool("subtitles") && (_sound->pollCD())) {
+				// Special case for Loom (CD), since it only uses CD audio.for sound
+			} else if (!ConfMan.getBool("subtitles") && (!_haveActorSpeechMsg || _mixer->isSoundHandleActive(*_sound->_talkChannelHandle))) {
+				// Subtitles are turned off, and there is a voice version
+				// of this message -> don't print it.
+			} else {
+				_charset->printChar(c, false);
+			}
+		}
+		_nextLeft = _charset->_left;
+		_nextTop = _charset->_top;
 
 		if (drawTextBox)
 			mac_drawIndy3TextBox();
@@ -876,176 +653,7 @@ void ScummEngine::CHARSET_1() {
 	if (_game.platform == Common::kPlatformFMTowns && (c == 0 || c == 2 || c == 3))
 		memcpy(&_curStringRect, &_charset->_str, sizeof(Common::Rect));
 #endif
-
-#ifdef ENABLE_SCUMM_7_8
-	if (_game.version >= 7 && subtitleLine != subtitleBuffer) {
-		((ScummEngine_v7 *)this)->addSubtitleToQueue(subtitleBuffer, subtitlePos, _charsetColor, _charset->getCurID());
-	}
-#endif
 }
-
-#ifdef ENABLE_SCUMM_7_8
-void ScummEngine_v7::CHARSET_1() {
-	if (_game.id == GID_FT) {
-		ScummEngine::CHARSET_1();
-		return;
-	}
-
-	byte subtitleBuffer[2048];
-	byte *subtitleLine = subtitleBuffer;
-	Common::Point subtitlePos;
-
-	processSubtitleQueue();
-
-	if (!_haveMsg)
-		return;
-
-	Actor *a = NULL;
-	if (getTalkingActor() != 0xFF)
-		a = derefActorSafe(getTalkingActor(), "CHARSET_1");
-
-	StringTab saveStr = _string[0];
-	if (a && _string[0].overhead) {
-		int s;
-
-		_string[0].xpos = a->getPos().x - _virtscr[kMainVirtScreen].xstart;
-		s = a->_scalex * a->_talkPosX / 255;
-		_string[0].xpos += (a->_talkPosX - s) / 2 + s;
-
-		_string[0].ypos = a->getPos().y - a->getElevation() - _screenTop;
-		s = a->_scaley * a->_talkPosY / 255;
-		_string[0].ypos += (a->_talkPosY - s) / 2 + s;
-	}
-
-	_charset->setColor(_charsetColor);
-
-	if (a && a->_charset)
-		_charset->setCurID(a->_charset);
-	else
-		_charset->setCurID(_string[0].charset);
-
-	if (_talkDelay)
-		return;
-
-	if (VAR(VAR_HAVE_MSG)) {
-		if ((_sound->_sfxMode & 2) == 0) {
-			stopTalk();
-		}
-		return;
-	}
-
-	if (a && !_string[0].no_talk_anim) {
-		a->runActorTalkScript(a->_talkStartFrame);
-	}
-
-	if (!_keepText) {
-		clearSubtitleQueue();
-		_nextLeft = _string[0].xpos;
-		_nextTop = _string[0].ypos + _screenTop;
-	}
-
-	_charset->_disableOffsX = _charset->_firstChar = !_keepText;
-
-	_talkDelay = VAR(VAR_DEFAULT_TALK_DELAY);
-	for (int i = _charsetBufPos; _charsetBuffer[i]; ++i) {
-		_talkDelay += VAR(VAR_CHARINC);
-	}
-
-	if (_string[0].wrapping) {
-		_charset->addLinebreaks(0, _charsetBuffer, _charsetBufPos, _screenWidth - 20);
-
-		struct { int pos, w; } substring[10];
-		int count = 0;
-		int maxLineWidth = 0;
-		int lastPos = 0;
-		int code = 0;
-		while (handleNextCharsetCode(a, &code)) {
-			if (code == 13 || code == 0) {
-				*subtitleLine++ = '\0';
-				assert(count < 10);
-				substring[count].w = _charset->getStringWidth(0, subtitleBuffer + lastPos);
-				if (maxLineWidth < substring[count].w) {
-					maxLineWidth = substring[count].w;
-				}
-				substring[count].pos = lastPos;
-				++count;
-				lastPos = subtitleLine - subtitleBuffer;
-			} else {
-				*subtitleLine++ = code;
-				*subtitleLine = '\0';
-			}
-			if (code == 0) {
-				break;
-			}
-		}
-
-		int h = count * _charset->getFontHeight();
-		h += _charset->getFontHeight() / 2;
-		subtitlePos.y = _string[0].ypos;
-		if (subtitlePos.y + h > _screenHeight - 10) {
-			subtitlePos.y = _screenHeight - 10 - h;
-		}
-		if (subtitlePos.y < 10) {
-			subtitlePos.y = 10;
-		}
-
-		for (int i = 0; i < count; ++i) {
-			subtitlePos.x = _string[0].xpos;
-			if (_string[0].center) {
-				if (subtitlePos.x + maxLineWidth / 2 > _screenWidth - 10) {
-					subtitlePos.x = _screenWidth - 10 - maxLineWidth / 2;
-				}
-				if (subtitlePos.x - maxLineWidth / 2 < 10) {
-					subtitlePos.x = 10 + maxLineWidth / 2;
-				}
-				subtitlePos.x -= substring[i].w / 2;
-			} else {
-				if (subtitlePos.x + maxLineWidth > _screenWidth - 10) {
-					subtitlePos.x = _screenWidth - 10 - maxLineWidth;
-				}
-				if (subtitlePos.x - maxLineWidth < 10) {
-					subtitlePos.x = 10;
-				}
-			}
-			if (subtitlePos.y < _screenHeight - 10) {
-				addSubtitleToQueue(subtitleBuffer + substring[i].pos, subtitlePos, _charsetColor, _charset->getCurID());
-			}
-			subtitlePos.y += _charset->getFontHeight();
-		}
-	} else {
-		int code = 0;
-		subtitlePos.y = _string[0].ypos;
-		if (subtitlePos.y < 10) {
-			subtitlePos.y = 10;
-		}
-		while (handleNextCharsetCode(a, &code)) {
-			if (code == 13 || code == 0) {
-				subtitlePos.x = _string[0].xpos;
-				if (_string[0].center) {
-					subtitlePos.x -= _charset->getStringWidth(0, subtitleBuffer) / 2;
-				}
-				if (subtitlePos.x < 10) {
-					subtitlePos.x = 10;
-				}
-				if (subtitlePos.y < _screenHeight - 10) {
-					addSubtitleToQueue(subtitleBuffer, subtitlePos, _charsetColor, _charset->getCurID());
-					subtitlePos.y += _charset->getFontHeight();
-				}
-				subtitleLine = subtitleBuffer;
-			} else {
-				*subtitleLine++ = code;
-			}
-			*subtitleLine = '\0';
-			if (code == 0) {
-				break;
-			}
-		}
-	}
-	_haveMsg = (_game.version == 8) ? 2 : 1;
-	_keepText = false;
-	_string[0] = saveStr;
-}
-#endif
 
 void ScummEngine::drawString(int a, const byte *msg) {
 	byte buf[270];
@@ -1060,7 +668,7 @@ void ScummEngine::drawString(int a, const byte *msg) {
 
 	convertMessageToString(msg, buf, sizeof(buf));
 
-	if (_game.version >= 4 && _game.version < 7 && _game.heversion == 0 && _language == Common::HE_ISR) {
+	if (_game.version >= 4 && _game.heversion == 0 && _language == Common::HE_ISR) {
 		fakeBidiString(buf, false);
 	}
 

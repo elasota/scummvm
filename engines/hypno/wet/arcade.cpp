@@ -228,7 +228,7 @@ void WetEngine::findNextSegment(ArcadeShooting *arc) {
 
 void WetEngine::runAfterArcade(ArcadeShooting *arc) {
 	_checkpoint = _currentLevel;
-	if (!isDemo() || _variant == "Demo") {
+	if (!isDemo() || (_variant == "Demo" && _language == Common::EN_USA)) {
 		byte *palette;
 		Graphics::Surface *frame = decodeFrame("c_misc/zones.smk", 12, &palette);
 		loadPalette(palette, 0, 256);
@@ -285,6 +285,49 @@ void WetEngine::runAfterArcade(ArcadeShooting *arc) {
 
 }
 
+uint32 WetEngine::findPaletteIndexZones(uint32 id) {
+	switch (id) {
+	case 11:
+		return 237;
+	case 10:
+		return 239;
+	case 21:
+		return 240;
+	case 22:
+		return 237;
+	case 23:
+		return 238;
+	case 20:
+		return 239;
+	default:
+	break;
+	}
+
+	switch (id / 10) {
+	case 3:
+		if (id == 30)
+			return 241;
+		else
+			return 237 + id % 10;
+	case 4:
+		if (id == 40)
+			return 241;
+		else
+			return 236 + id % 10;
+	case 5:
+		if (id == 50)
+			return 240;
+		else
+			return 237 + id % 10;
+	case 6:
+		if (id == 60)
+			return 238;
+		else
+			return 237;
+	default:
+	error("Invalid level id: %d", id);
+	}
+}
 
 void WetEngine::runBeforeArcade(ArcadeShooting *arc) {
 	resetStatistics();
@@ -296,8 +339,17 @@ void WetEngine::runBeforeArcade(ArcadeShooting *arc) {
 		byte *palette;
 		Graphics::Surface *frame = decodeFrame("c_misc/zones.smk", (arc->id / 10 - 1) * 2, &palette);
 		loadPalette(palette, 0, 256);
-		byte p[3] = {0xff, 0x00, 0x00}; // Always red?
-		loadPalette((byte *) &p, 240 - arc->id % 10, 1);
+		byte red[3] = {0xff, 0x00, 0x00};
+		for (int i = 0; i < 5; i++)
+			loadPalette((byte *) &red, 237 + i, 1);
+
+		byte blue[3] = {0x00, 0x00, 0xff};
+		for (uint32 id = 10 * (arc->id / 10) + 1; id < arc->id; id++)
+			loadPalette((byte *) &blue, findPaletteIndexZones(id), 1);
+
+		byte green[3] = {0x00, 0xff, 0x00};
+		uint32 idx = findPaletteIndexZones(arc->id);
+		loadPalette((byte *) &green, idx, 1);
 		drawImage(*frame, 0, 0, false);
 		frame->free();
 		delete frame;
@@ -382,12 +434,25 @@ void WetEngine::runBeforeArcade(ArcadeShooting *arc) {
 	_playerFrameIdx = -1;
 }
 
+void WetEngine::drawCursorArcade(const Common::Point &mousePos) {
+	int i = detectTarget(mousePos);
+	if (_arcadeMode == "YT") {
+		changeCursor("c33/c33i2.smk", 12);
+		return;
+	}
+
+	if (i >= 0)
+		changeCursor("target");
+	else
+		changeCursor("arcade");
+}
+
 bool WetEngine::clickedSecondaryShoot(const Common::Point &mousePos) {
 	incShotsFired();
 	return clickedPrimaryShoot(mousePos);
 }
 
-void WetEngine::missTarget(Shoot *s, ArcadeShooting *arc, MVideo &background) {
+void WetEngine::missedTarget(Shoot *s, ArcadeShooting *arc, MVideo &background) {
 	if (s->name == "SP_SWITCH_R" || s->name == "SP_SWITCH_L") {
 		_health = 0;
 	} else if (s->name == "SP_LIZARD1") {
@@ -399,11 +464,47 @@ void WetEngine::missTarget(Shoot *s, ArcadeShooting *arc, MVideo &background) {
 		background.decoder->pauseVideo(false);
 		updateScreen(background);
 		drawScreen();
+	} else if (s->attackFrames.empty()) {
+		_health = _health - s->attackWeight;
+		hitPlayer();
+	}
+}
+
+void WetEngine::missNoTarget(ArcadeShooting *arc, MVideo &background) {
+	for (int i = _shoots.size() - 1; i >= 0; --i) {
+		Shoot *it = &_shoots[i];
+		if ((it->name == "SP_BOSS" || it->name == "SP_BOSS1") && !arc->missBoss1Video.empty()) {
+			background.decoder->pauseVideo(true);
+			MVideo video(arc->missBoss1Video, Common::Point(0, 0), false, true, false);
+			disableCursor();
+			runIntro(video);
+			// Should be currentPalette?
+			loadPalette(arc->backgroundPalette);
+			background.decoder->pauseVideo(false);
+			updateScreen(background);
+			drawScreen();
+			if (!_music.empty())
+				playSound(_music, 0, arc->musicRate); // restore music
+			break;
+		} else if (it->name == "SP_BOSS2" && !arc->missBoss2Video.empty()) {
+			background.decoder->pauseVideo(true);
+			MVideo video(arc->missBoss2Video, Common::Point(0, 0), false, true, false);
+			disableCursor();
+			runIntro(video);
+			// Should be currentPalette?
+			loadPalette(arc->backgroundPalette);
+			background.decoder->pauseVideo(false);
+			updateScreen(background);
+			drawScreen();
+			if (!_music.empty())
+				playSound(_music, 0, arc->musicRate); // restore music
+			break;
+		}
 	}
 }
 
 void WetEngine::hitPlayer() {
-	if (_arcadeMode != "Y1" && _arcadeMode != "Y3" && _arcadeMode != "Y4" && _arcadeMode != "Y5") {
+	if (_arcadeMode != "Y1" && _arcadeMode != "Y2" && _arcadeMode != "Y3" && _arcadeMode != "Y4" && _arcadeMode != "Y5") {
 		assert( _playerFrameSep < (int)_playerFrames.size());
 		if (_playerFrameIdx < _playerFrameSep)
 			_playerFrameIdx = _playerFrameSep;
@@ -413,15 +514,30 @@ void WetEngine::hitPlayer() {
 	}
 }
 
+Common::Point WetEngine::computeTargetPosition(const Common::Point &mousePos) {
+	if (_arcadeMode == "YT") {
+		return Common::Point(mousePos.x, mousePos.y - 20);
+	}
+	return mousePos;
+}
+
 void WetEngine::drawShoot(const Common::Point &mousePos) {
 	uint32 c = 253;
-	_compositeSurface->drawLine(0, _screenH, mousePos.x, mousePos.y, c);
-	_compositeSurface->drawLine(0, _screenH, mousePos.x - 1, mousePos.y, c);
-	_compositeSurface->drawLine(0, _screenH, mousePos.x - 2, mousePos.y, c);
 
-	_compositeSurface->drawLine(_screenW, _screenH, mousePos.x, mousePos.y, c);
-	_compositeSurface->drawLine(_screenW, _screenH, mousePos.x - 1, mousePos.y, c);
-	_compositeSurface->drawLine(_screenW, _screenH, mousePos.x - 2, mousePos.y, c);
+	if (_arcadeMode == "YT") {
+		_compositeSurface->drawLine(mousePos.x, mousePos.y - 20, mousePos.x, mousePos.y + 1, c);
+		_compositeSurface->drawLine(mousePos.x, mousePos.y - 20, mousePos.x, mousePos.y, c);
+		_compositeSurface->drawLine(mousePos.x, mousePos.y - 20, mousePos.x, mousePos.y - 1, c);
+	} else {
+		_compositeSurface->drawLine(0, _screenH, mousePos.x, mousePos.y, c);
+		_compositeSurface->drawLine(0, _screenH, mousePos.x - 1, mousePos.y, c);
+		_compositeSurface->drawLine(0, _screenH, mousePos.x - 2, mousePos.y, c);
+
+		_compositeSurface->drawLine(_screenW, _screenH, mousePos.x, mousePos.y, c);
+		_compositeSurface->drawLine(_screenW, _screenH, mousePos.x - 1, mousePos.y, c);
+		_compositeSurface->drawLine(_screenW, _screenH, mousePos.x - 2, mousePos.y, c);
+	}
+
 	playSound(_soundPath + _shootSound, 1);
 }
 
@@ -460,7 +576,14 @@ void WetEngine::drawPlayer() {
 	else if (_arcadeMode == "Y4")
 		_playerFrameIdx = 2;
 
-	drawImage(*_playerFrames[_playerFrameIdx], 0, 200 - _playerFrames[_playerFrameIdx]->h + 1, true);
+	int offset = 0;
+	// Ugly, but seems to be necessary
+	if (_levelId == 31)
+		offset = 2;
+	else if (_levelId == 52)
+		offset = 2;
+
+	drawImage(*_playerFrames[_playerFrameIdx], 0, 200 - _playerFrames[_playerFrameIdx]->h + offset, true);
 }
 
 void WetEngine::drawHealth() {

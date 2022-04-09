@@ -237,7 +237,6 @@ bool HypnoEngine::hoverHotspot(Common::Point mousePos) {
 }
 
 Common::String HypnoEngine::findNextLevel(const Transition *trans) { error("Function \"%s\" not implemented", __FUNCTION__); }
-Common::String HypnoEngine::findNextLevel(const Common::String &level) { error("Function \"%s\" not implemented", __FUNCTION__); }
 
 void HypnoEngine::runTransition(Transition *trans) {
 	Common::String nextLevel = findNextLevel(trans);

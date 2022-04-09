@@ -411,19 +411,8 @@ void engine_init_user_directories() {
 	if (!_GP(usetup).shared_data_dir.IsEmpty())
 		Debug::Printf(kDbgMsg_Info, "Shared data directory: %s", _GP(usetup).shared_data_dir.GetCStr());
 
-	// if end-user specified custom save path, use it
-	bool res = false;
-	if (!_GP(usetup).user_data_dir.IsEmpty()) {
-		res = SetCustomSaveParent(_GP(usetup).user_data_dir);
-		if (!res) {
-			Debug::Printf(kDbgMsg_Warn, "WARNING: custom user save path failed, using default system paths");
-			res = false;
-		}
-	}
-	// if there is no custom path, or if custom path failed, use default system path
-	if (!res) {
-		SetSaveGameDirectoryPath(Path::ConcatPaths(UserSavedgamesRootToken, _GP(game).saveGameFolderName));
-	}
+	// Initialize default save directory early, for we'll need it to set restart point
+	SetDefaultSaveDirectory();
 }
 
 #if AGS_PLATFORM_OS_ANDROID
@@ -962,6 +951,15 @@ void engine_read_config(ConfigTree &cfg) {
 				_GP(usetup).user_conf_dir.GetCStr());
 			_GP(usetup).user_conf_dir = "";
 		}
+	}
+
+	// Handle directive to search for the user config inside the game directory;
+	// this option may come either from command line or default/global config.
+	_GP(usetup).local_user_conf |= INIreadint(cfg, "misc", "localuserconf", 0) != 0;
+	if (_GP(usetup).local_user_conf) { // Test if the file is writeable, if it is then both engine and setup
+	  // applications may actually use it fully as a user config, otherwise
+	  // fallback to default behavior.
+		_GP(usetup).local_user_conf = File::TestWriteFile(def_cfg_file);
 	}
 
 	// Read user configuration file

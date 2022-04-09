@@ -691,7 +691,7 @@ void mous_obj_action(int16 nr, int16 mode, int16 txt_mode, int16 txt_nr) {
 				int16 x = g_events->_mousePos.x;
 				int16 y = g_events->_mousePos.y;
 				calcTxtXy(&x, &y, desc);
-				for (int16 i = 0; i < desc.size(); i++)
+				for (int16 i = 0; i < (int16)desc.size(); i++)
 					printShadowed(x, y + i * 10, 255, 300, 0, _G(scr_width), desc[i].c_str());
 			}
 		}
@@ -1364,7 +1364,7 @@ int16 calcMouseText(int16 x, int16 y, int16 mode) {
 					}
 
 					int16 action_ret = 0;
-					if (!_G(atds)->getControlBit(txtNr, ATS_ACTIVE_BIT, ATS_DATA)) {
+					if (!_G(atds)->getControlBit(txtNr, ATS_ACTIVE_BIT)) {
 						if (_G(menu_item) != CUR_WALK && _G(menu_item) != CUR_USE) {
 							if (x + _G(gameState).scrollx > _G(spieler_vector)[P_CHEWY].Xypos[0])
 								setPersonSpr(P_RIGHT, P_CHEWY);
@@ -1373,18 +1373,18 @@ int16 calcMouseText(int16 x, int16 y, int16 mode) {
 						}
 					}
 
-					if (_G(atds)->getControlBit(txtNr, ATS_ACTION_BIT, ATS_DATA)) {
+					if (_G(atds)->getControlBit(txtNr, ATS_ACTION_BIT)) {
 						action_ret = atsAction(txtNr, txtMode, ATS_ACTION_VOR);
 					}
 					
-					if (ok && !_G(atds)->getControlBit(txtNr, ATS_ACTIVE_BIT, ATS_DATA)) {
+					if (ok && !_G(atds)->getControlBit(txtNr, ATS_ACTIVE_BIT)) {
 						if (startAtsWait(txtNr, txtMode, 14, ATS_DATA))
 							dispFl = false;
 					} else {
 						ret = -1;
 					}
 					
-					if (_G(atds)->getControlBit(txtNr, ATS_ACTION_BIT, ATS_DATA)) {
+					if (_G(atds)->getControlBit(txtNr, ATS_ACTION_BIT)) {
 						action_ret = atsAction(txtNr, txtMode, ATS_ACTION_NACH);
 						actionFl = true;
 						if (action_ret)
@@ -1392,7 +1392,7 @@ int16 calcMouseText(int16 x, int16 y, int16 mode) {
 					}
 					
 					if (!ok && !action_ret) {
-						if (inv_no_use_mode != -1 && !_G(atds)->getControlBit(txtNr, ATS_ACTIVE_BIT, ATS_DATA)) {
+						if (inv_no_use_mode != -1 && !_G(atds)->getControlBit(txtNr, ATS_ACTIVE_BIT)) {
 							actionFl = calc_inv_no_use(idx + (_G(gameState)._personRoomNr[P_CHEWY] * 100), inv_no_use_mode);
 							if (actionFl)
 								ret = txtNr;
@@ -1400,7 +1400,7 @@ int16 calcMouseText(int16 x, int16 y, int16 mode) {
 					}
 					
 					if (ok && !action_ret && txtMode == TXT_MARK_USE && dispFl) {
-						if (!_G(atds)->getControlBit(txtNr, ATS_ACTIVE_BIT, ATS_DATA)) {
+						if (!_G(atds)->getControlBit(txtNr, ATS_ACTIVE_BIT)) {
 							if (_G(menu_item) != CUR_WALK) {
 								if (x + _G(gameState).scrollx > _G(spieler_vector)[P_CHEWY].Xypos[0])
 									setPersonSpr(P_RIGHT, P_CHEWY);
@@ -1427,7 +1427,7 @@ int16 calcMouseText(int16 x, int16 y, int16 mode) {
 						ret = txtNr;
 						_G(fontMgr)->setFont(_G(font8));
 						calcTxtXy(&x, &y, desc);
-						for (int16 i = 0; i < desc.size(); i++)
+						for (int16 i = 0; i < (int16)desc.size(); i++)
 							printShadowed(x, y + i * 10, 255, 300, 0, _G(scr_width), desc[i].c_str());
 					}
 				}
@@ -1918,7 +1918,7 @@ void set_person_rnr() {
 
 bool is_chewy_busy() {
 	bool ret = true;
-	if (_G(atds)->ats_get_status() == DISPLAY_NONE) {
+	if (!_G(atds)->atsShown()) {
 		if (_G(atds)->aadGetStatus() == -1) {
 			if (_G(atds)->ads_get_status() == -1) {
 				if (!_G(mov)->auto_go_status()) {

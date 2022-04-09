@@ -151,6 +151,7 @@ public:
 	void defaultCursor();
 	void changeCursor(const Common::String &cursor, uint32 n, bool centerCursor = false);
 	void changeCursor(const Common::String &cursor);
+	void changeCursor(const Graphics::Surface &entry, byte *palette, bool centerCursor = false);
 
 	// Actions
 	void runMenu(Hotspots *hs);
@@ -182,6 +183,7 @@ public:
 	uint32 _transparentColor;
 	Common::Rect screenRect;
 	void updateScreen(MVideo &video);
+	void updateVideo(MVideo &video);
 	void drawScreen();
 
 	// intros
@@ -207,6 +209,8 @@ public:
 	Videos _escapeSequentialVideoToPlay;
 	Videos _videosPlaying;
 	Videos _videosLooping;
+	MVideo *_masks;
+	const Graphics::Surface *_mask;
 
 	// Sounds
 	Filename _soundPath;
@@ -216,15 +220,18 @@ public:
 
 	// Arcade
 	Common::String _arcadeMode;
+	MVideo *_background;
 	uint32 _currentPlayerPosition;
 	uint32 _lastPlayerPosition;
-	int detectTarget(const Common::Point &mousePos);
+	virtual Common::Point computeTargetPosition(const Common::Point &mousePos);
+	virtual int detectTarget(const Common::Point &mousePos);
 	virtual bool clickedPrimaryShoot(const Common::Point &mousePos);
 	virtual bool clickedSecondaryShoot(const Common::Point &mousePos);
 	virtual void drawShoot(const Common::Point &mousePos);
 	virtual void shoot(const Common::Point &mousePos, ArcadeShooting *arc, MVideo &background);
 	virtual void hitPlayer();
-	virtual void missTarget(Shoot *s, ArcadeShooting *arc, MVideo &background);
+	virtual void missedTarget(Shoot *s, ArcadeShooting *arc, MVideo &background);
+	virtual void missNoTarget(ArcadeShooting *arc, MVideo &background);
 
 	// Segments
 	uint32 _segmentIdx;
@@ -339,7 +346,11 @@ public:
 	void drawPlayer() override;
 	void drawHealth() override;
 	void hitPlayer() override;
-	void missTarget(Shoot *s, ArcadeShooting *arc, MVideo &background) override;
+	void drawCursorArcade(const Common::Point &mousePos) override;
+	Common::Point computeTargetPosition(const Common::Point &mousePos) override;
+	void missedTarget(Shoot *s, ArcadeShooting *arc, MVideo &background) override;
+	void missNoTarget(ArcadeShooting *arc, MVideo &background) override;
+
 	void runCode(Code *code) override;
 	Common::String findNextLevel(const Common::String &level) override;
 	Common::String findNextLevel(const Transition *trans) override;
@@ -361,6 +372,7 @@ private:
 	void runLevelMenu(Code *code);
 	void runCheckLives(Code *code);
 	void endCredits(Code *code);
+	uint32 findPaletteIndexZones(uint32 id);
 
 	Common::BitArray _font05;
 	Common::BitArray _font08;
@@ -442,6 +454,41 @@ class BoyzEngine : public HypnoEngine {
 public:
 	BoyzEngine(OSystem *syst, const ADGameDescription *gd);
 	void loadAssets() override;
+	Common::String findNextLevel(const Common::String &level) override;
+
+	void runBeforeArcade(ArcadeShooting *arc) override;
+	void runAfterArcade(ArcadeShooting *arc) override;
+	int detectTarget(const Common::Point &mousePos) override;
+	void drawCursorArcade(const Common::Point &mousePos) override;
+	void shoot(const Common::Point &mousePos, ArcadeShooting *arc, MVideo &background) override;
+
+	void missedTarget(Shoot *s, ArcadeShooting *arc, MVideo &background) override;
+	void drawHealth() override;
+	void drawShoot(const Common::Point &target) override;
+	void hitPlayer() override;
+	void drawPlayer() override;
+	void findNextSegment(ArcadeShooting *arc) override;
+	void initSegment(ArcadeShooting *arc) override;
+
+	private:
+	Graphics::Surface _healthBar[6];
+	Graphics::Surface _ammoBar[6];
+	Graphics::Surface _portrait[6];
+
+	Filename _weaponShootSound[6];
+
+	byte *_crosshairsPalette;
+	Graphics::Surface _crosshairsInactive[8];
+	Graphics::Surface _crosshairsActive[8];
+	Graphics::Surface _crosshairsTarget[8];
+
+	void updateFromScript();
+
+	Script _currentScript;
+	ScriptMode _currentMode;
+	uint32 _currentActor;
+	uint32 _currentCursor;
+
 };
 
 } // End of namespace Hypno

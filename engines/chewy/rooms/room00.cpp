@@ -130,7 +130,7 @@ bool Room0::getPillow() {
 		invent_2_slot(0);
 		_G(menu_item) = CUR_WALK;
 		cursorChoice(CUR_WALK);
-		_G(atds)->setControlBit(174, ATS_ACTIVE_BIT, ATS_DATA);
+		_G(atds)->setControlBit(174, ATS_ACTIVE_BIT);
 		_G(det)->hideStaticSpr(6);
 
 		_G(flags).AutoAniPlay = false;
@@ -156,7 +156,7 @@ bool Room0::pullSlime() {
 		invent_2_slot(1);
 		_G(menu_item) = CUR_WALK;
 		cursorChoice(CUR_WALK);
-		_G(atds)->setControlBit(175, ATS_ACTIVE_BIT, ATS_DATA);
+		_G(atds)->setControlBit(175, ATS_ACTIVE_BIT);
 
 		_G(flags).AutoAniPlay = false;
 		showCur();
@@ -307,7 +307,7 @@ void Room0::calcEyeClick(int16 aniNr) {
 				int16 x = g_events->_mousePos.x;
 				int16 y = g_events->_mousePos.y;
 				calcTxtXy(&x, &y, desc);
-				for (int16 i = 0; i < desc.size(); i++)
+				for (int16 i = 0; i < (int16)desc.size(); i++)
 					printShadowed(x, y + i * 10, 255, 300, 0, _G(scr_width), desc[i].c_str());
 			}
 		} else if (_G(minfo)._button == 1 || g_events->_kbInfo._keyCode == Common::KEYCODE_RETURN) {
@@ -545,7 +545,7 @@ void Room0::calcPillowClick(int16 aniNr) {
 				int16 x = g_events->_mousePos.x;
 				int16 y = g_events->_mousePos.y;
 				calcTxtXy(&x, &y, desc);
-				for (int16 i = 0; i < desc.size(); i++)
+				for (int16 i = 0; i < (int16)desc.size(); i++)
 					printShadowed(x, y + i * 10, 255, 300, 0, _G(scr_width), desc[i].c_str());
 			}
 		} else if (_G(minfo)._button == 1 || g_events->_kbInfo._keyCode == Common::KEYCODE_RETURN) {

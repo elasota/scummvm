@@ -250,6 +250,12 @@ String PathFromInstallDir(const String &path) {
 	return path;
 }
 
+FSLocation PathFromInstallDir(const FSLocation &fsloc) {
+	if (is_relative_filename(fsloc.FullDir))
+		return FSLocation(_GP(ResPaths).DataDir).Rebase(fsloc.FullDir);
+	return fsloc;
+}
+
 String PreparePathForWriting(const FSLocation &fsloc, const String &filename) {
 	if (Directory::CreateAllDirectories(fsloc.BaseDir, fsloc.SubDir))
 		return Path::ConcatPaths(fsloc.FullDir, filename);
@@ -257,66 +263,78 @@ String PreparePathForWriting(const FSLocation &fsloc, const String &filename) {
 }
 
 FSLocation GetGlobalUserConfigDir() {
-	String dir = _G(platform)->GetUserGlobalConfigDirectory();
-	if (Path::IsRelativePath(dir)) // relative dir is resolved relative to the game data dir
-		return FSLocation(_GP(ResPaths).DataDir, dir);
-	return FSLocation(dir);
+	FSLocation dir = _G(platform)->GetUserGlobalConfigDirectory();
+	if (is_relative_filename(dir.FullDir)) // relative dir is resolved relative to the game data dir
+		return FSLocation(_GP(ResPaths).DataDir).Rebase(dir.FullDir);
+	return dir;
 }
 
 FSLocation GetGameUserConfigDir() {
-	String dir = _G(platform)->GetUserConfigDirectory();
-	if (!_GP(usetup).user_conf_dir.IsEmpty()) // directive to use custom userconf location
-		return FSLocation(_GP(usetup).user_conf_dir);
-	else if (Path::IsRelativePath(dir)) // relative dir is resolved relative to the game data dir
-		return FSLocation(_GP(ResPaths).DataDir, dir);
+	FSLocation dir = _G(platform)->GetUserConfigDirectory();
+	if (is_relative_filename(dir.FullDir)) // relative dir is resolved relative to the game data dir
+		return FSLocation(_GP(ResPaths).DataDir).Rebase(dir.FullDir);
+	else if (_GP(usetup).local_user_conf) // directive to use game dir location
+		return FSLocation(_GP(ResPaths).DataDir);
 	// For absolute dir, we assume it's a special directory prepared for AGS engine
-	// and therefore amend it with a game own subdir
-	return FSLocation(dir, _GP(game).saveGameFolderName);
+	// and therefore append a game's own subdir
+	return dir.Concat(_GP(game).saveGameFolderName);
 }
 
-// A helper function that deduces a data directory either using default system location,
-// or user option from config. In case of a default location a path is appended with
-// game's "save folder" name, which is meant to separate files from different games.
-static FSLocation MakeGameDataDir(const String &default_dir, const String &user_option) {
-	if (user_option.IsEmpty()) {
-		String dir = default_dir;
-		if (Path::IsRelativePath(dir)) // relative dir is resolved relative to the game data dir
-			return FSLocation(_GP(ResPaths).DataDir, dir);
-		// For absolute dir, we assume it's a special directory prepared for AGS engine
-		// and therefore amend it with a game own subdir
-		return FSLocation(dir, _GP(game).saveGameFolderName);
-	}
-	// If this location is set up by user config, then use it as is (resolving relative path if necessary)
-	String dir = user_option;
-	if (Path::IsSameOrSubDir(_GP(ResPaths).DataDir, dir)) // check if it's inside game dir
-		return FSLocation(_GP(ResPaths).DataDir, Path::MakeRelativePath(_GP(ResPaths).DataDir, dir));
-	dir = Path::MakeAbsolutePath(dir);
-	return FSLocation(dir);
+// Constructs data dir using rules for default system location
+inline FSLocation MakeDefaultDataDir(const FSLocation &def_dir) {
+	// Relative dir is resolved relative to the game data dir
+	if (is_relative_filename(def_dir.FullDir))
+		return FSLocation(_GP(ResPaths).DataDir).Rebase(def_dir.FullDir);
+	// For absolute dir, we assume it's a special directory prepared for AGS engine
+	// and therefore amend it with a game's own subdir (to separate files from different games)
+	return def_dir.Concat(_GP(game).saveGameFolderName);
+}
+
+// Constructs data dir using rules for the user-specified location
+inline FSLocation MakeUserDataDir(const String &user_dir) {
+	// If user-set location is inside game dir, then form a relative path
+	if (is_relative_filename(user_dir))
+		return FSLocation(_GP(ResPaths).DataDir).Rebase(user_dir);
+	// Otherwise treat it as an absolute path
+	return FSLocation(Path::MakeAbsolutePath(user_dir));
 }
 
 FSLocation GetGameAppDataDir() {
-	return MakeGameDataDir(_G(platform)->GetAllUsersDataDirectory(), _GP(usetup).shared_data_dir);
+	if (_GP(usetup).shared_data_dir.IsEmpty())
+		return MakeDefaultDataDir(_G(platform)->GetAllUsersDataDirectory());
+	return MakeUserDataDir(_GP(usetup).shared_data_dir);
 }
 
 FSLocation GetGameUserDataDir() {
-	return MakeGameDataDir(_G(platform)->GetUserSavedgamesDirectory(), _GP(usetup).user_data_dir);
+	if (_GP(usetup).user_data_dir.IsEmpty())
+		return MakeDefaultDataDir(_G(platform)->GetUserSavedgamesDirectory());
+	return MakeUserDataDir(_GP(usetup).user_data_dir);
 }
 
 bool ResolveScriptPath(const String &orig_sc_path, bool read_only, ResolvedPath &rp) {
-	debugC(::AGS::kDebugFilePath, "ResolveScriptPath(%s)", orig_sc_path.GetCStr());
 	rp = ResolvedPath();
 
-	if (!Path::IsRelativePath(orig_sc_path)) {
-		if (!read_only) {
-			debug_script_warn("Attempt to access file '%s' denied (cannot write to absolute path)", orig_sc_path.GetCStr());
-			return false;
-		}
+	// Make sure that the file path has system-compatible form
+	String sc_path = orig_sc_path;
+	sc_path.Replace('\\', '/');
 
-		rp = ResolvedPath(orig_sc_path);
+	// File tokens (they must be the only thing in script path)
+	if (sc_path.Compare(UserConfigFileToken) == 0) {
+		auto loc = GetGameUserConfigDir();
+		rp = ResolvedPath(loc, DefaultConfigFileName);
 		return true;
 	}
 
-	String sc_path = orig_sc_path;
+	// Test absolute paths
+	if (!Path::IsRelativePath(sc_path)) {
+		if (!read_only) {
+			debug_script_warn("Attempt to access file '%s' denied (cannot write to absolute path)", sc_path.GetCStr());
+			return false;
+		}
+		rp = ResolvedPath(sc_path);
+		return true;
+	}
+
 	if (sc_path.CompareLeft(GameAssetToken, strlen(GameAssetToken)) == 0) {
 		if (!read_only) {
 			debug_script_warn("Attempt to access file '%s' denied (cannot write to game assets)", orig_sc_path.GetCStr());
@@ -418,6 +436,10 @@ bool ResolveWritePathAndCreateDirs(const String &sc_path, ResolvedPath &rp) {
 		return false;
 	}
 	return true;
+}
+
+bool CreateFSDirs(const FSLocation &fs) {
+	return Directory::CreateAllDirectories(fs.BaseDir, fs.FullDir);
 }
 
 //

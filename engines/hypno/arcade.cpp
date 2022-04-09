@@ -57,17 +57,7 @@ void HypnoEngine::parseArcadeShooting(const Common::String &prefix, const Common
 	ArcadeShooting *arcade = new ArcadeShooting();
 	*arcade = *g_parsedArc;
 	_levels[filename] = (Level*) arcade;
-	g_parsedArc->backgroundVideo.clear();
-	g_parsedArc->transitionPalette.clear();
-	g_parsedArc->player.clear();
-	g_parsedArc->shoots.clear();
-	g_parsedArc->intros.clear();
-	g_parsedArc->defeatNoEnergyFirstVideo.clear();
-	g_parsedArc->defeatMissBossVideo.clear();
-	g_parsedArc->defeatNoEnergySecondVideo.clear();
-	g_parsedArc->beforeVideo.clear();
-	g_parsedArc->briefingVideo.clear();
-	g_parsedArc->segments.clear();
+	g_parsedArc->clear();
 }
 
 SegmentShootsSequence HypnoEngine::parseShootList(const Common::String &filename, const Common::String &data) {
@@ -133,6 +123,7 @@ SegmentShootsSequence HypnoEngine::parseShootList(const Common::String &filename
 
 			Common::replace(n, "\nS", "");
 			Common::replace(n, "\nZ\n", "");
+			Common::replace(n, "\nZ", "");
 			si.name = n;
 			si.timestamp = atoi(t.c_str());
 			if (si.timestamp == 0)
@@ -165,7 +156,8 @@ void HypnoEngine::drawPlayer() { error("Function \"%s\" not implemented", __FUNC
 void HypnoEngine::drawHealth() { error("Function \"%s\" not implemented", __FUNCTION__); }
 void HypnoEngine::drawShoot(const Common::Point &target) { error("Function \"%s\" not implemented", __FUNCTION__); }
 void HypnoEngine::hitPlayer() { error("Function \"%s\" not implemented", __FUNCTION__); }
-void HypnoEngine::missTarget(Shoot *s, ArcadeShooting *arc, MVideo &background) {}
+void HypnoEngine::missedTarget(Shoot *s, ArcadeShooting *arc, MVideo &background) {}
+void HypnoEngine::missNoTarget(ArcadeShooting *arc, MVideo &background) {}
 
 void HypnoEngine::runBeforeArcade(ArcadeShooting *arc) {}
 void HypnoEngine::runAfterArcade(ArcadeShooting *arc) {}
@@ -191,21 +183,30 @@ void HypnoEngine::runArcade(ArcadeShooting *arc) {
 	_health = arc->health;
 	_maxHealth = _health;
 	debugC(1, kHypnoDebugArcade, "Starting segment of type %x", segments[_segmentIdx].type);
-	changeCursor("arcade");
 	_shoots.clear();
 	_skipLevel = false;
+	_mask = nullptr;
+	_masks = nullptr;
 
 	Common::Point offset;
-	MVideo background = MVideo(arc->backgroundVideo, offset, false, false, false);
+	_background = new MVideo(arc->backgroundVideo, offset, false, false, false);
 
-	changeCursor("arcade");
-	playVideo(background);
-	float rate = background.decoder->getFrameRate().toDouble();
+	drawCursorArcade(mousePos);
+	playVideo(*_background);
+
+	if (!arc->maskVideo.empty()) {
+		_masks = new MVideo(arc->maskVideo, offset, false, false, false);
+		playVideo(*_masks);
+		_mask = _masks->decoder->decodeNextFrame();
+	}
+
+	float rate = _background->decoder->getFrameRate().toDouble();
 	if (rate < 10) {
 		debugC(1, kHypnoDebugArcade, "Used frame rate looks odd: %f, increasing x 10", rate);
-		background.decoder->setRate(10.0);
+		_background->decoder->setRate(10.0);
 	}
-	loadPalette(arc->backgroundPalette);
+	Filename currentPalette = arc->backgroundPalette;
+	loadPalette(currentPalette);
 	bool shootingPrimary = false;
 	bool shootingSecondary = false;
 	bool needsUpdate = true;
@@ -226,7 +227,7 @@ void HypnoEngine::runArcade(ArcadeShooting *arc) {
 
 	Common::Event event;
 	while (!shouldQuit()) {
-		needsUpdate = background.decoder->needsUpdate();
+		needsUpdate = _background->decoder->needsUpdate();
 		while (g_system->getEventManager()->pollEvent(event)) {
 			mousePos = g_system->getEventManager()->getMousePos();
 			// Events
@@ -238,17 +239,12 @@ void HypnoEngine::runArcade(ArcadeShooting *arc) {
 
 			case Common::EVENT_KEYDOWN:
 				if (event.kbd.keycode == Common::KEYCODE_c) {
-					background.decoder->pauseVideo(true);
+					_background->decoder->pauseVideo(true);
 					showCredits();
-
-					if (transition && !arc->transitionPalette.empty())
-						loadPalette(arc->transitionPalette);
-					else
-						loadPalette(arc->backgroundPalette);
-
+					loadPalette(currentPalette);
 					changeScreenMode("320x200");
-					background.decoder->pauseVideo(false);
-					updateScreen(background);
+					_background->decoder->pauseVideo(false);
+					updateScreen(*_background);
 					drawScreen();
 				} else if (event.kbd.keycode == Common::KEYCODE_k) { // Added for testing
 					_health = 0;
@@ -290,7 +286,7 @@ void HypnoEngine::runArcade(ArcadeShooting *arc) {
 					}
 					offset.x = offset.x + 1;
 					needsUpdate = true;
-				} else if (mousePos.x >= 300 && offset.x > 320 - background.decoder->getWidth()) {
+				} else if (mousePos.x >= 300 && offset.x > 320 - _background->decoder->getWidth()) {
 					for (Shoots::iterator it = _shoots.begin(); it != _shoots.end(); ++it) {
 						if (it->video && it->video->decoder)
 							it->video->position.x = it->video->position.x - 1;
@@ -298,7 +294,7 @@ void HypnoEngine::runArcade(ArcadeShooting *arc) {
 					offset.x = offset.x - 1;
 					needsUpdate = true;
 				}
-				background.position = offset;
+				_background->position = offset;
 				break;
 
 			default:
@@ -308,15 +304,19 @@ void HypnoEngine::runArcade(ArcadeShooting *arc) {
 
 		if (needsUpdate) {
 			drawScreen();
-			updateScreen(background);
+			updateScreen(*_background);
+			if (!arc->maskVideo.empty() && _masks->decoder->needsUpdate())
+				_mask = _masks->decoder->decodeNextFrame();
 		}
 
 		if (_health <= 0) {
-			skipVideo(background);
+			skipVideo(*_background);
 			if (!arc->defeatNoEnergySecondVideo.empty() && transition) {
+				disableCursor();
 				MVideo video(arc->defeatNoEnergySecondVideo, Common::Point(0, 0), false, true, false);
 				runIntro(video);
 			} else if (!arc->defeatNoEnergyFirstVideo.empty()) {
+				disableCursor();
 				MVideo video(arc->defeatNoEnergyFirstVideo, Common::Point(0, 0), false, true, false);
 				runIntro(video);
 			}
@@ -327,24 +327,35 @@ void HypnoEngine::runArcade(ArcadeShooting *arc) {
 			break;
 		}
 
-		if (!arc->transitionVideo.empty() && !transition && background.decoder->getCurFrame() >= (int)arc->transitionTime) {
+		if (!arc->transitionVideos.empty() && _background->decoder->getCurFrame() > (int)*arc->transitionTimes.begin()) {
 			transition = true;
-			background.decoder->pauseVideo(true);
+			_background->decoder->pauseVideo(true);
 
-			debugC(1, kHypnoDebugArcade, "Playing transition %s", arc->transitionVideo.c_str());
-			MVideo video(arc->transitionVideo, Common::Point(0, 0), false, true, false);
+			Filename transitionVideo = *arc->transitionVideos.begin();
+			Filename transitionPalette = *arc->transitionPalettes.begin();
+
+			debugC(1, kHypnoDebugArcade, "Playing transition %s", transitionVideo.c_str());
+			MVideo video(transitionVideo, Common::Point(0, 0), false, true, false);
+			disableCursor();
 			runIntro(video);
 
-			if (!arc->transitionPalette.empty())
-				loadPalette(arc->transitionPalette);
-			else
-				loadPalette(arc->backgroundPalette);
-			background.decoder->pauseVideo(false);
-			updateScreen(background);
+			if (!transitionPalette.empty())
+				currentPalette = transitionPalette;
+
+			loadPalette(currentPalette);
+			_background->decoder->pauseVideo(false);
+			updateScreen(*_background);
 			drawScreen();
+			drawCursorArcade(mousePos);
+
+			arc->transitionVideos.pop_front();
+			arc->transitionPalettes.pop_front();
+			arc->transitionTimes.pop_front();
+			if (!_music.empty())
+				playSound(_music, 0, arc->musicRate); // restore music
 		}
 
-		if (background.decoder && background.decoder->getCurFrame() >= int(segments[_segmentIdx].start + segments[_segmentIdx].size - 2)) {
+		if (_background->decoder && _background->decoder->getCurFrame() >= int(segments[_segmentIdx].start + segments[_segmentIdx].size - 2)) {
 			debugC(1, kHypnoDebugArcade, "Finished segment %d of type %x", _segmentIdx, segments[_segmentIdx].type);
 
 			// Clear shoots
@@ -361,18 +372,19 @@ void HypnoEngine::runArcade(ArcadeShooting *arc) {
 
 			debugC(1, kHypnoDebugArcade, "Starting segment %d of type %x at %d", _segmentIdx, segments[_segmentIdx].type, segments[_segmentIdx].start);
 			if (!segments[_segmentIdx].end) { // If it is not the end segment
-				background.decoder->forceSeekToFrame(segments[_segmentIdx].start);
+				_background->decoder->forceSeekToFrame(segments[_segmentIdx].start);
 				continue;
 			}
 		}
 
 		if (segments[_segmentIdx].end || _skipLevel) {
-			skipVideo(background);
+			skipVideo(*_background);
 			// Objectives
 			if ((_objKillsRequired[_objIdx] > 0 || _objMissesAllowed[_objIdx] > 0) && !_skipLevel) {
 				if (_objKillsCount[_objIdx] < _objKillsRequired[_objIdx] || _objMissesCount[_objIdx] > _objMissesAllowed[_objIdx]) {
 					if (!arc->defeatMissBossVideo.empty()) {
 						MVideo video(arc->defeatMissBossVideo, Common::Point(0, 0), false, true, false);
+						disableCursor();
 						runIntro(video);
 					}
 					assert(!arc->levelIfLose.empty());
@@ -386,6 +398,7 @@ void HypnoEngine::runArcade(ArcadeShooting *arc) {
 
 			if (!arc->nextLevelVideo.empty()) {
 				MVideo video(arc->nextLevelVideo, Common::Point(0, 0), false, true, false);
+				disableCursor();
 				runIntro(video);
 			}
 			assert(!arc->levelIfWin.empty());
@@ -400,7 +413,7 @@ void HypnoEngine::runArcade(ArcadeShooting *arc) {
 		if (_shootSequence.size() > 0) {
 			ShootInfo si = _shootSequence.front();
 			int idx = (int)segments[_segmentIdx].size * _segmentRepetition \
-					+ background.decoder->getCurFrame() \
+					+ _background->decoder->getCurFrame() \
 					- (int)segments[_segmentIdx].start + 3;
 			//debug("%d %d", si.timestamp, idx);
 			if ((int)si.timestamp <= idx) {
@@ -409,7 +422,14 @@ void HypnoEngine::runArcade(ArcadeShooting *arc) {
 				for (Shoots::iterator it = arc->shoots.begin(); it != arc->shoots.end(); ++it) {
 					if (it->name == si.name) {
 						Shoot s = *it;
-						if (it->animation == "NONE") {
+						s.startFrame = si.timestamp;
+						if (_masks) {
+							s.startFrame = 0;
+							if (_shoots.size() == 0)
+								_shoots.push_back(s);
+							else
+								_shoots[0] = s;
+						} else if (it->animation == "NONE") {
 							if ((uint32)(it->name[0]) == _currentPlayerPosition) {
 								_health = _health - it->attackWeight;
 								hitPlayer();
@@ -459,7 +479,7 @@ void HypnoEngine::runArcade(ArcadeShooting *arc) {
 
 				uint32 bodyLastFrame = it->bodyFrames[it->bodyFrames.size() - 1].lastFrame();
 				if (frame > 0 && frame >= (int)(bodyLastFrame - 3) && !it->destroyed) {
-					missTarget(it, arc, background);
+					missedTarget(it, arc, *_background);
 					incTargetsMissed();
 					// No need to pop attackFrames or explosionFrames
 					skipVideo(*it->video);
@@ -469,6 +489,14 @@ void HypnoEngine::runArcade(ArcadeShooting *arc) {
 				} else if (it->video->decoder->needsUpdate() && needsUpdate) {
 					updateScreen(*it->video);
 				}
+			} else if (!it->video && it->bodyFrames.size() > 0) {
+				uint32 frame = _background->decoder->getCurFrame();
+				uint32 bodyLastFrame = it->bodyFrames[it->bodyFrames.size() - 1].lastFrame();
+				if (frame > it->startFrame && frame - it->startFrame > bodyLastFrame)
+					if (!it->destroyed) {
+						missedTarget(it, arc, *_background);
+						shootsToRemove.push_back(i);
+					}
 			}
 			i++;
 		}
@@ -487,7 +515,7 @@ void HypnoEngine::runArcade(ArcadeShooting *arc) {
 
 		if (needsUpdate) {
 			if (shootingPrimary || shootingSecondary) {
-				shoot(mousePos, arc, background);
+				shoot(mousePos, arc, *_background);
 				drawShoot(mousePos);
 				shootingPrimary = false;
 			}
@@ -506,17 +534,31 @@ void HypnoEngine::runArcade(ArcadeShooting *arc) {
 		delete it->video;
 	}
 
-	if (background.decoder)
-		skipVideo(background);
+	if (_background->decoder) {
+		skipVideo(*_background);
+	}
+
+	delete _background;
+	_background = nullptr;
+
+	if (_masks) {
+		skipVideo(*_masks);
+		delete _masks;
+		_mask = nullptr;
+		_masks = nullptr;
+	}
 
 	stopSound();
 	_music.clear();
 }
 
+Common::Point HypnoEngine::computeTargetPosition(const Common::Point &mousePos) {
+	return mousePos;
+}
+
 int HypnoEngine::detectTarget(const Common::Point &mousePos) {
 	int i = -1;
-	int x = mousePos.x;
-	int y = mousePos.y;
+	Common::Point target = computeTargetPosition(mousePos);
 	for (Shoots::iterator it = _shoots.begin(); it != _shoots.end(); ++it) {
 		i++;
 		if (it->destroyed)
@@ -525,7 +567,7 @@ int HypnoEngine::detectTarget(const Common::Point &mousePos) {
 		if (it->animation != "NONE" && !it->video->decoder)
 			continue;
 
-		uint32 c =  _compositeSurface->getPixel(x, y);
+		uint32 c =  _compositeSurface->getPixel(target.x, target.y);
 		if (c >= it->paletteOffset && c < it->paletteOffset + it->paletteSize) {
 			return i;
 		}
@@ -548,7 +590,9 @@ bool HypnoEngine::clickedPrimaryShoot(const Common::Point &mousePos) { return tr
 void HypnoEngine::shoot(const Common::Point &mousePos, ArcadeShooting *arc, MVideo &background) {
 	incShotsFired();
 	int i = detectTarget(mousePos);
-	if (i >= 0) {
+	if (i < 0) {
+		missNoTarget(arc, background);
+	} else {
 		if (!_shoots[i].hitSound.empty())
 			playSound(_soundPath + _shoots[i].hitSound, 1);
 
@@ -567,9 +611,10 @@ void HypnoEngine::shoot(const Common::Point &mousePos, ArcadeShooting *arc, MVid
 		_shoots[i].destroyed = true;
 
 		if (_shoots[i].animation != "NONE") {
-			if (_shoots[i].deathPosition.x != 0 && _shoots[i].deathPosition.y != 0)
-				_shoots[i].video->position = Common::Point(mousePos.x, mousePos.y) - _shoots[i].deathPosition;
-
+			if (_shoots[i].deathPosition.x != 0 && _shoots[i].deathPosition.y != 0) {
+				Common::Point position = computeTargetPosition(mousePos);
+				_shoots[i].video->position = Common::Point(position.x, position.y) - _shoots[i].deathPosition;
+			}
 			int currentFrame = _shoots[i].video->decoder->getCurFrame();
 			uint32 explosionIdx;
 			for (explosionIdx = 0; explosionIdx < _shoots[i].bodyFrames.size(); explosionIdx++) {
@@ -586,27 +631,36 @@ void HypnoEngine::shoot(const Common::Point &mousePos, ArcadeShooting *arc, MVid
 			_shoots[i].lastFrame = explosionLastFrame - 2;
 		} else {
 			if (!_shoots[i].explosionAnimation.empty()) {
-				_shoots[i].video = new MVideo(_shoots[i].explosionAnimation, mousePos, true, false, false);
+				Common::Point position = computeTargetPosition(mousePos);
+				_shoots[i].video = new MVideo(_shoots[i].explosionAnimation, position, true, false, false);
 				playVideo(*_shoots[i].video);
 				int w = _shoots[i].video->decoder->getWidth();
 				int h = _shoots[i].video->decoder->getHeight();
-				_shoots[i].video->position = Common::Point(mousePos.x - w / 2, mousePos.y - h / 2);
+				_shoots[i].video->position = Common::Point(position.x - w / 2, position.y - h / 2);
 			} else if (_objIdx == 0 && !arc->hitBoss1Video.empty()) {
 				background.decoder->pauseVideo(true);
 				MVideo video(arc->hitBoss1Video, Common::Point(0, 0), false, true, false);
+				disableCursor();
 				runIntro(video);
+				// Should be currentPalette?
 				loadPalette(arc->backgroundPalette);
 				background.decoder->pauseVideo(false);
 				updateScreen(background);
 				drawScreen();
+				if (!_music.empty())
+					playSound(_music, 0, arc->musicRate); // restore music
 			} else if (_objIdx == 1 && !arc->hitBoss2Video.empty()) {
 				background.decoder->pauseVideo(true);
 				MVideo video(arc->hitBoss2Video, Common::Point(0, 0), false, true, false);
 				runIntro(video);
+				// Should be currentPalette?
 				loadPalette(arc->backgroundPalette);
 				background.decoder->pauseVideo(false);
 				updateScreen(background);
 				drawScreen();
+				drawCursorArcade(mousePos);
+				if (!_music.empty())
+					playSound(_music, 0, arc->musicRate); // restore music
 			}
 			byte p[3] = {0x00, 0x00, 0x00}; // Always black?
 			assert(_shoots[i].paletteSize == 1 || _shoots[i].paletteSize == 0);

@@ -754,7 +754,6 @@ public:
 	MoveList *_mls = nullptr;
 	GameSetup *_usetup;
 	AGS::Shared::String _saveGameDirectory;
-	AGS::Shared::String _saveGameParent;
 	AGS::Shared::String _saveGameSuffix;
 	bool _want_exit = false;
 	bool _abort_engine = false;
@@ -1054,7 +1053,7 @@ public:
 	char *_lzbuffer = nullptr;
 	int *_node = nullptr;
 	int _pos = 0;
-	long _outbytes = 0, _maxsize = 0, _putbytes = 0;
+	size_t _outbytes = 0, _maxsize = 0, _putbytes = 0;
 
 	/**@}*/
 

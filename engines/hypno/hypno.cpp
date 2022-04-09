@@ -55,7 +55,8 @@ HypnoEngine::HypnoEngine(OSystem *syst, const ADGameDescription *gd)
 	  _countdown(0), _timerStarted(false), _score(0), _lives(0),
 	  _defaultCursor(""), _checkpoint(""),
 	  _currentPlayerPosition(kPlayerLeft), _lastPlayerPosition(kPlayerLeft),
-	  //_obj1KillsCount(0), _obj1MissesCount(0),
+	  _background(nullptr),
+	  _masks(nullptr),
 	  _screenW(0), _screenH(0) { // Every games initializes its own resolution
 	_rnd = new Common::RandomSource("hypno");
 
@@ -117,6 +118,7 @@ LibFile *HypnoEngine::loadLib(const Filename &prefix, const Filename &filename, 
 }
 
 void HypnoEngine::loadAssets() { error("Function \"%s\" not implemented", __FUNCTION__); }
+Common::String HypnoEngine::findNextLevel(const Common::String &level) { error("Function \"%s\" not implemented", __FUNCTION__); }
 
 Common::Error HypnoEngine::run() {
 	Graphics::ModeList modes;
@@ -429,6 +431,10 @@ void HypnoEngine::loadPalette(const Common::String &fname) {
 void HypnoEngine::loadPalette(const byte *palette, uint32 offset, uint32 size) {
 	debugC(1, kHypnoDebugMedia, "Loading palette from byte array with offset %d and size %d", offset, size);
 	g_system->getPaletteManager()->setPalette(palette, offset, size);
+}
+
+void HypnoEngine::updateVideo(MVideo &video) {
+	video.decoder->decodeNextFrame();
 }
 
 void HypnoEngine::updateScreen(MVideo &video) {

@@ -33,7 +33,7 @@ static const chapterEntry rawChapterTable[] = {
 	{21, {70, 160}, {180, 160}, {220, 185}}, 	// c21
 	{22, {70, 160}, {180, 160}, {220, 185}}, 	// c22
 	{23, {70, 160}, {180, 160}, {220, 185}}, 	// c23
-	{20, {44, 172}, {218, 172}, {0,   0}}, 		// c20
+	{20, {128, 150}, {238, 150},{0,   0}}, 		// c20
 	{31, {70, 160}, {180, 160}, {220, 185}}, 	// c31
 	{32, {70, 160}, {180, 160}, {220, 185}}, 	// c32
 	{33, {70, 160}, {180, 160}, {220, 185}}, 	// c33
@@ -391,7 +391,7 @@ void WetEngine::showCredits() {
 		return;
 	}
 
-	if (!isDemo() || _variant == "Demo" || _language == Common::EN_USA) {
+	if (!isDemo() || (_variant == "Demo" && _language == Common::EN_USA)) {
 		MVideo video("c_misc/credits.smk", Common::Point(0, 0), false, true, false);
 		runIntro(video);
 	}

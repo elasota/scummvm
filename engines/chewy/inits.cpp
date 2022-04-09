@@ -138,7 +138,6 @@ void var_init() {
 
 	_G(gpkt).Vorschub = _G(spieler_mi)[P_CHEWY].Vorschub;
 	init_room();
-	init_atds();
 	_G(gameState).FramesPerSecond = 7;
 	_G(currentSong) = -1;
 	_G(SetUpScreenFunc) = nullptr;
@@ -161,29 +160,6 @@ void init_room() {
 	_G(room_blk).AtsLoad = true;
 
 	_G(room)->open_handle(EPISODE1_GEP, R_GEP_DATA);
-}
-
-void init_atds() {
-	// Close any prior handles
-	_G(atds)->close_handle(AAD_DATA);
-	_G(atds)->close_handle(ATS_DATA);
-	_G(atds)->close_handle(ADS_DATA);
-	_G(atds)->close_handle(INV_USE_DATA);
-	_G(atds)->close_handle(INV_ATS_DATA);
-	_G(atds)->close_handle(ATDS_HANDLE);
-
-	// New set up
-	Common::Stream *handle = _G(atds)->pool_handle(ATDS_TXT);
-	_G(atds)->set_handle(ATDS_TXT, ATS_DATA, handle, ATS_TAP_OFF, ATS_TAP_MAX);
-	_G(atds)->set_handle(ATDS_TXT, INV_ATS_DATA, handle, INV_TAP_OFF, INV_TAP_MAX);
-	_G(atds)->set_handle(ATDS_TXT, AAD_DATA, handle, AAD_TAP_OFF, AAD_TAP_MAX);
-	_G(atds)->set_handle(ATDS_TXT, ADS_DATA, handle, ADS_TAP_OFF, ADS_TAP_MAX);
-	_G(atds)->set_handle(ATDS_TXT, INV_USE_DATA, handle, USE_TAP_OFF, USE_TAP_MAX);
-	_G(gameState).AadSilent = 10;
-	_G(gameState).DelaySpeed = 5;
-	_G(spieler_vector)[P_CHEWY].Delay = _G(gameState).DelaySpeed;
-	_G(atds)->set_delay(&_G(gameState).DelaySpeed, _G(gameState).AadSilent);
-	_G(atds)->set_string_end_func(&atdsStringStart);
 }
 
 void new_game() {
@@ -284,7 +260,6 @@ void sound_init() {
 	_G(gameState).SoundVol = 63;
 	g_engine->_sound->setMusicVolume(_G(gameState).MusicVol * Audio::Mixer::kMaxChannelVolume / 120);
 	g_engine->_sound->setSoundVolume(_G(gameState).SoundVol * Audio::Mixer::kMaxChannelVolume / 120);
-	_G(atds)->setHasSpeech(true);
 }
 
 void show_intro() {
