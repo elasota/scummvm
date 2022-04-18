@@ -284,7 +284,8 @@ void engine_locate_audio_pak() {
 			_G(platform)->DisplayAlert("Unable to initialize digital audio pack '%s', file could be corrupt or of unsupported format.",
 				music_file.GetCStr());
 		}
-	} else if (Path::ComparePaths(_GP(ResPaths).DataDir, _GP(ResPaths).AudioDir2) != 0) {
+	} else if (!_GP(ResPaths).AudioDir2.IsEmpty() &&
+			Path::ComparePaths(_GP(ResPaths).DataDir, _GP(ResPaths).AudioDir2) != 0) {
 		Debug::Printf(kDbgMsg_Info, "Audio pack was not found, but explicit audio directory is defined.");
 	}
 }
@@ -325,10 +326,16 @@ void engine_init_timer() {
 
 void engine_init_audio() {
 #if !AGS_PLATFORM_SCUMMVM
-	if (_GP(usetup).audio_backend != 0) {
-		Debug::Printf("Initializing audio");
-		audio_core_init(); // audio core system
-	}
+	if (usetup.audio_backend != 0)
+    {
+        Debug::Printf("Initializing audio");
+        try {
+            audio_core_init(); // audio core system
+        } catch(std::runtime_error) {
+            Debug::Printf("Failed to initialize audio, disabling.");
+            usetup.audio_backend = 0;
+        }
+    }
 #endif
 
 	_G(our_eip) = -181;
@@ -539,7 +546,10 @@ void engine_init_game_settings() {
 	Debug::Printf("Initialize game settings");
 
 	// Setup a text encoding mode depending on the game data hint
-	set_uformat(U_ASCII);
+	if (_GP(game).options[OPT_GAMETEXTENCODING] == 65001) // utf-8 codepage number
+		set_uformat(U_UTF8);
+	else
+		set_uformat(U_ASCII);
 
 	int ee;
 
@@ -752,8 +762,10 @@ void engine_init_game_settings() {
 	_GP(play).game_speed_modifier = 0;
 	if (_G(debug_flags) & DBG_DEBUGMODE)
 		_GP(play).debug_mode = 1;
-	_G(gui_disabled_style) = convert_gui_disabled_style(_GP(game).options[OPT_DISABLEOFF]);
 	_GP(play).shake_screen_yoff = 0;
+
+	GUI::Options.DisabledStyle = static_cast<GuiDisableStyle>(_GP(game).options[OPT_DISABLEOFF]);
+	GUI::Options.ClipControls = _GP(game).options[OPT_CLIPGUICONTROLS] != 0;
 
 	memset(&_GP(play).walkable_areas_on[0], 1, MAX_WALK_AREAS + 1);
 	memset(&_GP(play).script_timers[0], 0, MAX_TIMERS * sizeof(int));
@@ -1173,6 +1185,8 @@ int initialize_engine(const ConfigTree &startup_opts) {
 
 	engine_init_resolution_settings(_GP(game).GetGameRes());
 
+	engine_adjust_for_rotation_settings();
+
 	// Attempt to initialize graphics mode
 	if (!engine_try_set_gfxmode_any(_GP(usetup).Screen))
 		return EXIT_ERROR;
@@ -1205,12 +1219,14 @@ bool engine_try_set_gfxmode_any(const DisplayModeSetup &setup) {
 	engine_shutdown_gfxmode();
 
 	const Size init_desktop = get_desktop_size();
-	if (!graphics_mode_init_any(GraphicResolution(_GP(game).GetGameRes(), _GP(game).color_depth * 8),
-		setup, ColorDepthOption(_GP(game).GetColorDepth())))
-		return false;
+	bool res = graphics_mode_init_any(GraphicResolution(_GP(game).GetGameRes(), _GP(game).color_depth * 8),
+		setup, ColorDepthOption(_GP(game).GetColorDepth()));
 
-	engine_post_gfxmode_setup(init_desktop);
-	return true;
+	if (res)
+		engine_post_gfxmode_setup(init_desktop);
+	// Make sure that we don't receive window events queued during init
+	sys_flush_events();
+	return res;
 }
 
 bool engine_try_switch_windowed_gfxmode() {
@@ -1259,7 +1275,9 @@ bool engine_try_switch_windowed_gfxmode() {
 			init_desktop = get_desktop_size();
 		engine_post_gfxmode_setup(init_desktop);
 	}
-	ags_clear_input_state();
+
+	// Make sure that we don't receive window events queued during init
+	sys_flush_events();
 	return res;
 }
 

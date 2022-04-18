@@ -352,6 +352,12 @@ void override_config_ext(ConfigTree &cfg) {
 	else
 		INIwriteint(cfg, "graphics", "supersampling", 0);
 
+	// psp_gfx_rotation - scaling style:
+	//    * 0 - unlocked, let the user rotate as wished.
+	//    * 1 - portrait
+	//    * 2 - landscape
+	INIwriteint(cfg, "graphics", "rotation", _G(psp_rotation));
+
 #if AGS_PLATFORM_OS_ANDROID
 	// config_mouse_control_mode - enable relative mouse mode
 	//    * 1 - relative mouse touch controls
@@ -361,6 +367,7 @@ void override_config_ext(ConfigTree &cfg) {
 
 	INIwriteint(cfg, "misc", "antialias", _G(psp_gfx_smooth_sprites) != 0);
 	INIwritestring(cfg, "language", "translation", _G(psp_translation));
+	INIwriteint(cfg, "misc", "clear_cache_on_room_change", _G(psp_clear_cache_on_room_change) != 0);
 }
 
 void apply_config(const ConfigTree &cfg) {
@@ -394,12 +401,19 @@ void apply_config(const ConfigTree &cfg) {
 		_GP(usetup).Screen.Params.VSync = INIreadint(cfg, "graphics", "vsync") > 0;
 		_GP(usetup).RenderAtScreenRes = INIreadint(cfg, "graphics", "render_at_screenres") > 0;
 		_GP(usetup).Supersampling = INIreadint(cfg, "graphics", "supersampling", 1);
-
+#ifdef TODO
+		_GP(usetup).rotation = (ScreenRotation)INIreadint(cfg, "graphics", "rotation", _GP(usetup).rotation);
+		String rotation_str = INIreadstring(cfg, "graphics", "rotation", "unlocked");
+		_GP(usetup).rotation = StrUtil::ParseEnum<ScreenRotation>(
+			rotation_str, CstrArr<kNumScreenRotationOptions>{ "unlocked", "portrait", "landscape" },
+			_GP(usetup).rotation);
+#endif
 		_GP(usetup).enable_antialiasing = INIreadint(cfg, "misc", "antialias") > 0;
 
 		// This option is backwards (usevox is 0 if no_speech_pack)
 		_GP(usetup).no_speech_pack = INIreadint(cfg, "sound", "usespeech", 1) == 0;
 
+		_GP(usetup).clear_cache_on_room_change = INIreadint(cfg, "misc", "clear_cache_on_room_change", _GP(usetup).clear_cache_on_room_change);
 		_GP(usetup).user_data_dir = INIreadstring(cfg, "misc", "user_data_dir");
 		_GP(usetup).shared_data_dir = INIreadstring(cfg, "misc", "shared_data_dir");
 

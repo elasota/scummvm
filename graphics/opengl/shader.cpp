@@ -64,6 +64,18 @@ static const char *compatFragment =
 		"#define OUTPUT out vec4 outColor;\n"
 	"#endif\n";
 
+// OGLES2 on AmigaOS doesn't support uniform booleans, let's introduce some shim
+#if defined(AMIGAOS)
+static const char *compatUniformBool =
+	"#define UBOOL mediump int\n"
+	"#define UBOOL_TEST(v) (v != 0)\n";
+#else
+static const char *compatUniformBool =
+	"#define UBOOL bool\n"
+	"#define UBOOL_TEST(v) v\n";
+#endif
+
+
 static const GLchar *readFile(const Common::String &filename) {
 	Common::File file;
 	Common::String shaderDir;
@@ -127,11 +139,12 @@ static GLuint createCompatShader(const char *shaderSource, GLenum shaderType, co
 	const GLchar *shaderSources[] = {
 		versionSource,
 		compatSource,
+		compatUniformBool,
 		shaderSource
 	};
 
 	GLuint shader = glCreateShader(shaderType);
-	glShaderSource(shader, 3, shaderSources, NULL);
+	glShaderSource(shader, 4, shaderSources, NULL);
 	glCompileShader(shader);
 
 	GLint status;
@@ -256,6 +269,7 @@ void ShaderGL::use(bool forceReload) {
 			}
 		}
 	}
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 GLuint ShaderGL::createBuffer(GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usage) {
@@ -263,6 +277,7 @@ GLuint ShaderGL::createBuffer(GLenum target, GLsizeiptr size, const GLvoid *data
 	glGenBuffers(1, &vbo);
 	glBindBuffer(target, vbo);
 	glBufferData(target, size, data, usage);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	return vbo;
 }
 

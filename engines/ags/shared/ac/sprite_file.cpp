@@ -67,6 +67,7 @@ static size_t lookup_palette(uint32_t col, uint32_t palette[256], uint32_t ncols
 static bool CreateIndexedBitmap(const Bitmap *image, std::vector<uint8_t> &dst_data,
 	uint32_t palette[256], uint32_t &pal_count) {
 	const int src_bpp = image->GetBPP();
+	if (src_bpp < 2) { assert(0); return false; }
 	const size_t src_size = image->GetWidth() * image->GetHeight() * image->GetBPP();
 	const size_t dst_size = image->GetWidth() * image->GetHeight();
 	dst_data.resize(dst_size);
@@ -86,7 +87,7 @@ static bool CreateIndexedBitmap(const Bitmap *image, std::vector<uint8_t> &dst_d
 			col = *((const uint32_t *)src);
 			pal_n = lookup_palette(col, palette, pal_count);
 			break;
-		default: assert(0); break;
+		default: assert(0); return false;
 		}
 
 		if ((int)pal_n == -1) {
@@ -146,7 +147,9 @@ SpriteFile::SpriteFile() {
 }
 
 HError SpriteFile::OpenFile(const String &filename, const String &sprindex_filename,
-	std::vector<Size> &metrics) {
+		std::vector<Size> &metrics) {
+	Close();
+
 	char buff[20];
 	soff_t spr_initial_offs = 0;
 	int spriteFileID = 0;
@@ -218,6 +221,10 @@ HError SpriteFile::OpenFile(const String &filename, const String &sprindex_filen
 
 void SpriteFile::Close() {
 	_stream.reset();
+	_spriteData.clear();
+	_version = kSprfVersion_Undefined;
+	_storeFlags = 0;
+	_compress = kSprCompress_None;
 	_curPos = -2;
 }
 
@@ -428,13 +435,17 @@ HError SpriteFile::LoadRawData(sprkey_t index, SpriteDatHeader &hdr, std::vector
 	size_t data_size = 0;
 	soff_t data_pos = _stream->GetPosition();
 	// Optional palette
-	data_size += hdr.PalCount * GetPaletteBPP(hdr.SFormat);
+	size_t pal_size = hdr.PalCount * GetPaletteBPP(hdr.SFormat);
+	data_size += pal_size;
+	_stream->Seek(pal_size);
+	// Pixel data
 	if ((_version >= kSprfVersion_StorageFormats) || _compress != kSprCompress_None)
 		data_size += (uint32_t)_stream->ReadInt32() + sizeof(uint32_t);
 	else
 		data_size += hdr.Width * hdr.Height * hdr.BPP;
+	// Seek back and read all at once
 	data.resize(data_size);
-	_stream->Seek(data_pos);
+	_stream->Seek(data_pos, kSeekBegin);
 	_stream->Read(&data[0], data_size);
 
 	_curPos = index + 1; // mark correct pos
@@ -450,25 +461,24 @@ void SpriteFile::SeekToSprite(sprkey_t index) {
 }
 
 
-// Finds the topmost occupied slot index. Warning: may be slow.
-static sprkey_t FindTopmostSprite(const std::vector<Bitmap *> &sprites) {
+// Finds the topmost occupied slot index
+static sprkey_t FindTopmostSprite(const std::vector<std::pair<bool, Bitmap *>> &sprites) {
 	sprkey_t topmost = -1;
 	for (sprkey_t i = 0; i < static_cast<sprkey_t>(sprites.size()); ++i)
-		if (sprites[i])
+		if (sprites[i].first)
 			topmost = i;
 	return topmost;
 }
 
 int SaveSpriteFile(const String &save_to_file,
-		const std::vector<Bitmap *> &sprites, SpriteFile *read_from_file,
+		const std::vector<std::pair<bool, Bitmap *> > &sprites,
+		SpriteFile *read_from_file,
 		int store_flags, SpriteCompression compress, SpriteFileIndex &index) {
 	std::unique_ptr<Stream> output(File::CreateFile(save_to_file));
 	if (output == nullptr)
 		return -1;
 
-	sprkey_t lastslot = read_from_file ? read_from_file->GetTopmostSprite() : 0;
-	lastslot = std::max(lastslot, FindTopmostSprite(sprites));
-
+	sprkey_t lastslot = FindTopmostSprite(sprites);
 	SpriteFileWriter writer(output);
 	writer.Begin(store_flags, compress, lastslot);
 
@@ -482,8 +492,12 @@ int SaveSpriteFile(const String &save_to_file,
 			read_from_file->GetStoreFlags() != store_flags);
 
 	for (sprkey_t i = 0; i <= lastslot; ++i) {
-		Bitmap *image = (size_t)i < sprites.size() ? sprites[i] : nullptr;
+		if (!sprites[i].first) { // empty slot
+			writer.WriteEmptySlot();
+			continue;
+		}
 
+		Bitmap *image = sprites[i].second;
 		// if compression setting is different, load the sprite into memory
 		// (otherwise we will be able to simply copy bytes from one file to another
 		if ((image == nullptr) && diff_compress) {

@@ -28,27 +28,27 @@
 namespace Hypno {
 
 static const chapterEntry rawChapterTable[] = {
-	{11, {44, 172}, {218, 172}, {0,   0}}, 		// c11
-	{10, {19, 3},   {246, 3}, 	{246, 11}}, 	// c10
-	{21, {70, 160}, {180, 160}, {220, 185}}, 	// c21
-	{22, {70, 160}, {180, 160}, {220, 185}}, 	// c22
-	{23, {70, 160}, {180, 160}, {220, 185}}, 	// c23
-	{20, {128, 150}, {238, 150},{0,   0}}, 		// c20
-	{31, {70, 160}, {180, 160}, {220, 185}}, 	// c31
-	{32, {70, 160}, {180, 160}, {220, 185}}, 	// c32
-	{33, {70, 160}, {180, 160}, {220, 185}}, 	// c33
-	{30, {19, 3},   {246, 3}, 	{246, 11}}, 	// c30
-	{41, {70, 160}, {180, 160}, {220, 185}}, 	// c41
-	{42, {70, 160}, {180, 160}, {220, 185}}, 	// c42
-	{43, {70, 160}, {180, 160}, {220, 185}}, 	// c43
-	{44, {70, 160}, {180, 160}, {220, 185}}, 	// c44
-	{40, {19, 3},   {246, 3}, 	{246, 11}}, 	// c40
-	{51, {60, 167}, {190, 167}, {135, 187}}, 	// c51
-	{52, {60, 167}, {190, 167}, {135, 187}}, 	// c52
-	{50, {19, 3},   {246, 3}, 	{246, 11}}, 	// c50 (fixed)
-	{61, {44, 172}, {218, 172}, {0, 0}}, 		// c61
-	{60, {44, 172}, {218, 172}, {0, 0}}, 		// c60
-	{0,  {0,  0},   {0,   0},   {0,   0}}    	// NULL
+	{11, {44, 172}, {218, 172}, {0,   0},   {127, 172}, kHypnoColorRed}, 	// c11
+	{10, {19, 3},   {246, 3}, 	{246, 11},  {2, 2},     kHypnoNoColor}, 	// c10
+	{21, {70, 160}, {180, 160}, {220, 185}, {44, 162},  kHypnoColorYellow}, // c21
+	{22, {70, 160}, {180, 160}, {220, 185}, {44, 162},  kHypnoColorGreen}, 	// c22
+	{23, {70, 160}, {180, 160}, {220, 185}, {44, 162},  kHypnoColorCyan}, 	// c23
+	{20, {128, 150}, {238, 150},{0,   0},   {0, 0},     kHypnoColorCyan}, 	// c20
+	{31, {70, 160}, {180, 160}, {220, 185}, {44, 164},  kHypnoColorGreen}, 	// c31
+	{32, {70, 160}, {180, 160}, {220, 185}, {44, 164},  kHypnoColorRed}, 	// c32
+	{33, {70, 160}, {180, 160}, {220, 185}, {44, 164},  kHypnoColorRed}, 	// c33
+	{30, {19, 3},   {246, 3}, 	{246, 11},  {0, 0},     kHypnoColorRed}, 	// c30
+	{41, {70, 160}, {180, 160}, {220, 185}, {0, 0},     kHypnoColorRed}, 	// c41
+	{42, {70, 160}, {180, 160}, {220, 185}, {0, 0},     kHypnoColorRed}, 	// c42
+	{43, {70, 160}, {180, 160}, {220, 185}, {0, 0},     kHypnoColorRed}, 	// c43
+	{44, {70, 160}, {180, 160}, {220, 185}, {0, 0},     kHypnoColorRed}, 	// c44
+	{40, {19, 3},   {246, 3}, 	{246, 11},  {0, 0},     kHypnoColorRed}, 	// c40
+	{51, {60, 167}, {190, 167}, {135, 187}, {0, 0},     kHypnoColorRed}, 	// c51
+	{52, {60, 167}, {190, 167}, {135, 187}, {0, 0},     kHypnoColorRed}, 	// c52
+	{50, {19, 3},   {246, 3}, 	{246, 11},  {0, 0},     kHypnoColorRed}, 	// c50 (fixed)
+	{61, {63, 167}, {187, 167}, {192, 188}, {152, 185}, kHypnoColorRed}, 	// c61
+	{60, {63, 167}, {187, 167}, {192, 188}, {152, 185}, kHypnoColorRed}, 	// c60
+	{0,  {0,  0},   {0,   0},   {0,   0},   {0, 0},     kHypnoColorRed}    	// NULL
 };
 
 WetEngine::WetEngine(OSystem *syst, const ADGameDescription *gd) : HypnoEngine(syst, gd) {
@@ -59,6 +59,9 @@ WetEngine::WetEngine(OSystem *syst, const ADGameDescription *gd) : HypnoEngine(s
 
 	_c40SegmentIdx = -1;
 	_c40lastTurn = -1;
+
+	_c50LeftTurns = 0;
+	_c50RigthTurns = 0;
 
     const chapterEntry *entry = rawChapterTable;
     while (entry->id) {
@@ -200,12 +203,12 @@ void WetEngine::loadAssetsPCW() {
 	intro->intros.push_back("c_misc/wet.smk");
 	_levels["<start>"] = intro;
 
-	loadArcadeLevel("c11.mis", "<quit>", "<check_lives>", "");
+	loadArcadeLevel("c11.mis", "<quit>", "<quit>", "");
 
 	Transition *over = new Transition("<quit>");
 	_levels["<game_over>"] = over;
 
-	loadLib("", "c_misc/sound.lib", false);
+	loadLib("sound/", "c_misc/sound.lib", false);
 	loadLib("", "c_misc/fonts.lib", true);
 	loadFonts();
 	_nextLevel = "<start>";
@@ -226,7 +229,7 @@ void WetEngine::loadAssetsPCG() {
 	intro->frameNumber = 0;
 	_levels["<start>"] = intro;
 
-	loadArcadeLevel("c31.mis", "<quit>", "<check_lives>", "");
+	loadArcadeLevel("c31.mis", "<quit>", "<quit>", "");
 
 	Transition *over = new Transition("<quit>");
 	over->intros.push_back("g.s");
@@ -259,7 +262,7 @@ void WetEngine::loadAssetsFullGame() {
 	_levels["<level_menu>"] = level_menu;
 	_levels["<level_menu>"]->levelIfWin = "?";
 
-	Transition *over = new Transition("<quit>");
+	Transition *over = new Transition("<main_menu>");
 	over->intros.push_back("c_misc/gameover.smk");
 	_levels["<game_over>"] = over;
 
@@ -386,11 +389,6 @@ void WetEngine::loadAssetsFullGame() {
 }
 
 void WetEngine::showCredits() {
-	if (_cheatsEnabled && !_arcadeMode.empty()) {
-		_skipLevel = true;
-		return;
-	}
-
 	if (!isDemo() || (_variant == "Demo" && _language == Common::EN_USA)) {
 		MVideo video("c_misc/credits.smk", Common::Point(0, 0), false, true, false);
 		runIntro(video);

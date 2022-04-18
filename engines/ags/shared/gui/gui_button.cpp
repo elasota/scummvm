@@ -97,15 +97,15 @@ void GUIButton::Draw(Bitmap *ds) {
 	bool draw_disabled = !IsGUIEnabled(this);
 
 	// if it's "Unchanged when disabled" or "GUI Off", don't grey out
-	if (_G(gui_disabled_style) == GUIDIS_UNCHANGED ||
-	        _G(gui_disabled_style) == GUIDIS_GUIOFF) {
+	if ((GUI::Options.DisabledStyle == kGuiDis_Unchanged) ||
+		(GUI::Options.DisabledStyle == kGuiDis_Off)) {
 		draw_disabled = false;
 	}
 	// TODO: should only change properties in reaction to particular events
 	if (CurrentImage <= 0 || draw_disabled)
 		CurrentImage = Image;
 
-	if (draw_disabled && _G(gui_disabled_style) == GUIDIS_BLACKOUT)
+	if (draw_disabled && (GUI::Options.DisabledStyle == kGuiDis_Blackout))
 		// buttons off when disabled - no point carrying on
 		return;
 
@@ -284,8 +284,8 @@ void GUIButton::WriteToSavegame(Stream *out) const {
 
 void GUIButton::DrawImageButton(Bitmap *ds, bool draw_disabled) {
 	// NOTE: the CLIP flag only clips the image, not the text
-	if (IsClippingImage())
-		ds->SetClip(Rect(X, Y, X + Width - 1, Y + Height - 1));
+	if (IsClippingImage() && !GUI::Options.ClipControls)
+		ds->SetClip(RectWH(X, Y, Width, Height));
 	if (_GP(spriteset)[CurrentImage] != nullptr)
 		draw_gui_sprite(ds, CurrentImage, X, Y, true);
 
@@ -311,17 +311,19 @@ void GUIButton::DrawImageButton(Bitmap *ds, bool draw_disabled) {
 		}
 	}
 
-	if ((draw_disabled) && (_G(gui_disabled_style) == GUIDIS_GREYOUT)) {
+	if ((draw_disabled) && (GUI::Options.DisabledStyle == kGuiDis_Greyout)) {
 		// darken the button when disabled
 		GUI::DrawDisabledEffect(ds, RectWH(X, Y,
 		                                   _GP(spriteset)[CurrentImage]->GetWidth(),
 		                                   _GP(spriteset)[CurrentImage]->GetHeight()));
 	}
-	ds->ResetClip();
 
 	// Don't print Text of (INV) (INVSHR) (INVNS)
 	if (_placeholder == kButtonPlace_None && !_unnamed)
 		DrawText(ds, draw_disabled);
+
+	if (IsClippingImage() && !GUI::Options.ClipControls)
+		ds->ResetClip();
 }
 
 void GUIButton::DrawText(Bitmap *ds, bool draw_disabled) {

@@ -19,23 +19,22 @@
  *
  */
 
-#ifndef CHEWY_DATA_H
-#define CHEWY_DATA_H
+#ifndef GLK_SCOTT_GAMEINFO
+#define GLK_SCOTT_GAMEINFO
 
-#include "chewy/chewy.h"
-#include "common/file.h"
+#include "glk/scott/definitions.h"
+#include "common/array.h"
 
-namespace Chewy {
+namespace Glk {
+namespace Scott {
 
-class Data {
-public:
-	Data() {}
-	~Data() {}
+extern GameInfo g_games[];
+extern const char *g_sysDict[];
+extern const char *g_sysDictIAm[];
+extern const char *g_sysDictZX[];
+extern const char *g_sysDictTI994A[];
 
-	void selectPoolItem(Common::File *stream, uint16 nr);
-	uint32 getPoolSize(const char *filename, int16 chunkStart, int16 chunkNr);
-};
-
-} // namespace Chewy
+} // End of namespace Scott
+} // End of namespace Glk
 
 #endif

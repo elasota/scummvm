@@ -68,6 +68,24 @@ enum PlayerPosition {
 	kPlayerRight = 'R'
 };
 
+// Common colors
+enum HypnoColors {
+	kHypnoNoColor = -1,
+	kHypnoColorRed = 250,
+	kHypnoColorGreen = 251,
+	kHypnoColorWhiteOrBlue = 252,
+	kHypnoColorYellow = 253,
+	kHypnoColorBlack = 254,
+	kHypnoColorCyan = 255
+};
+
+// Spider colors
+enum SpiderColors {
+	kSpiderColorWhite = 248,
+	kSpiderColorBlue = 252,
+};
+
+
 class HypnoEngine : public Engine {
 private:
 	Image::ImageDecoder *_image;
@@ -144,6 +162,7 @@ public:
 	void drawImage(Graphics::Surface &image, int x, int y, bool transparent);
 	void loadPalette(const Common::String &fname);
 	void loadPalette(const byte *palette, uint32 offset, uint32 size);
+	byte *getPalette(uint32 idx);
 
 	// Cursors
 	Common::String _defaultCursor;
@@ -154,7 +173,7 @@ public:
 	void changeCursor(const Graphics::Surface &entry, byte *palette, bool centerCursor = false);
 
 	// Actions
-	void runMenu(Hotspots *hs);
+	void runMenu(Hotspots *hs, bool only_menu = false);
 	void runBackground(Background *a);
 	void runOverlay(Overlay *a);
 	void runMice(Mice *a);
@@ -221,17 +240,17 @@ public:
 	// Arcade
 	Common::String _arcadeMode;
 	MVideo *_background;
-	uint32 _currentPlayerPosition;
-	uint32 _lastPlayerPosition;
 	virtual Common::Point computeTargetPosition(const Common::Point &mousePos);
 	virtual int detectTarget(const Common::Point &mousePos);
+	virtual void pressedKey(const int keycode);
 	virtual bool clickedPrimaryShoot(const Common::Point &mousePos);
 	virtual bool clickedSecondaryShoot(const Common::Point &mousePos);
 	virtual void drawShoot(const Common::Point &mousePos);
-	virtual void shoot(const Common::Point &mousePos, ArcadeShooting *arc, MVideo &background);
+	virtual void shoot(const Common::Point &mousePos, ArcadeShooting *arc);
 	virtual void hitPlayer();
-	virtual void missedTarget(Shoot *s, ArcadeShooting *arc, MVideo &background);
-	virtual void missNoTarget(ArcadeShooting *arc, MVideo &background);
+	virtual void missedTarget(Shoot *s, ArcadeShooting *arc);
+	virtual void missNoTarget(ArcadeShooting *arc);
+	virtual byte *getTargetColor(Common::String name, int levelId);
 
 	// Segments
 	uint32 _segmentIdx;
@@ -269,12 +288,18 @@ public:
 
 	Common::String _difficulty;
 	bool _skipLevel;
+	bool _skipDefeatVideo;
 
 	virtual void drawCursorArcade(const Common::Point &mousePos);
 	virtual void drawPlayer();
 	virtual void drawHealth();
+	virtual void drawAmmo();
 	int _health;
 	int _maxHealth;
+
+	int _ammo;
+	int _maxAmmo;
+
 	int _score;
 	int _bonus;
 	int _lives;
@@ -283,7 +308,10 @@ public:
 	Shoots _shoots;
 	Frames _playerFrames;
 	int _playerFrameIdx;
+	Common::List<int> _playerFrameSeps;
+	int _playerFrameStart;
 	int _playerFrameSep;
+	int _playerFrameEnd;
 
 	// Objectives
 	uint32 _objIdx;
@@ -300,6 +328,7 @@ public:
 	Actions _conversation;
 	bool _refreshConversation;
 	virtual void showConversation();
+	virtual void endConversation();
 	virtual void rightClickedConversation(const Common::Point &mousePos);
 	virtual void leftClickedConversation(const Common::Point &mousePos);
 	virtual bool hoverConversation(const Common::Point &mousePos);
@@ -322,6 +351,8 @@ struct chapterEntry {
 	int energyPos[2];
 	int scorePos[2];
 	int objectivesPos[2];
+	int ammoPos[2];
+	int targetColor;
 };
 
 class WetEngine : public HypnoEngine {
@@ -345,11 +376,12 @@ public:
 	void drawShoot(const Common::Point &target) override;
 	void drawPlayer() override;
 	void drawHealth() override;
+	void drawAmmo() override;
 	void hitPlayer() override;
 	void drawCursorArcade(const Common::Point &mousePos) override;
 	Common::Point computeTargetPosition(const Common::Point &mousePos) override;
-	void missedTarget(Shoot *s, ArcadeShooting *arc, MVideo &background) override;
-	void missNoTarget(ArcadeShooting *arc, MVideo &background) override;
+	void missedTarget(Shoot *s, ArcadeShooting *arc) override;
+	void missNoTarget(ArcadeShooting *arc) override;
 
 	void runCode(Code *code) override;
 	Common::String findNextLevel(const Common::String &level) override;
@@ -362,16 +394,19 @@ public:
 	void saveProfile(const Common::String &name, int levelId);
 
 	// Arcade
+	void pressedKey(const int keycode) override;
 	void runBeforeArcade(ArcadeShooting *arc) override;
 	void runAfterArcade(ArcadeShooting *arc) override;
 	void findNextSegment(ArcadeShooting *arc) override;
 	void initSegment(ArcadeShooting *arc) override;
+	byte *getTargetColor(Common::String name, int levelId) override;
 
 private:
 	void runMainMenu(Code *code);
 	void runLevelMenu(Code *code);
 	void runCheckLives(Code *code);
 	void endCredits(Code *code);
+	void showDemoScore();
 	uint32 findPaletteIndexZones(uint32 id);
 
 	Common::BitArray _font05;
@@ -380,6 +415,8 @@ private:
 	Common::Array<uint32> _c40SegmentNext;
 	int _c40SegmentIdx;
 	int _c40lastTurn;
+	int _c50LeftTurns;
+	int _c50RigthTurns;
 };
 
 class SpiderEngine : public HypnoEngine {
@@ -394,13 +431,16 @@ public:
 	void drawShoot(const Common::Point &target) override;
 	void drawPlayer() override;
 	void drawHealth() override;
+	void missedTarget(Shoot *s, ArcadeShooting *arc) override;
 	void hitPlayer() override;
 
 	// Arcade
+	void pressedKey(const int keycode) override;
 	void runBeforeArcade(ArcadeShooting *arc) override;
 	void runAfterArcade(ArcadeShooting *arc) override;
 	void findNextSegment(ArcadeShooting *arc) override;
 	void initSegment(ArcadeShooting *arc) override;
+	byte *getTargetColor(Common::String name, int levelId) override;
 
 	void drawBackToMenu(Hotspot *h) override;
 	void runCode(Code *code) override;
@@ -411,6 +451,7 @@ public:
 	void drawString(const Filename &name, const Common::String &str, int x, int y, int w, uint32 c) override;
 
 	void showConversation() override;
+	void endConversation() override;
 	void rightClickedConversation(const Common::Point &mousePos) override;
 	void leftClickedConversation(const Common::Point &mousePos) override;
 	bool hoverConversation(const Common::Point &mousePos) override;
@@ -436,6 +477,9 @@ private:
 	void runGiveUp();
 	void showScore(const Common::String prefix);
 
+	uint32 _currentPlayerPosition;
+	uint32 _lastPlayerPosition;
+
 	bool _fuseState[2][10] = {};
 	bool _isFuseRust = true;
 	bool _isFuseUnreadable = false;
@@ -460,10 +504,11 @@ public:
 	void runAfterArcade(ArcadeShooting *arc) override;
 	int detectTarget(const Common::Point &mousePos) override;
 	void drawCursorArcade(const Common::Point &mousePos) override;
-	void shoot(const Common::Point &mousePos, ArcadeShooting *arc, MVideo &background) override;
+	void shoot(const Common::Point &mousePos, ArcadeShooting *arc) override;
 
-	void missedTarget(Shoot *s, ArcadeShooting *arc, MVideo &background) override;
+	void missedTarget(Shoot *s, ArcadeShooting *arc) override;
 	void drawHealth() override;
+	void drawAmmo() override;
 	void drawShoot(const Common::Point &target) override;
 	void hitPlayer() override;
 	void drawPlayer() override;
@@ -487,7 +532,7 @@ public:
 	Script _currentScript;
 	ScriptMode _currentMode;
 	uint32 _currentActor;
-	uint32 _currentCursor;
+	uint32 _currentWeapon;
 
 };
 

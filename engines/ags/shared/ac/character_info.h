@@ -22,6 +22,7 @@
 #ifndef AGS_SHARED_AC_CHARACTER_INFO_H
 #define AGS_SHARED_AC_CHARACTER_INFO_H
 
+#include "ags/lib/std/vector.h"
 #include "ags/shared/ac/common_defines.h" // constants
 
 namespace AGS3 {
@@ -61,8 +62,10 @@ using namespace AGS; // FIXME later
 #define FOLLOW_ALWAYSONTOP  0x7ffe
 
 struct CharacterExtras; // forward declaration
-// remember - if change this struct, also change AGSDEFNS.SH and
-// plugin header file struct
+// IMPORTANT: exposed to script API, and plugin API as AGSCharacter!
+// For older script compatibility the struct also has to maintain its size;
+// do not extend or change existing fields, unless planning breaking compatibility.
+// Use CharacterExtras struct for any extensions
 struct CharacterInfo {
 	int   defview;
 	int   talkview;
@@ -85,7 +88,7 @@ struct CharacterInfo {
 	short pic_yoffs; // this is fixed in screen coordinates
 	int   z;    // z-location, for flying etc
 	int   walkwait;
-	short speech_anim_speed, reserved1;  // only 1 reserved left!!
+	short speech_anim_speed, idle_anim_speed;
 	short blocking_width, blocking_height;
 	int   index_id;  // used for object functions to know the id
 	short pic_xoffs; // this is fixed in screen coordinates
@@ -118,14 +121,14 @@ struct CharacterInfo {
 	//
 	// [IKM] 2016-08-26: these methods should NOT be in CharacterInfo class,
 	// bit in distinct runtime character class!
-	void UpdateMoveAndAnim(int &char_index, CharacterExtras *chex, int &numSheep, int *followingAsSheep);
+	void UpdateMoveAndAnim(int &char_index, CharacterExtras *chex, std::vector<int> &followingAsSheep);
 	void UpdateFollowingExactlyCharacter();
 
 	int  update_character_walking(CharacterExtras *chex);
 	void update_character_moving(int &char_index, CharacterExtras *chex, int &doing_nothing);
 	int  update_character_animating(int &char_index, int &doing_nothing);
 	void update_character_idle(CharacterExtras *chex, int &doing_nothing);
-	void update_character_follower(int &char_index, int &numSheep, int *followingAsSheep, int &doing_nothing);
+	void update_character_follower(int &char_index, std::vector<int> &followingAsSheep, int &doing_nothing);
 
 	void ReadFromFile(Shared::Stream *in);
 	void WriteToFile(Shared::Stream *out);

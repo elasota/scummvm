@@ -300,6 +300,11 @@ public:
 		escape = false;
 		active = true;
 	}
+
+	Talk(Talk *t)  {
+		*this = *t;
+	}
+
 	TalkCommands commands;
 	bool active;
 	bool escape;
@@ -494,6 +499,23 @@ public:
 
 typedef Common::Array<Segment> Segments;
 
+class ArcadeTransition {
+public:
+	ArcadeTransition(Filename video_, Filename palette_, Filename sound_, uint32 time_)  {
+		video = video_;
+		palette = palette_;
+		sound = sound_;
+		time = time_;
+	}
+
+	Filename video;
+	Filename palette;
+	Filename sound;
+	uint32 time;
+};
+
+typedef Common::List<ArcadeTransition> ArcadeTransitions;
+
 class ArcadeShooting : public Level {
 public:
 	ArcadeShooting()  {
@@ -509,9 +531,7 @@ public:
 	void clear() {
 		nextLevelVideo.clear();
 		backgroundVideo.clear();
-		transitionVideos.clear();
-		transitionTimes.clear();
-		transitionPalettes.clear();
+		transitions.clear();
 		maskVideo.clear();
 		player.clear();
 		shoots.clear();
@@ -528,12 +548,18 @@ public:
 		additionalVideo.clear();
 		segments.clear();
 		script.clear();
+		objKillsRequired[0] = 0;
+		objKillsRequired[1] = 0;
+		objMissesAllowed[0] = 0;
+		objMissesAllowed[1] = 0;
+		mouseBox = Common::Rect(0, 0, 320, 200);
 	}
 
 	uint32 id;
 	uint32 frameDelay;
 	Common::String mode;
-	Common::List<uint32> transitionTimes;
+	Common::Rect mouseBox;
+	ArcadeTransitions transitions;
 	Segments segments;
 
 	// Objectives
@@ -544,8 +570,6 @@ public:
 	Script script;
 
 	// Videos
-	Common::List<Filename> transitionVideos;
-	Common::List<Filename> transitionPalettes;
 	Filename nextLevelVideo;
 	Filename defeatNoEnergyFirstVideo;
 	Filename defeatNoEnergySecondVideo;

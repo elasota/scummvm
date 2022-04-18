@@ -336,7 +336,6 @@ bool run_service_key_controls(KeyInput &out_key) {
 		// ctrl+D - show info
 		char infobuf[900];
 		int ff;
-		// MACPORT FIX 9/6/5: added last %s
 		sprintf(infobuf, "In room %d %s[Player at %d, %d (view %d, loop %d, frame %d)%s%s%s",
 		        _G(displayed_room), (_G(noWalkBehindsAtAll) ? "(has no walk-behinds)" : ""), _G(playerchar)->x, _G(playerchar)->y,
 		        _G(playerchar)->view + 1, _G(playerchar)->loop, _G(playerchar)->frame,
@@ -461,7 +460,7 @@ static void check_keyboard_controls() {
 	// pressed, but exclude control characters (<32) and
 	// extended keys (eg. up/down arrow; 256+)
 	if ((((kgn >= 32) && (kgn <= 255) && (kgn != '[')) || (kgn == eAGSKeyCodeReturn) || (kgn == eAGSKeyCodeBackspace))
-	        && !_G(all_buttons_disabled)) {
+			&& (_G(all_buttons_disabled) < 0)) {
 		for (int guiIndex = 0; guiIndex < _GP(game).numgui; guiIndex++) {
 			auto &gui = _GP(guis)[guiIndex];
 
@@ -581,10 +580,10 @@ static void game_loop_update_animated_buttons() {
 	// update animating GUI buttons
 	// this bit isn't in update_stuff because it always needs to
 	// happen, even when the game is paused
-	for (int aa = 0; aa < _G(numAnimButs); aa++) {
-		if (UpdateAnimatingButton(aa)) {
-			StopButtonAnimation(aa);
-			aa--;
+	for (size_t i = 0; i < GetAnimatingButtonCount(); ++i) {
+		if (UpdateAnimatingButton(i)) {
+			StopButtonAnimation(i);
+			i--;
 		}
 	}
 }
@@ -790,6 +789,13 @@ void UpdateGameOnce(bool checkControls, IDriverDependantBitmap *extraBitmap, int
 	WaitForNextFrame();
 }
 
+void UpdateGameAudioOnly() {
+	update_audio_system_on_game_loop();
+	game_loop_update_loop_counter();
+	game_loop_update_fps();
+	WaitForNextFrame();
+}
+
 static void UpdateMouseOverLocation() {
 	// Call GetLocationName - it will internally force a GUI refresh
 	// if the result it returns has changed from last time
@@ -859,7 +865,7 @@ static int UpdateWaitMode() {
 	auto was_disabled_for = _G(user_disabled_for);
 
 	set_default_cursor();
-	if (_G(gui_disabled_style) != GUIDIS_UNCHANGED) { // If GUI looks change when disabled, then update them all
+	if (GUI::Options.DisabledStyle != kGuiDis_Unchanged) { // If GUI looks change when disabled, then update them all
 		GUI::MarkAllGUIForUpdate();
 	}
 	_GP(play).disabled_user_interface--;
@@ -905,7 +911,7 @@ static int GameTick() {
 
 static void SetupLoopParameters(int untilwhat, const void *udata) {
 	_GP(play).disabled_user_interface++;
-	if (_G(gui_disabled_style) != GUIDIS_UNCHANGED) { // If GUI looks change when disabled, then update them all
+	if (GUI::Options.DisabledStyle != kGuiDis_Unchanged) { // If GUI looks change when disabled, then update them all
 		GUI::MarkAllGUIForUpdate();
 	}
 	// Only change the mouse cursor if it hasn't been specifically changed first

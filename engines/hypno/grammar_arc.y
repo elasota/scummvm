@@ -58,8 +58,8 @@ using namespace Hypno;
 %token<s> NAME FILENAME BNTOK SNTOK KNTOK YXTOK FNTOK ENCTOK ONTOK
 %token<i> NUM BYTE
 // header
-%token COMMENT AVTOK ABTOK CTOK DTOK HTOK HETOK HLTOK H12TOK HUTOK RETTOK QTOK RESTOK
-%token PTOK FTOK TTOK TPTOK ATOK VTOK OTOK LTOK MTOK NTOK NSTOK RTOK R01TOK
+%token COMMENT ALTOK AVTOK ABTOK CTOK DTOK HTOK HETOK HLTOK H12TOK HUTOK RETTOK QTOK RESTOK
+%token PTOK FTOK TTOK TATOK TPTOK ATOK VTOK OTOK LTOK MTOK NTOK NSTOK RTOK R01TOK
 %token ITOK I1TOK GTOK JTOK J0TOK KTOK UTOK ZTOK
 
 // body
@@ -107,8 +107,14 @@ hline: 	CTOK NUM {
 		ScriptInfo si($2, $3, $4, $5);
 		g_parsedArc->script.push_back(si);
 	}
-	| VTOK NUM NUM { debugC(1, kHypnoDebugParser, "V %d %d", $2, $3); }
-	| VTOK RESTOK { debugC(1, kHypnoDebugParser, "V 320,200"); }
+	| VTOK NUM NUM {
+		debugC(1, kHypnoDebugParser, "V %d %d", $2, $3);
+		g_parsedArc->mouseBox = Common::Rect(0, 0, $2, $3);
+	}
+	| VTOK RESTOK {
+		debugC(1, kHypnoDebugParser, "V 320,200");
+		g_parsedArc->mouseBox = Common::Rect(0, 0, 320, 200);
+	}
 	| OTOK NUM NUM {
 		g_parsedArc->objKillsRequired[0] = $2;
 		g_parsedArc->objMissesAllowed[0] = $3;
@@ -134,15 +140,18 @@ hline: 	CTOK NUM {
 		debugC(1, kHypnoDebugParser, "ON %d", $2);
 	}
 	| TPTOK FILENAME NUM FILENAME {
-		g_parsedArc->transitionVideos.push_back($2);
-		g_parsedArc->transitionTimes.push_back($3);
-		g_parsedArc->transitionPalettes.push_back($4);
+		ArcadeTransition at($2, $4, "", $3);
+		g_parsedArc->transitions.push_back(at);
 		debugC(1, kHypnoDebugParser, "Tp %s %d %s", $2, $3, $4);
 	}
+	| TATOK NUM FILENAME flag enc {
+		ArcadeTransition at("", "", $3, $2);
+		g_parsedArc->transitions.push_back(at);
+		debugC(1, kHypnoDebugParser, "Ta %d %s", $2, $3);
+	}
 	| TTOK FILENAME NUM {
-		g_parsedArc->transitionVideos.push_back($2);
-		g_parsedArc->transitionTimes.push_back($3);
-		g_parsedArc->transitionPalettes.push_back("");
+		ArcadeTransition at($2, "", "", $3);
+		g_parsedArc->transitions.push_back(at);
 		debugC(1, kHypnoDebugParser, "T %s %d", $2, $3);
 	}
 	| TTOK NONETOK NUM { debugC(1, kHypnoDebugParser, "T NONE %d", $3); }
@@ -290,6 +299,9 @@ bline: FNTOK FILENAME {
 	}
 	| AVTOK NUM {
 		debugC(1, kHypnoDebugParser, "AV %d", $2);
+	}
+	| ALTOK NUM {
+		debugC(1, kHypnoDebugParser, "AL %d", $2);
 	}
 	| ABTOK NUM {
 		debugC(1, kHypnoDebugParser, "AB %d", $2);

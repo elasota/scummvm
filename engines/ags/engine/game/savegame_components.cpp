@@ -21,9 +21,10 @@
 
 #include "ags/lib/std/map.h"
 #include "ags/shared/ac/audio_clip_type.h"
-#include "ags/engine/ac/character.h"
 #include "ags/shared/ac/common.h"
 #include "ags/shared/ac/dialog_topic.h"
+#include "ags/engine/ac/button.h"
+#include "ags/engine/ac/character.h"
 #include "ags/engine/ac/draw.h"
 #include "ags/engine/ac/dynamic_sprite.h"
 #include "ags/engine/ac/game.h"
@@ -567,9 +568,10 @@ HSaveError WriteGUI(Stream *out) {
 
 	// Animated buttons
 	WriteFormatTag(out, "AnimatedButtons");
-	out->WriteInt32(_G(numAnimButs));
-	for (int i = 0; i < _G(numAnimButs); ++i)
-		_G(animbuts)[i].WriteToFile(out);
+	size_t num_abuts = GetAnimatingButtonCount();
+	out->WriteInt32(num_abuts);
+	for (size_t i = 0; i < num_abuts; ++i)
+		GetAnimatingButtonByIndex(i)->WriteToFile(out);
 	return HSaveError::None();
 }
 
@@ -629,13 +631,13 @@ HSaveError ReadGUI(Stream *in, int32_t cmp_ver, const PreservedParams &pp, Resto
 	// Animated buttons
 	if (!AssertFormatTagStrict(err, in, "AnimatedButtons"))
 		return err;
+	RemoveAllButtonAnimations();
 	int anim_count = in->ReadInt32();
-	if (!AssertCompatLimit(err, anim_count, MAX_ANIMATING_BUTTONS, "animated buttons"))
-		return err;
-	_G(numAnimButs) = anim_count;
-	for (int i = 0; i < _G(numAnimButs); ++i)
-		_G(animbuts)[i].ReadFromFile(in);
-	return err;
+	for (int i = 0; i < anim_count; ++i) {
+		AnimatingGUIButton abut;
+		abut.ReadFromFile(in);
+		AddButtonAnimation(abut);
+	}	return err;
 }
 
 HSaveError WriteInventory(Stream *out) {
@@ -675,7 +677,7 @@ HSaveError ReadMouseCursors(Stream *in, int32_t cmp_ver, const PreservedParams &
 	if (!AssertGameContent(err, in->ReadInt32(), _GP(game).numcursors, "Mouse Cursors"))
 		return err;
 	for (int i = 0; i < _GP(game).numcursors; ++i) {
-		_GP(game).mcurs[i].ReadFromSavegame(in);
+		_GP(game).mcurs[i].ReadFromSavegame(in, cmp_ver);
 	}
 	return err;
 }
@@ -876,7 +878,7 @@ HSaveError ReadRoomStates(Stream *in, int32_t cmp_ver, const PreservedParams &pp
 			if (!AssertFormatTagStrict(err, in, "RoomState", true))
 				return err;
 			RoomStatus *roomstat = getRoomStatus(id);
-			roomstat->ReadFromSavegame(in);
+			roomstat->ReadFromSavegame(in, cmp_ver);
 			if (!AssertFormatTagStrict(err, in, "RoomState", false))
 				return err;
 		}
@@ -959,7 +961,7 @@ HSaveError ReadThisRoom(Stream *in, int32_t cmp_ver, const PreservedParams &pp, 
 	if (!AssertCompatLimit(err, objmls_count, CHMLSOFFS, "room object move lists"))
 		return err;
 	for (int i = 0; i < objmls_count; ++i) {
-		err = _G(mls)[i].ReadFromFile(in, cmp_ver > 0 ? 1 : 0);
+		err = _G(mls)[i].ReadFromFile(in, cmp_ver > 0 ? 1 : 0); // FIXME!!
 		if (!err)
 			return err;
 	}
@@ -969,7 +971,7 @@ HSaveError ReadThisRoom(Stream *in, int32_t cmp_ver, const PreservedParams &pp, 
 
 	// read the current troom state, in case they saved in temporary room
 	if (!in->ReadBool())
-		_GP(troom).ReadFromSavegame(in);
+		_GP(troom).ReadFromSavegame(in, cmp_ver);
 
 	return HSaveError::None();
 }
@@ -1059,7 +1061,7 @@ ComponentHandler ComponentHandlers[] = {
 	},
 	{
 		"Mouse Cursors",
-		0,
+		1,
 		0,
 		WriteMouseCursors,
 		ReadMouseCursors
@@ -1101,14 +1103,14 @@ ComponentHandler ComponentHandlers[] = {
 	},
 	{
 		"Room States",
-		0,
+		2,
 		0,
 		WriteRoomStates,
 		ReadRoomStates
 	},
 	{
 		"Loaded Room State",
-		1,
+		2, // should correspond to "Room States"
 		0,
 		WriteThisRoom,
 		ReadThisRoom
@@ -1199,7 +1201,8 @@ HSaveError ReadComponent(Stream *in, SvgCmpReadHelper &hlp, ComponentInfo &info)
 	if (!err)
 		return err;
 	if (in->GetPosition() - info.DataOffset != info.DataSize)
-		return new SavegameError(kSvgErr_ComponentSizeMismatch, String::FromFormat("Expected: %lld, actual: %lld", info.DataSize, in->GetPosition() - info.DataOffset));
+		return new SavegameError(kSvgErr_ComponentSizeMismatch, String::FromFormat("Expected: %llu, actual: %llu",
+			static_cast<int64>(info.DataSize), static_cast<int64>(in->GetPosition() - info.DataOffset)));
 	if (!AssertFormatTag(in, info.Name, false))
 		return new SavegameError(kSvgErr_ComponentClosingTagFormat);
 	return HSaveError::None();

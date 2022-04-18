@@ -20,6 +20,7 @@
  */
 
 #include "ags/lib/std/algorithm.h"
+#include "ags/shared/gui/gui_main.h"
 #include "ags/shared/ac/game_version.h"
 #include "ags/shared/ac/sprite_cache.h"
 #include "ags/shared/debugging/out.h"
@@ -28,7 +29,6 @@
 #include "ags/shared/gui/gui_inv.h"
 #include "ags/shared/gui/gui_label.h"
 #include "ags/shared/gui/gui_listbox.h"
-#include "ags/shared/gui/gui_main.h"
 #include "ags/shared/gui/gui_slider.h"
 #include "ags/shared/gui/gui_textbox.h"
 #include "ags/shared/util/stream.h"
@@ -46,6 +46,8 @@ using namespace AGS::Shared;
 
 namespace AGS {
 namespace Shared {
+
+GuiOptions GUI::Options;
 
 /* static */ String GUIMain::FixupGUIName(const String &name) {
 	if (name.GetLength() > 0 && name[0u] != 'g')
@@ -243,25 +245,27 @@ void GUIMain::DrawAt(Bitmap *ds, int x, int y) {
 
 	SET_EIP(379)
 
-	if (_G(all_buttons_disabled) && _G(gui_disabled_style) == GUIDIS_BLACKOUT)
-		return; // don't draw GUI controls
+	if ((_G(all_buttons_disabled) >= 0) && (GUI::Options.DisabledStyle == kGuiDis_Blackout))
+        return; // don't draw GUI controls
 
 	for (size_t ctrl_index = 0; ctrl_index < _controls.size(); ++ctrl_index) {
 		set_eip_guiobj(_ctrlDrawOrder[ctrl_index]);
 
 		GUIObject *objToDraw = _controls[_ctrlDrawOrder[ctrl_index]];
 
-		if (!objToDraw->IsEnabled() && _G(gui_disabled_style) == GUIDIS_BLACKOUT)
+		if (!objToDraw->IsEnabled() && (GUI::Options.DisabledStyle == kGuiDis_Blackout))
 			continue;
 		if (!objToDraw->IsVisible())
 			continue;
 
+		if (GUI::Options.ClipControls)
+			subbmp.SetClip(RectWH(objToDraw->X, objToDraw->Y, objToDraw->Width, objToDraw->Height));
 		objToDraw->Draw(&subbmp);
 
 		int selectedColour = 14;
 
 		if (HighlightCtrl == _ctrlDrawOrder[ctrl_index]) {
-			if (outlineGuiObjects)
+			if (GUI::Options.OutlineControls)
 				selectedColour = 13;
 			draw_color = subbmp.GetCompatibleColor(selectedColour);
 			DrawBlob(&subbmp, objToDraw->X + objToDraw->Width - get_fixed_pixel_size(1) - 1, objToDraw->Y, draw_color);
@@ -270,7 +274,7 @@ void GUIMain::DrawAt(Bitmap *ds, int x, int y) {
 			DrawBlob(&subbmp, objToDraw->X + objToDraw->Width - get_fixed_pixel_size(1) - 1,
 			         objToDraw->Y + objToDraw->Height - get_fixed_pixel_size(1) - 1, draw_color);
 		}
-		if (outlineGuiObjects) {
+		if (GUI::Options.OutlineControls) {
 			// draw a dotted outline round all objects
 			draw_color = subbmp.GetCompatibleColor(selectedColour);
 			for (int i = 0; i < objToDraw->Width; i += 2) {
@@ -752,7 +756,7 @@ HError ResortGUI(std::vector<GUIMain> &theGuis, bool bwcompat_ctrl_zorder = fals
 	return HError::None();
 }
 
-HError ReadGUI(std::vector<GUIMain> &guis, Stream *in, bool is_savegame) {
+HError ReadGUI(Stream *in, bool is_savegame) {
 	if (in->ReadInt32() != (int)GUIMAGIC)
 		return new Error("ReadGUI: unknown format or file is corrupt");
 
@@ -767,7 +771,7 @@ HError ReadGUI(std::vector<GUIMain> &guis, Stream *in, bool is_savegame) {
 		                                    GameGuiVersion, kGuiVersion_Initial, kGuiVersion_Current));
 	else
 		gui_count = in->ReadInt32();
-	guis.resize(gui_count);
+	_GP(guis).resize(gui_count);
 
 	// import the main GUI elements
 	for (size_t i = 0; i < gui_count; ++i) {
@@ -853,17 +857,17 @@ HError ReadGUI(std::vector<GUIMain> &guis, Stream *in, bool is_savegame) {
 			_GP(guilist)[i].ReadFromFile(in, GameGuiVersion);
 		}
 	}
-	return ResortGUI(guis, GameGuiVersion < kGuiVersion_272e);
+	return ResortGUI(_GP(guis), GameGuiVersion < kGuiVersion_272e);
 }
 
-void WriteGUI(const std::vector<GUIMain> &guis, Stream *out) {
+void WriteGUI(Stream *out) {
 	out->WriteInt32(GUIMAGIC);
 	out->WriteInt32(kGuiVersion_Current);
-	out->WriteInt32(guis.size());
+	out->WriteInt32(_GP(guis).size());
 
-	for (size_t i = 0; i < guis.size(); ++i) {
+	for (size_t i = 0; i < _GP(guis).size(); ++i) {
 		_GP(guis)[i].WriteToFile(out);
-	}
+	} 
 	out->WriteInt32(_G(numguibuts));
 	for (int i = 0; i < _G(numguibuts); ++i) {
 		_GP(guibuts)[i].WriteToFile(out);

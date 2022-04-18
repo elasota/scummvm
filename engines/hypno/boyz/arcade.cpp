@@ -46,10 +46,7 @@ void BoyzEngine::runBeforeArcade(ArcadeShooting *arc) {
 	_playerFrameIdx = -1;
 
 	_currentScript = arc->script;
-	ScriptInfo si = *_currentScript.begin();
-	_currentActor = si.actor - 1;
-	_currentMode = si.mode;
-	_currentScript.pop_front();
+	updateFromScript();
 }
 
 void BoyzEngine::runAfterArcade(ArcadeShooting *arc) {
@@ -63,25 +60,30 @@ void BoyzEngine::updateFromScript() {
 	if (_currentScript.size() > 0) {
 		ScriptInfo si = *_currentScript.begin();
 		//debug("%d %d %d", si.time, _background->decoder->getCurFrame(), si.actor);
-		if (int(si.time) <= _background->decoder->getCurFrame()) {
+		if (!_background || int(si.time) <= _background->decoder->getCurFrame()) {
 			_currentActor = si.actor - 1;
 			_currentMode = si.mode;
+			_currentWeapon = si.cursor - 1;
 			_currentScript.pop_front();
+
+			if (_currentMode == NonInteractive)
+				changeCursor(_crosshairsInactive[_currentWeapon], _crosshairsPalette, true);
+			else
+				changeCursor(_crosshairsActive[_currentWeapon], _crosshairsPalette, true);
 		}
 	}
 }
 
 void BoyzEngine::drawCursorArcade(const Common::Point &mousePos) {
 	if (_currentMode == NonInteractive) {
-		changeCursor(_crosshairsInactive[0], _crosshairsPalette, true);
 		return;
 	}
 
 	int i = detectTarget(mousePos);
 	if (i >= 0)
-		changeCursor(_crosshairsTarget[0], _crosshairsPalette, true);
+		changeCursor(_crosshairsTarget[_currentWeapon], _crosshairsPalette, true);
 	else
-		changeCursor(_crosshairsActive[0], _crosshairsPalette, true);
+		changeCursor(_crosshairsActive[_currentWeapon], _crosshairsPalette, true);
 }
 
 void BoyzEngine::drawPlayer() {
@@ -91,11 +93,24 @@ void BoyzEngine::drawPlayer() {
 
 void BoyzEngine::drawHealth() {
 	updateFromScript();
+
+	Common::Rect healthBarBox(0, 0, _healthBar[_currentActor].w, _healthBar[_currentActor].h/2);
+	uint32 c = kHypnoColorWhiteOrBlue; // white
+	_compositeSurface->fillRect(healthBarBox, c);
 	drawImage(_healthBar[_currentActor], 0, 0, true);
+}
+
+void BoyzEngine::drawAmmo() {
+	updateFromScript();
+
+	Common::Rect ammoBarBox(320 - _ammoBar[_currentActor].w, 0, 320, _ammoBar[_currentActor].h/2);
+	uint32 c = kHypnoColorGreen; // green
+	_compositeSurface->fillRect(ammoBarBox, c);
 	drawImage(_ammoBar[_currentActor], 320 - _ammoBar[_currentActor].w, 0, true);
 }
+
 void BoyzEngine::hitPlayer() {
-	uint32 c = 250; // red
+	uint32 c = kHypnoColorRed; // red
 	_compositeSurface->fillRect(Common::Rect(0, 0, _screenW, _screenH), c);
 	drawScreen();
 	if (!_hitSound.empty())
@@ -130,12 +145,16 @@ int BoyzEngine::detectTarget(const Common::Point &mousePos) {
 	return -1;
 }
 
-void BoyzEngine::shoot(const Common::Point &mousePos, ArcadeShooting *arc, MVideo &background) {
-	playSound(_soundPath + _weaponShootSound[0], 1);
+void BoyzEngine::shoot(const Common::Point &mousePos, ArcadeShooting *arc) {
+	if (_currentMode == NonInteractive) {
+		return;
+	}
+
+	playSound(_soundPath + _weaponShootSound[_currentWeapon], 1);
 	incShotsFired();
 	int i = detectTarget(mousePos);
 	if (i < 0) {
-		missNoTarget(arc, background);
+		missNoTarget(arc);
 	} else {
 		if (!_shoots[i].hitSound.empty())
 			playSound(_soundPath + _shoots[i].hitSound, 1);
@@ -148,26 +167,26 @@ void BoyzEngine::shoot(const Common::Point &mousePos, ArcadeShooting *arc, MVide
 		incScore(_shoots[i].pointsToShoot);
 		incBonus(_shoots[i].pointsToShoot);
 		_shoots[i].destroyed = true;
-		background.decoder->forceSeekToFrame(_shoots[i].explosionFrames[0].start - 3);
+		_background->decoder->forceSeekToFrame(_shoots[i].explosionFrames[0].start - 3);
 		_masks->decoder->forceSeekToFrame(_shoots[i].explosionFrames[0].start - 3);
 		_shoots.clear();
-		changeCursor(_crosshairsActive[0], _crosshairsPalette, true);
+		changeCursor(_crosshairsActive[_currentWeapon], _crosshairsPalette, true);
 	}
 }
 
-void BoyzEngine::missedTarget(Shoot *s, ArcadeShooting *arc, MVideo &background) {
+void BoyzEngine::missedTarget(Shoot *s, ArcadeShooting *arc) {
 	hitPlayer();
 	if (s->missedAnimation == 0)
 		return;
 	else if (s->missedAnimation == uint32(-1)) {
-		uint32 last = background.decoder->getFrameCount()-1;
-		background.decoder->forceSeekToFrame(last);
+		uint32 last = _background->decoder->getFrameCount()-1;
+		_background->decoder->forceSeekToFrame(last);
 		_masks->decoder->forceSeekToFrame(last);
 		return;
 	}
 
 	s->missedAnimation = s->missedAnimation + 3;
-	background.decoder->forceSeekToFrame(s->missedAnimation);
+	_background->decoder->forceSeekToFrame(s->missedAnimation);
 	_masks->decoder->forceSeekToFrame(s->missedAnimation);
 }
 

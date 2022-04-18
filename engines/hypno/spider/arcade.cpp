@@ -63,6 +63,14 @@ void SpiderEngine::runAfterArcade(ArcadeShooting *arc) {
 		assert(_score >= _bonus);
 		_score -= _bonus;
 	}
+
+	if (isDemo() && _restoredContentEnabled) {
+		if (_health == 0)
+			showScore("Spider-man was defeated!");
+		else
+			showScore("Spider-Man saved the day!");
+		_score = 0;
+	}
 }
 
 void SpiderEngine::initSegment(ArcadeShooting *arc) {
@@ -83,12 +91,45 @@ void SpiderEngine::findNextSegment(ArcadeShooting *arc) {
 }
 
 
+void SpiderEngine::pressedKey(const int keycode) {
+	if (keycode == Common::KEYCODE_c) {
+		if (_cheatsEnabled) {
+			_skipLevel = true;
+			return;
+		}
+	} else if (keycode == Common::KEYCODE_k) { // Added for testing
+		_health = 0;
+	} else if (keycode == Common::KEYCODE_LEFT) {
+		_lastPlayerPosition = _currentPlayerPosition;
+		_currentPlayerPosition = kPlayerLeft;
+	} else if (keycode == Common::KEYCODE_DOWN) {
+		_lastPlayerPosition = _currentPlayerPosition;
+		_currentPlayerPosition = kPlayerBottom;
+	} else if (keycode == Common::KEYCODE_RIGHT) {
+		_lastPlayerPosition = _currentPlayerPosition;
+		_currentPlayerPosition = kPlayerRight;
+	} else if (keycode == Common::KEYCODE_UP) {
+		_lastPlayerPosition = _currentPlayerPosition;
+		_currentPlayerPosition = kPlayerTop;
+	}
+}
+
+void SpiderEngine::missedTarget(Shoot *s, ArcadeShooting *arc) {
+	if (_arcadeMode != "YC" && _arcadeMode != "YD")
+		return;
+	if ((uint32)(s->name[0]) == _currentPlayerPosition) {
+		_health = _health - s->attackWeight;
+		hitPlayer();
+	}
+}
+
+
 void SpiderEngine::hitPlayer() {
 	if (_playerFrameSep < (int)_playerFrames.size()) {
 		if (_playerFrameIdx < _playerFrameSep)
 			_playerFrameIdx = _playerFrameSep;
 	} else {
-		uint32 c = 250; // red
+		uint32 c = kHypnoColorRed; // red
 		_compositeSurface->fillRect(Common::Rect(0, 0, 640, 480), c);
 		drawScreen();
 	}
@@ -97,7 +138,7 @@ void SpiderEngine::hitPlayer() {
 }
 
 void SpiderEngine::drawShoot(const Common::Point &target) {
-	uint32 c = 248; // white
+	uint32 c = kSpiderColorWhite; // white
 	uint32 ox = 0;
 	uint32 oy = 0;
 
@@ -270,17 +311,20 @@ void SpiderEngine::drawHealth() {
 		return;
 	r = Common::Rect(256, 152 + d, 272, 174);
 	if (d >= 11)
-		c = 250; // red
+		c = kHypnoColorRed; // red
 	else
-		c = 251; // green
+		c = kHypnoColorGreen; // green
 
 	_compositeSurface->fillRect(r, c);
 
 	r = Common::Rect(256, 152, 272, 174);
-	c = 252; // blue
+	c = kSpiderColorBlue; // blue
 	_compositeSurface->frameRect(r, c);
 
 	drawString("block05.fgx", "ENERGY", 248, 180, 38, c);
+}
+byte *SpiderEngine::getTargetColor(Common::String name, int levelId) {
+	return getPalette(kHypnoColorRed);
 }
 
 } // End of namespace Hypno

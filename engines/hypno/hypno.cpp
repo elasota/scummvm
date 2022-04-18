@@ -53,10 +53,8 @@ HypnoEngine::HypnoEngine(OSystem *syst, const ADGameDescription *gd)
 	  _levelId(0), _skipLevel(false), _health(0), _maxHealth(0),
 	  _playerFrameIdx(0), _playerFrameSep(0), _refreshConversation(false),
 	  _countdown(0), _timerStarted(false), _score(0), _lives(0),
-	  _defaultCursor(""), _checkpoint(""),
-	  _currentPlayerPosition(kPlayerLeft), _lastPlayerPosition(kPlayerLeft),
-	  _background(nullptr),
-	  _masks(nullptr),
+	  _defaultCursor(""), _checkpoint(""), _skipDefeatVideo(false),
+	  _background(nullptr), _masks(nullptr), _ammo(0), _maxAmmo(0),
 	  _screenW(0), _screenH(0) { // Every games initializes its own resolution
 	_rnd = new Common::RandomSource("hypno");
 
@@ -152,7 +150,8 @@ Common::Error HypnoEngine::run() {
 			_nextLevel = "";
 			_arcadeMode = "";
 			runLevel(_currentLevel);
-		}
+		} else
+			g_system->delayMillis(300);
 	}
 	return Common::kNoError;
 }
@@ -431,6 +430,13 @@ void HypnoEngine::loadPalette(const Common::String &fname) {
 void HypnoEngine::loadPalette(const byte *palette, uint32 offset, uint32 size) {
 	debugC(1, kHypnoDebugMedia, "Loading palette from byte array with offset %d and size %d", offset, size);
 	g_system->getPaletteManager()->setPalette(palette, offset, size);
+}
+
+
+byte *HypnoEngine::getPalette(uint32 idx) {
+	byte *videoPalette = (byte *)malloc(3);
+	g_system->getPaletteManager()->grabPalette(videoPalette, idx, 1);
+	return videoPalette;
 }
 
 void HypnoEngine::updateVideo(MVideo &video) {

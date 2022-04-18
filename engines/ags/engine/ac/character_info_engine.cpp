@@ -63,7 +63,7 @@ int CharacterInfo::get_blocking_bottom() {
 	return y + 3;
 }
 
-void CharacterInfo::UpdateMoveAndAnim(int &char_index, CharacterExtras *chex, int &numSheep, int *followingAsSheep) {
+void CharacterInfo::UpdateMoveAndAnim(int &char_index, CharacterExtras *chex, std::vector<int> &followingAsSheep) {
 	int res;
 
 	if (on != 1) return;
@@ -102,7 +102,7 @@ void CharacterInfo::UpdateMoveAndAnim(int &char_index, CharacterExtras *chex, in
 		return;                   //  must be careful not to screw things up
 	}
 
-	update_character_follower(char_index, numSheep, followingAsSheep, doing_nothing);
+	update_character_follower(char_index, followingAsSheep, doing_nothing);
 
 	update_character_idle(chex, doing_nothing);
 
@@ -151,6 +151,7 @@ int CharacterInfo::update_character_walking(CharacterExtras *chex) {
 			loop = turnlooporder[wantloop];
 			if (frame >= _GP(views)[view].loops[loop].numFrames)
 				frame = 0; // AVD: make sure the loop always has a valid frame
+			if (frame >= _GP(views)[view].loops[loop].numFrames) frame = 0; // AVD: make sure the loop always has a valid frame
 			walking -= TURNING_AROUND;
 			// if still turning, wait for next frame
 			if (walking % TURNING_BACKWARDS >= TURNING_AROUND)
@@ -359,7 +360,7 @@ int CharacterInfo::update_character_animating(int &aa, int &doing_nothing) {
 			wait = _GP(views)[view].loops[loop].frames[frame].speed;
 			// idle anim doesn't have speed stored cos animating==0
 			if (idleleft < 0)
-				wait += animspeed + 5;
+				wait += idle_anim_speed;
 			else
 				wait += (animating >> 8) & 0x00ff;
 
@@ -371,14 +372,12 @@ int CharacterInfo::update_character_animating(int &aa, int &doing_nothing) {
 	return 0;
 }
 
-void CharacterInfo::update_character_follower(int &aa, int &numSheep, int *followingAsSheep, int &doing_nothing) {
+void CharacterInfo::update_character_follower(int &aa, std::vector<int> &followingAsSheep, int &doing_nothing) {
 	if ((following >= 0) && (followinfo == FOLLOW_ALWAYSONTOP)) {
 		// an always-on-top follow
-		if (numSheep >= MAX_SHEEP)
-			quit("too many sheep");
-		followingAsSheep[numSheep] = aa;
-		numSheep++;
+		followingAsSheep.push_back(aa);
 	}
+
 	// not moving, but should be following another character
 	else if ((following >= 0) && (doing_nothing == 1)) {
 		short distaway = (followinfo >> 8) & 0x00ff;
@@ -484,10 +483,9 @@ void CharacterInfo::update_character_idle(CharacterExtras *chex, int &doing_noth
 			else if (useloop >= maxLoops)
 				useloop = 0;
 
-			animate_character(this, useloop,
-			                  animspeed + 5, (idletime == 0) ? 1 : 0, 1);
+			animate_character(this, useloop, idle_anim_speed, (idletime == 0) ? 1 : 0, 1);
 
-			// don't set Animating while the idle anim plays
+			// don't set Animating while the idle anim plays (TODO: investigate why?)
 			animating = 0;
 		}
 	}  // end do idle animation

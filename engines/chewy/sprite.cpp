@@ -22,6 +22,7 @@
 #include "chewy/defines.h"
 #include "chewy/events.h"
 #include "chewy/globals.h"
+#include "chewy/memory.h"
 #include "chewy/sound.h"
 #include "chewy/detail.h"
 
@@ -485,8 +486,10 @@ void start_aad(int16 diaNr) {
 
 bool startAtsWait(int16 txtNr, int16 txtMode, int16 col, int16 mode) {
 	bool shown = false;
-
 	const int16 oldMouseLeftClick = _G(mouseLeftClick);
+
+	assert(mode == ATS_DATA || mode == INV_USE_DATA || mode == INV_USE_DEF);
+
 	_G(mouseLeftClick) = false;
 	_G(minfo)._button = 0;
 

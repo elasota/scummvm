@@ -1062,12 +1062,12 @@ int Character_GetAnimationSpeed(CharacterInfo *chaa) {
 }
 
 void Character_SetAnimationSpeed(CharacterInfo *chaa, int newval) {
-
 	chaa->animspeed = newval;
+	if (_G(loaded_game_file_version) < kGameVersion_360_16)
+		chaa->idle_anim_speed = chaa->animspeed + 5;
 }
 
 int Character_GetBaseline(CharacterInfo *chaa) {
-
 	if (chaa->baseline < 1)
 		return 0;
 
@@ -1325,6 +1325,7 @@ const char *Character_GetName(CharacterInfo *chaa) {
 void Character_SetName(CharacterInfo *chaa, const char *newName) {
 	strncpy(chaa->name, newName, 40);
 	chaa->name[39] = 0;
+	GUI::MarkSpecialLabelsForUpdate(kLabelMacro_Overhotspot);
 }
 
 int Character_GetNormalView(CharacterInfo *chaa) {
@@ -1432,8 +1433,15 @@ void Character_SetSpeechAnimationDelay(CharacterInfo *chaa, int newDelay) {
 	chaa->speech_anim_speed = newDelay;
 }
 
-int Character_GetSpeechView(CharacterInfo *chaa) {
+int Character_GetIdleAnimationDelay(CharacterInfo *chaa) {
+	return chaa->idle_anim_speed;
+}
 
+void Character_SetIdleAnimationDelay(CharacterInfo *chaa, int newDelay) {
+	chaa->idle_anim_speed = newDelay;
+}
+
+int Character_GetSpeechView(CharacterInfo *chaa) {
 	return chaa->talkview + 1;
 }
 
@@ -2023,8 +2031,10 @@ void animate_character(CharacterInfo *chap, int loopn, int sppd, int rept, int n
 		Character_UnlockView(chap);
 		chap->idleleft = chap->idletime;
 	}
-	if ((loopn < 0) || (loopn >= _GP(views)[chap->view].numLoops))
-		quit("!AnimateCharacter: invalid loop number specified");
+	if ((loopn < 0) || (loopn >= _GP(views)[chap->view].numLoops)) {
+		quitprintf("!AnimateCharacter: invalid loop number\n"
+			"(trying to animate '%s' using loop %d. View is currently %d).", chap->name, loopn, chap->view + 1);
+	}
 	if ((sframe < 0) || (sframe >= _GP(views)[chap->view].loops[loopn].numFrames))
 		quit("!AnimateCharacter: invalid starting frame number specified");
 	Character_StopMoving(chap);
@@ -3406,6 +3416,15 @@ RuntimeScriptValue Sc_Character_SetSpeechAnimationDelay(void *self, const Runtim
 	API_OBJCALL_VOID_PINT(CharacterInfo, Character_SetSpeechAnimationDelay);
 }
 
+RuntimeScriptValue Sc_Character_GetIdleAnimationDelay(void *self, const RuntimeScriptValue *params, int32_t param_count) {
+	API_OBJCALL_INT(CharacterInfo, Character_GetIdleAnimationDelay);
+}
+
+// void (CharacterInfo *chaa, int newDelay)
+RuntimeScriptValue Sc_Character_SetIdleAnimationDelay(void *self, const RuntimeScriptValue *params, int32_t param_count) {
+	API_OBJCALL_VOID_PINT(CharacterInfo, Character_SetIdleAnimationDelay);
+}
+
 // int (CharacterInfo *chaa)
 RuntimeScriptValue Sc_Character_GetSpeechColor(void *self, const RuntimeScriptValue *params, int32_t param_count) {
 	API_OBJCALL_INT(CharacterInfo, Character_GetSpeechColor);
@@ -3618,6 +3637,8 @@ void RegisterCharacterAPI(ScriptAPIVersion base_api, ScriptAPIVersion compat_api
 		ccAddExternalObjectFunction("Character::get_HasExplicitTint",       Sc_Character_GetHasExplicitTint);
 	ccAddExternalObjectFunction("Character::get_ID",                    Sc_Character_GetID);
 	ccAddExternalObjectFunction("Character::get_IdleView",              Sc_Character_GetIdleView);
+	ccAddExternalObjectFunction("Character::get_IdleAnimationDelay",    Sc_Character_GetIdleAnimationDelay);
+	ccAddExternalObjectFunction("Character::set_IdleAnimationDelay",    Sc_Character_SetIdleAnimationDelay);
 	ccAddExternalObjectFunction("Character::geti_InventoryQuantity",    Sc_Character_GetIInventoryQuantity);
 	ccAddExternalObjectFunction("Character::seti_InventoryQuantity",    Sc_Character_SetIInventoryQuantity);
 	ccAddExternalObjectFunction("Character::get_IgnoreLighting",        Sc_Character_GetIgnoreLighting);

@@ -106,7 +106,6 @@ class SplitLines;
 class TTFFontRenderer;
 class WFNFontRenderer;
 
-struct ActiveDisplaySetting;
 struct AGSDeSerializer;
 struct AGSPlatformDriver;
 struct AGSStaticObject;
@@ -324,8 +323,7 @@ public:
 	 * @{
 	 */
 
-	AnimatingGUIButton *_animbuts;
-	int _numAnimButs = 0;
+	std::vector<AnimatingGUIButton> *_animbuts;
 
 	/**@}*/
 
@@ -996,8 +994,7 @@ public:
 	 */
 
 	int _guis_need_update = 1;
-	int _all_buttons_disabled = 0, _gui_inv_pic = -1;
-	int _gui_disabled_style = 0;
+	int _all_buttons_disabled = -1, _gui_inv_pic = -1;
 
 	/**@}*/
 
@@ -1089,6 +1086,7 @@ public:
 	const char *_psp_game_file_name = "";
 	const char *_psp_translation = "default";
 
+	int _psp_rotation = 0;
 	int _psp_gfx_renderer = 0;
 	int _psp_gfx_scaling = 1;
 	int _psp_gfx_smoothing = 0;
@@ -1334,6 +1332,7 @@ public:
 
 	std::chrono::microseconds _tick_duration = std::chrono::microseconds(1000000LL / 40);
 	bool _framerate_maxed = false;
+	int _framerate = 0;
 
 	uint32 _last_tick_time = 0; // AGS_Clock::now();
 	uint32 _next_frame_timestamp = 0; // AGS_Clock::now();

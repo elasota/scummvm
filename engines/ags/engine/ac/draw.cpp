@@ -2008,9 +2008,9 @@ void draw_gui_and_overlays() {
 			if (_GP(guis)[aa].Transparency == 255) continue; // 100% transparent
 
 			// Don't draw GUI if "GUIs Turn Off When Disabled"
-			if ((_GP(game).options[OPT_DISABLEOFF] == 3) &&
-			        (_G(all_buttons_disabled) > 0) &&
-			        (_GP(guis)[aa].PopupStyle != kGUIPopupNoAutoRemove))
+			if ((_GP(game).options[OPT_DISABLEOFF] == kGuiDis_Off) &&
+					(_G(all_buttons_disabled) >= 0) &&
+					(_GP(guis)[aa].PopupStyle != kGUIPopupNoAutoRemove))
 				continue;
 
 			_GP(guibgbmp)[aa]->SetTransparency(_GP(guis)[aa].Transparency);
@@ -2024,9 +2024,9 @@ void draw_gui_and_overlays() {
 			for (int gg = 0; gg < _GP(game).numgui; gg++) {
 				if (!_GP(guis)[gg].IsDisplayed()) continue; // not on screen
 				// Don't touch GUI if "GUIs Turn Off When Disabled"
-				if ((_GP(game).options[OPT_DISABLEOFF] == 3) &&
-					(_G(all_buttons_disabled) > 0) &&
-					(_GP(guis)[gg].PopupStyle != kGUIPopupNoAutoRemove))
+				if ((_GP(game).options[OPT_DISABLEOFF] == kGuiDis_Off) &&
+						(_G(all_buttons_disabled) >= 0) &&
+						(_GP(guis)[gg].PopupStyle != kGUIPopupNoAutoRemove))
 					continue;
 				_GP(guis)[gg].Poll();
 			}
@@ -2204,7 +2204,7 @@ void construct_game_screen_overlay(bool draw_mouse) {
 			if (_G(mouse_frame) >= _GP(views)[viewnum].loops[loopnum].numFrames)
 				_G(mouse_frame) = 0;
 			set_new_cursor_graphic(_GP(views)[viewnum].loops[loopnum].frames[_G(mouse_frame)].pic);
-			_G(mouse_delay) = _GP(views)[viewnum].loops[loopnum].frames[_G(mouse_frame)].speed + 5;
+			_G(mouse_delay) = _GP(views)[viewnum].loops[loopnum].frames[_G(mouse_frame)].speed + _GP(game).mcurs[_G(cur_cursor)].animdelay;
 			CheckViewFrame(viewnum, loopnum, _G(mouse_frame));
 		}
 		_G(lastmx) = _G(mousex);

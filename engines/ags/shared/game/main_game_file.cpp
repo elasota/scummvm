@@ -70,8 +70,6 @@ String GetMainGameFileErrorText(MainGameFileErrorType err) {
 		return "Unable to determine native game resolution.";
 	case kMGFErr_TooManySprites:
 		return "Too many sprites for this engine to handle.";
-	case kMGFErr_TooManyCursors:
-		return "Too many cursors for this engine to handle.";
 	case kMGFErr_InvalidPropertySchema:
 		return "Failed to deserialize custom properties schema.";
 	case kMGFErr_InvalidPropertyValues:
@@ -734,6 +732,15 @@ HError GameDataExtReader::ReadBlock(int block_id, const String &ext_id,
 			_in->ReadInt32();
 		}
 		return HError::None();
+	} else if (ext_id.CompareNoCase("v360_cursors") == 0) {
+		for (int i = 0; i < _ents.Game.numcursors; ++i) {
+			_ents.Game.mcurs[i].animdelay = _in->ReadInt32();
+			// reserved
+			_in->ReadInt32();
+			_in->ReadInt32();
+			_in->ReadInt32();
+		}
+		return HError::None();
 	}
 
     return new MainGameFileError(kMGFErr_ExtUnknown, String::FromFormat("Type: %s", ext_id.GetCStr()));
@@ -793,7 +800,7 @@ HGameFileError ReadGameData(LoadedGameEntities &ents, Stream *in, GameDataVersio
 
 	ReadDialogs(ents.Dialogs, ents.OldDialogScripts, ents.OldDialogSources, ents.OldSpeechLines,
 		in, data_ver, game.numdialog);
-	HError err2 = GUI::ReadGUI(_GP(guis), in);
+	HError err2 = GUI::ReadGUI(in);
 	if (!err2)
 		return new MainGameFileError(kMGFErr_GameEntityFailed, err2);
 	game.numgui = _GP(guis).size();
