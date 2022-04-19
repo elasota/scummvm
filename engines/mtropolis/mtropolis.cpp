@@ -39,8 +39,9 @@
 
 #include "engines/util.h"
 
-#include "graphics/pixelformat.h"
 #include "graphics/cursorman.h"
+#include "graphics/maccursor.h"
+#include "graphics/pixelformat.h"
 #include "graphics/wincursor.h"
 
 namespace MTropolis {
@@ -69,6 +70,55 @@ static bool loadCursorsFromPE(CursorGraphicCollection &cursorGraphics, Common::S
 
 		cursorGraphics.addWinCursorGroup(id.getID(), cursorGroup);
 	}
+
+	return true;
+}
+
+static bool loadCursorsFromMacResources(CursorGraphicCollection &cursorGraphics, Common::MacResManager &resMan) {
+	const uint32 bwType = MKTAG('C', 'U', 'R', 'S');
+	const uint32 colorType = MKTAG('c', 'r', 's', 'r');
+
+	Common::MacResIDArray bwIDs = resMan.getResIDArray(bwType);
+	Common::MacResIDArray colorIDs = resMan.getResIDArray(colorType);
+
+	Common::MacResIDArray bwOnlyIDs;
+	for (Common::MacResIDArray::const_iterator bwIt = bwIDs.begin(), bwItEnd = bwIDs.end(); bwIt != bwItEnd; ++bwIt) {
+		bool hasColor = false;
+		for (Common::MacResIDArray::const_iterator colorIt = colorIDs.begin(), colorItEnd = colorIDs.end(); colorIt != colorItEnd; ++colorIt) {
+			if ((*colorIt) == (*bwIt)) {
+				hasColor = true;
+				break;
+			}
+		}
+
+		if (!hasColor)
+			bwOnlyIDs.push_back(*bwIt);
+	}
+
+	for (int cti = 0; cti < 2; cti++) {
+		const uint32 resType = (cti == 0) ? bwType : colorType;
+		const bool isBW = (cti == 0);
+		const Common::MacResIDArray &resArray = (cti == 0) ? bwOnlyIDs : colorIDs;
+
+		for (size_t i = 0; i < resArray.size(); i++) {
+			Common::SeekableReadStream *resData = resMan.getResource(resType, resArray[i]);
+			if (!resData) {
+				warning("Failed to open cursor resource");
+				return false;
+			}
+
+			Common::SharedPtr<Graphics::MacCursor> cursor(new Graphics::MacCursor());
+			// Some CURS resources are 72 bytes instead of the expected 68, make sure they load as the correct format
+			if (!cursor->readFromStream(*resData, isBW, 0xff, isBW)) {
+				warning("Failed to load cursor resource");
+				return false;
+			}
+
+			cursorGraphics.addMacCursor(resArray[i], cursor);
+		}
+	}
+
+	return true;
 }
 
 struct MacObsidianResources : public ProjectResources {
@@ -77,6 +127,7 @@ struct MacObsidianResources : public ProjectResources {
 
 	void setup();
 	Common::SeekableReadStream *getSegmentStream(int index) const;
+	const Common::SharedPtr<CursorGraphicCollection> &getCursorGraphics() const;
 
 private:
 	Common::MacResManager _installerResMan;
@@ -85,11 +136,15 @@ private:
 	Common::SeekableReadStream *_installerDataForkStream;
 	Common::Archive *_installerArchive;
 	Common::SeekableReadStream *_segmentStreams[6];
+
+	Common::SharedPtr<CursorGraphicCollection> _cursorGraphics;
 };
 
 MacObsidianResources::MacObsidianResources() : _installerArchive(nullptr), _installerDataForkStream(nullptr) {
 	for (int i = 0; i < 6; i++)
 		_segmentStreams[i] = nullptr;
+
+	_cursorGraphics.reset(new CursorGraphicCollection());
 }
 
 void MacObsidianResources::setup() {
@@ -110,7 +165,7 @@ void MacObsidianResources::setup() {
 	debug(1, "Reading data from installer...");
 	_segmentStreams[0] = _installerArchive->createReadStreamForMember("Obsidian Data 1");
 
-	debug("Opening data segments...");
+	debug(1, "Opening data segments...");
 	for (int i = 0; i < 5; i++) {
 		char fileName[32];
 		sprintf(fileName, "Obsidian Data %i", (i + 2));
@@ -124,10 +179,33 @@ void MacObsidianResources::setup() {
 
 		_segmentStreams[1 + i] = resMan.getDataFork();
 	}
+
+	debug(1, "Opening resources...");
+
+	const char *cursorSources[4] = {"Obsidian.rsrc", "Basic.rPP.rsrc", "mCursors.cPP.rsrc", "Obsidian.cPP.rsrc"};
+	for (int i = 0; i < 4; i++) {
+		const char *fileName = cursorSources[i];
+
+		Common::SeekableReadStream *resForkStream = _installerArchive->createReadStreamForMember(fileName);
+
+		Common::MacResManager resMan;
+		if (resForkStream == nullptr || !resMan.loadFromRawFork(*resForkStream)) {
+			delete resForkStream;
+
+			error("Failed to open resources in file '%s'", fileName);
+		}
+
+		if (!loadCursorsFromMacResources(*_cursorGraphics, resMan))
+			error("Failed to read cursor resources from file '%s'", fileName);
+	}
 }
 
 Common::SeekableReadStream *MacObsidianResources::getSegmentStream(int index) const {
 	return _segmentStreams[index];
+}
+
+const Common::SharedPtr<CursorGraphicCollection>& MacObsidianResources::getCursorGraphics() const {
+	return _cursorGraphics;
 }
 
 MacObsidianResources::~MacObsidianResources() {
@@ -240,6 +318,7 @@ Common::Error MTropolisEngine::run() {
 		desc->addPlugIn(PlugIns::createObsidian());
 
 		desc->setResources(resPtr);
+		desc->setCursorGraphics(resources->getCursorGraphics());
 
 		_runtime->queueProject(desc);
 	}
