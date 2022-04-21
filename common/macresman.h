@@ -198,11 +198,6 @@ public:
 	bool loadFromMacBinary(SeekableReadStream &stream);
 
 	/**
-	 * Load from raw resource fork stream
-	 */
-	bool loadFromRawFork(SeekableReadStream &stream);
-
-	/**
 	 * Dump contents of the archive to ./dumps directory
 	 */
 	 void dumpRaw();
@@ -231,6 +226,7 @@ private:
 
 	bool load(SeekableReadStream &stream);
 
+	bool loadFromRawFork(SeekableReadStream &stream);
 	bool loadFromAppleDouble(SeekableReadStream &stream);
 
 	static Path constructAppleDoubleName(Path name);
