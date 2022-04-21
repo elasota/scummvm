@@ -41,6 +41,7 @@
 
 #include "graphics/cursorman.h"
 #include "graphics/maccursor.h"
+#include "graphics/surface.h"
 #include "graphics/pixelformat.h"
 #include "graphics/wincursor.h"
 
@@ -182,22 +183,19 @@ void MacObsidianResources::setup() {
 
 	debug(1, "Opening resources...");
 
-	const char *cursorSources[4] = {"Obsidian.rsrc", "Basic.rPP.rsrc", "mCursors.cPP.rsrc", "Obsidian.cPP.rsrc"};
+	const char *cursorSources[4] = {"Obsidian", "Basic.rPP", "mCursors.cPP", "Obsidian.cPP"};
 	for (int i = 0; i < 4; i++) {
 		const char *fileName = cursorSources[i];
 
-		Common::SeekableReadStream *resForkStream = _installerArchive->createReadStreamForMember(fileName);
-
 		Common::MacResManager resMan;
-		if (resForkStream == nullptr || !resMan.loadFromRawFork(*resForkStream)) {
-			delete resForkStream;
-
+		if (!resMan.open(Common::Path(fileName), *_installerArchive))
 			error("Failed to open resources in file '%s'", fileName);
-		}
 
 		if (!loadCursorsFromMacResources(*_cursorGraphics, resMan))
 			error("Failed to read cursor resources from file '%s'", fileName);
 	}
+
+	debug(1, "Finished unpacking installer resources");
 }
 
 Common::SeekableReadStream *MacObsidianResources::getSegmentStream(int index) const {
@@ -243,14 +241,14 @@ void MTropolisEngine::handleEvents() {
 Common::Error MTropolisEngine::run() {
 	int preferredWidth = 1024;
 	int preferredHeight = 768;
-	Graphics::PixelFormat preferredPixelFormat = Graphics::createPixelFormat<888>();
+	ColorDepthMode preferredColorDepthMode = kColorDepthMode8Bit;
 
 	_runtime.reset(new Runtime());
 
 	if (_gameDescription->gameID == GID_OBSIDIAN && _gameDescription->desc.platform == Common::kPlatformWindows) {
 		preferredWidth = 640;
 		preferredHeight = 480;
-		preferredPixelFormat = Graphics::createPixelFormat<555>();
+		preferredColorDepthMode = kColorDepthMode16Bit;
 
 		_runtime->addVolume(0, "Installed", true);
 		_runtime->addVolume(1, "OBSIDIAN1", true);
@@ -292,7 +290,7 @@ Common::Error MTropolisEngine::run() {
 	} else if (_gameDescription->gameID == GID_OBSIDIAN && _gameDescription->desc.platform == Common::kPlatformMacintosh) {
 		preferredWidth = 640;
 		preferredHeight = 480;
-		preferredPixelFormat = Graphics::createPixelFormat<555>();
+		preferredColorDepthMode = kColorDepthMode16Bit;
 
 		MacObsidianResources *resources = new MacObsidianResources();
 		Common::SharedPtr<ProjectResources> resPtr(resources);
@@ -323,7 +321,77 @@ Common::Error MTropolisEngine::run() {
 		_runtime->queueProject(desc);
 	}
 
-	initGraphics(preferredWidth, preferredHeight, &preferredPixelFormat);
+	// Figure out pixel formats
+	Graphics::PixelFormat modePixelFormats[kColorDepthModeCount];
+	bool haveExactMode[kColorDepthModeCount];
+	bool haveCloseMode[kColorDepthModeCount];
+
+	for (int i = 0; i < kColorDepthModeCount; i++) {
+		haveExactMode[i] = false;
+		haveCloseMode[i] = false;
+	}
+
+	{
+		Common::List<Graphics::PixelFormat> pixelFormats = _system->getSupportedFormats();
+
+		Graphics::PixelFormat clut8Format = Graphics::PixelFormat::createFormatCLUT8();
+
+		for (Common::List<Graphics::PixelFormat>::const_iterator it = pixelFormats.begin(), itEnd = pixelFormats.end(); it != itEnd; ++it) {
+			const Graphics::PixelFormat &candidateFormat = *it;
+			ColorDepthMode thisFormatMode = kColorDepthModeInvalid;
+			bool isExactMatch = false;
+			if (candidateFormat.rBits() == 8 && candidateFormat.gBits() == 8 && candidateFormat.bBits() == 8) {
+				isExactMatch = (candidateFormat.aBits() == 8);
+				thisFormatMode = kColorDepthMode32Bit;
+			} else if (candidateFormat.rBits() == 5 && candidateFormat.bBits() == 5 && candidateFormat.bytesPerPixel == 2) {
+				if (candidateFormat.gBits() == 5) {
+					isExactMatch = true;
+					thisFormatMode = kColorDepthMode16Bit;
+				} else if (candidateFormat.gBits() == 6) {
+					isExactMatch = false;
+					thisFormatMode = kColorDepthMode16Bit;
+				}
+			} else if (candidateFormat == clut8Format) {
+				isExactMatch = true;
+				thisFormatMode = kColorDepthMode8Bit;
+			}
+
+			if (thisFormatMode != kColorDepthModeInvalid && !haveExactMode[thisFormatMode]) {
+				if (isExactMatch) {
+					haveExactMode[thisFormatMode] = true;
+					haveCloseMode[thisFormatMode] = true;
+					modePixelFormats[thisFormatMode] = candidateFormat;
+				} else if (!haveCloseMode[thisFormatMode]) {
+					haveCloseMode[thisFormatMode] = true;
+					modePixelFormats[thisFormatMode] = candidateFormat;
+				}
+			}
+		}
+	}
+
+	// Figure out a pixel format.  First try to find one that's at least as good or better.
+	ColorDepthMode selectedMode = kColorDepthModeInvalid;
+	for (int i = preferredColorDepthMode; i < kColorDepthModeCount; i++) {
+		if (haveExactMode[i] || haveCloseMode[i]) {
+			selectedMode = static_cast<ColorDepthMode>(i);
+			break;
+		}
+	}
+
+	// If that fails, then try to find the best one available
+	if (selectedMode == kColorDepthModeInvalid) {
+		for (int i = preferredColorDepthMode - 1; i >= 0; i++) {
+			if (haveExactMode[i] || haveCloseMode[i]) {
+				selectedMode = static_cast<ColorDepthMode>(i);
+				break;
+			}
+		}
+	}
+
+	if (selectedMode == kColorDepthModeInvalid)
+		error("Couldn't resolve a color depth mode");
+
+	initGraphics(preferredWidth, preferredHeight, &modePixelFormats[selectedMode]);
 	setDebugger(new Console(this));
 
 #ifdef MTROPOLIS_DEBUG_ENABLE
@@ -338,7 +406,7 @@ Common::Error MTropolisEngine::run() {
 	while (!shouldQuit()) {
 		handleEvents();
 		_runtime->runFrame();
-		_system->updateScreen();
+		_runtime->drawFrame(_system);
 	}
 
 	_runtime.release();
