@@ -377,11 +377,10 @@ public:
 
 	/**
 	 * Implicit conversion operator to bool for convenience, to make
-	 * checks like "if (weakPtr) ..." possible.  This only checks if the
-	 * weak pointer contains a pointer, not that the pointer is live.
+	 * checks like "if (weakPtr) ..." possible.
 	 */
 	bool operator_bool() const {
-		return _pointer != nullptr;
+		return refCount() != 0;
 	}
 
 	/**
