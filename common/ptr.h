@@ -334,7 +334,7 @@ private:
  * a pointer. It needs to be converted to a SharedPtr to access it.
  */
 template<class T>
-class WeakPtr : public SafeBool<WeakPtr<T> > {
+class WeakPtr {
 	template<class T2>
 	friend class WeakPtr;
 	template<class T2>
@@ -376,14 +376,6 @@ public:
 	}
 
 	/**
-	 * Implicit conversion operator to bool for convenience, to make
-	 * checks like "if (weakPtr) ..." possible.
-	 */
-	bool operator_bool() const {
-		return refCount() != 0;
-	}
-
-	/**
 	 * Returns the number of strong references to the object.
 	 */
 	int refCount() const {
@@ -414,6 +406,16 @@ public:
 	WeakPtr<T> &operator=(const SharedPtr<T2> &r) {
 		reset(r);
 		return *this;
+	}
+
+	template<class T2>
+	bool operator==(const WeakPtr<T2> &r) const {
+		return _pointer == r._pointer && _tracker == r._tracker;
+	}
+
+	template<class T2>
+	bool operator!=(const WeakPtr<T2> &r) const {
+		return !((*this) == r);
 	}
 
 	/**
