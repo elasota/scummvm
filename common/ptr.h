@@ -322,7 +322,32 @@ public:
 		_tracker = new BasePtrTrackerImpl<T>(ptr);
 	}
 
+	template<class T2>
+	SharedPtr<T2> staticCast() const {
+		return SharedPtr<T2>(static_cast<T2 *>(_pointer), _tracker);
+	}
+
+	template<class T2>
+	SharedPtr<T2> constCast() const {
+		return SharedPtr<T2>(const_cast<T2 *>(_pointer), _tracker);
+	}
+
+	template<class T2>
+	SharedPtr<T2> reinterpretCast() const {
+		return SharedPtr<T2>(reinterpret_cast<T2 *>(_pointer), _tracker);
+	}
+
+	template<class T2>
+	SharedPtr<T2> dynamicCast() const {
+		return SharedPtr<T2>(dynamic_cast<T2 *>(_pointer), _tracker);
+	}
+
 private:
+	SharedPtr(T *pointer, BasePtrTrackerInternal *tracker) : _pointer(pointer), _tracker(tracker) {
+		if (tracker)
+			tracker->incStrong();
+	}
+
 	T *_pointer;
 	BasePtrTrackerInternal *_tracker;
 };
@@ -460,7 +485,32 @@ public:
 			oldTracker->decWeak();
 	}
 
+	template<class T2>
+	WeakPtr<T2> staticCast() const {
+		return WeakPtr<T2>(static_cast<T2 *>(_pointer), _tracker);
+	}
+
+	template<class T2>
+	WeakPtr<T2> constCast() const {
+		return WeakPtr<T2>(const_cast<T2 *>(_pointer), _tracker);
+	}
+
+	template<class T2>
+	WeakPtr<T2> reinterpretCast() const {
+		return WeakPtr<T2>(reinterpret_cast<T2 *>(_pointer), _tracker);
+	}
+
+	template<class T2>
+	WeakPtr<T2> dynamicCast() const {
+		return WeakPtr<T2>(dynamic_cast<T2 *>(_pointer), _tracker);
+	}
+
 private:
+	WeakPtr(T *pointer, BasePtrTrackerInternal *tracker) : _pointer(pointer), _tracker(tracker) {
+		if (tracker)
+			tracker->incWeak();
+	}
+
 	T *_pointer;
 	BasePtrTrackerInternal *_tracker;
 };
