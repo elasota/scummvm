@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ScummVM 1.3.0svn\n"
 "Report-Msgid-Bugs-To: scummvm-devel@lists.scummvm.org\n"
-"POT-Creation-Date: 2022-04-16 21:25+0000\n"
+"POT-Creation-Date: 2022-04-27 19:39+0000\n"
 "PO-Revision-Date: 2021-11-07 02:48+0000\n"
 "Last-Translator: Eugene Sandulenko <sev@scummvm.org>\n"
 "Language-Team: Danish <https://translations.scummvm.org/projects/scummvm/"
@@ -134,7 +134,7 @@ msgstr ""
 #: gui/downloaddialog.cpp:118 gui/downloaddialog.cpp:152
 #: gui/filebrowser-dialog.cpp:136 gui/fluidsynth-dialog.cpp:217
 #: gui/launcher.cpp:407 gui/launcher.cpp:436 gui/launcher.cpp:479
-#: gui/options.cpp:3062 gui/options.cpp:3100 gui/saveload-dialog.cpp:343
+#: gui/options.cpp:3063 gui/options.cpp:3101 gui/saveload-dialog.cpp:343
 #: backends/events/default/default-events.cpp:194 engines/buried/buried.cpp:580
 #: engines/director/events.cpp:91 engines/grim/grim.cpp:357
 #: engines/kyra/gui/saveload_eob.cpp:595 engines/kyra/gui/saveload_eob.cpp:628
@@ -146,7 +146,7 @@ msgstr "Ja"
 #: gui/downloaddialog.cpp:118 gui/downloaddialog.cpp:153
 #: gui/filebrowser-dialog.cpp:136 gui/fluidsynth-dialog.cpp:217
 #: gui/launcher.cpp:407 gui/launcher.cpp:436 gui/launcher.cpp:479
-#: gui/options.cpp:3062 gui/options.cpp:3100 gui/saveload-dialog.cpp:343
+#: gui/options.cpp:3063 gui/options.cpp:3101 gui/saveload-dialog.cpp:343
 #: engines/buried/buried.cpp:580 engines/director/events.cpp:91
 #: engines/grim/grim.cpp:357 engines/kyra/gui/saveload_eob.cpp:595
 #: engines/kyra/gui/saveload_eob.cpp:628
@@ -313,7 +313,7 @@ msgstr ""
 #: gui/options.cpp:1388 gui/options.cpp:1401 gui/options.cpp:1415
 #: gui/options.cpp:1427 gui/options.cpp:1447 gui/options.cpp:1461
 #: gui/options.cpp:1840 gui/options.cpp:2258 gui/options.cpp:2331
-#: gui/options.cpp:2511 gui/options.cpp:2950 audio/null.cpp:40
+#: gui/options.cpp:2511 gui/options.cpp:2951 audio/null.cpp:40
 #: engines/ags/dialogs.cpp:62
 msgid "<default>"
 msgstr "<standard>"
@@ -500,20 +500,20 @@ msgstr ""
 #: gui/options.cpp:2179 gui/options.cpp:2222 gui/options.cpp:2230
 #: gui/options.cpp:2238 gui/options.cpp:2247 gui/options.cpp:2624
 #: gui/options.cpp:2630 gui/options.cpp:2636 gui/options.cpp:2643
-#: gui/options.cpp:2652 gui/options.cpp:2931 gui/options.cpp:2934
-#: gui/options.cpp:2937 gui/options.cpp:2944 gui/options.cpp:2956
-#: gui/options.cpp:2967
+#: gui/options.cpp:2652 gui/options.cpp:2932 gui/options.cpp:2935
+#: gui/options.cpp:2938 gui/options.cpp:2945 gui/options.cpp:2957
+#: gui/options.cpp:2968
 msgctxt "path"
 msgid "None"
 msgstr "Ingen"
 
 #: gui/editgamedialog.cpp:403 gui/editgamedialog.cpp:510
 #: gui/editgamedialog.cpp:641 gui/options.cpp:2122 gui/options.cpp:2618
-#: gui/options.cpp:2940 backends/platform/wii/options.cpp:55
+#: gui/options.cpp:2941 backends/platform/wii/options.cpp:55
 msgid "Default"
 msgstr "Standard"
 
-#: gui/editgamedialog.cpp:563 gui/options.cpp:2961
+#: gui/editgamedialog.cpp:563 gui/options.cpp:2962
 msgid "Select SoundFont"
 msgstr "Vælg SoundFont"
 
@@ -521,11 +521,11 @@ msgstr "Vælg SoundFont"
 msgid "Select additional game directory"
 msgstr "Vælg ekstra spilmappe"
 
-#: gui/editgamedialog.cpp:615 gui/options.cpp:2842
+#: gui/editgamedialog.cpp:615 gui/options.cpp:2843
 msgid "Select directory for saved games"
 msgstr "Vælg mappe til gemte spil"
 
-#: gui/editgamedialog.cpp:622 gui/options.cpp:2849
+#: gui/editgamedialog.cpp:622 gui/options.cpp:2850
 msgid "The chosen directory cannot be written to. Please select another one."
 msgstr "Der kan ikke skrives til den valgte mappe. Vælg venligst et andet."
 
@@ -1556,7 +1556,7 @@ msgid "ScummVM config path: "
 msgstr ""
 
 #. I18N: Referring to the last path memorized when adding a game
-#: gui/options.cpp:2263 gui/options.cpp:2950
+#: gui/options.cpp:2263 gui/options.cpp:2951
 msgid "Last browser path: "
 msgstr ""
 
@@ -1723,7 +1723,7 @@ msgstr "Sidste synkronisering:"
 msgid "When was the last time saved games were synced with this storage"
 msgstr "Sidste gang gemte spil blev synkroniseret med dette lager"
 
-#: gui/options.cpp:2422 gui/options.cpp:3305
+#: gui/options.cpp:2422 gui/options.cpp:3306
 msgid "<never>"
 msgstr "<aldrig>"
 
@@ -1830,7 +1830,7 @@ msgstr "Kør server"
 msgid "Run local webserver"
 msgstr "Kør lokal webserver"
 
-#: gui/options.cpp:2463 gui/options.cpp:3420
+#: gui/options.cpp:2463 gui/options.cpp:3421
 msgid "Not running"
 msgstr "Kører ikke"
 
@@ -1948,29 +1948,29 @@ msgstr ""
 "\n"
 "Diverse indstillinger vil blive genskabt."
 
-#: gui/options.cpp:2858
+#: gui/options.cpp:2859
 msgid "Select directory for GUI themes"
 msgstr "Vælg mappe for GUI-temaer"
 
-#: gui/options.cpp:2868
+#: gui/options.cpp:2869
 #, fuzzy
 #| msgid "Select directory for GUI themes"
 msgid "Select directory for GUI launcher thumbnails"
 msgstr "Vælg mappe for GUI-temaer"
 
-#: gui/options.cpp:2878
+#: gui/options.cpp:2879
 msgid "Select directory for extra files"
 msgstr "Vælg mappe for ekstra filer"
 
-#: gui/options.cpp:2889
+#: gui/options.cpp:2890
 msgid "Select directory for plugins"
 msgstr "Vælg mappe for plugins"
 
-#: gui/options.cpp:2902
+#: gui/options.cpp:2903
 msgid "Select directory for Files Manager /root/"
 msgstr "Vælg mappe for filhåndteringen /root/"
 
-#: gui/options.cpp:3037
+#: gui/options.cpp:3038
 msgid ""
 "Failed to open URL!\n"
 "Please navigate to this page manually."
@@ -1978,47 +1978,47 @@ msgstr ""
 "Kunne ikke åbne URL!\n"
 "Navigér venligst til siden manuelt."
 
-#: gui/options.cpp:3062
+#: gui/options.cpp:3063
 msgid "Another Storage is working now. Do you want to interrupt it?"
 msgstr "Et andet lager er aktivt nu. Vil du afbryde det?"
 
-#: gui/options.cpp:3071 gui/options.cpp:3109
+#: gui/options.cpp:3072 gui/options.cpp:3110
 msgid "Wait until current Storage finishes up and try again."
 msgstr "Vent indtil aktuel lagring er færdig og prøv igen."
 
-#: gui/options.cpp:3084
+#: gui/options.cpp:3085
 msgid "Connecting..."
 msgstr "Tilslutter ..."
 
-#: gui/options.cpp:3100
+#: gui/options.cpp:3101
 msgid "This Storage is working now. Do you want to interrupt it?"
 msgstr "Lageret arbejder nu. Vil du afbryde det?"
 
-#: gui/options.cpp:3303 backends/cloud/cloudmanager.cpp:156
+#: gui/options.cpp:3304 backends/cloud/cloudmanager.cpp:156
 msgid "<right now>"
 msgstr "<lige nu>"
 
-#: gui/options.cpp:3412
+#: gui/options.cpp:3413
 msgid "Stop server"
 msgstr "Stop server"
 
-#: gui/options.cpp:3413
+#: gui/options.cpp:3414
 msgid "Stop local webserver"
 msgstr "Stop lokal webserver"
 
-#: gui/options.cpp:3465
+#: gui/options.cpp:3466
 msgid "Storage connected."
 msgstr "Lageret er tilsluttet."
 
-#: gui/options.cpp:3467
+#: gui/options.cpp:3468
 msgid "Failed to connect storage."
 msgstr "Kunne ikke tilslutte lageret."
 
-#: gui/options.cpp:3469
+#: gui/options.cpp:3470
 msgid "Failed to connect storage: "
 msgstr "Kunne ikke tilslutte lageret: "
 
-#: gui/options.cpp:3489
+#: gui/options.cpp:3490
 msgid ""
 "Request failed.\n"
 "Check your Internet connection."
@@ -2279,11 +2279,11 @@ msgstr "Spil"
 msgid "Saves"
 msgstr "Gem"
 
-#: base/main.cpp:651
+#: base/main.cpp:650
 msgid "Error running game:"
 msgstr "Fejl ved kørsel af spil:"
 
-#: base/main.cpp:698
+#: base/main.cpp:697
 msgid "Could not find any engine capable of running the selected game"
 msgstr "Kunne ikke finde nogen motor istand til at afvikle det valgte spil"
 
@@ -4072,24 +4072,24 @@ msgid "Check for Updates..."
 msgstr "Søg efter opdateringer ..."
 
 #: engines/access/resources.cpp:43 engines/drascula/drascula.cpp:933
-#: engines/hugo/hugo.cpp:424 engines/lure/lure.cpp:56
+#: engines/hugo/hugo.cpp:424 engines/lure/lure.cpp:57
 #: engines/mortevielle/mortevielle.cpp:301 engines/sky/compact.cpp:130
-#: engines/supernova/supernova.cpp:462 engines/teenagent/resources.cpp:97
+#: engines/supernova/supernova.cpp:464 engines/teenagent/resources.cpp:97
 #: engines/tony/tony.cpp:187 engines/toon/toon.cpp:4999
 #, c-format
 msgid "Unable to locate the '%s' engine data file."
 msgstr "Kan ikke finde '%s'-motorens datafil."
 
 #: engines/access/resources.cpp:51 engines/drascula/drascula.cpp:949
-#: engines/hugo/hugo.cpp:436 engines/lure/lure.cpp:65
-#: engines/mortevielle/mortevielle.cpp:309 engines/supernova/supernova.cpp:467
+#: engines/hugo/hugo.cpp:436 engines/lure/lure.cpp:66
+#: engines/mortevielle/mortevielle.cpp:309 engines/supernova/supernova.cpp:469
 #: engines/tony/tony.cpp:200 engines/toon/toon.cpp:5012
 #, c-format
 msgid "The '%s' engine data file is corrupt."
 msgstr "'%s'-motorens datafil er ødelagt."
 
 #: engines/access/resources.cpp:60 engines/drascula/drascula.cpp:960
-#: engines/hugo/hugo.cpp:446 engines/lure/lure.cpp:68
+#: engines/hugo/hugo.cpp:446 engines/lure/lure.cpp:69
 #: engines/mortevielle/mortevielle.cpp:319 engines/tony/tony.cpp:211
 #: engines/toon/toon.cpp:5023
 #, c-format
@@ -4108,53 +4108,55 @@ msgstr "TV-emulering"
 msgid "Emulate composite output to an NTSC TV"
 msgstr "Emulér composite-output på et NTSC-TV"
 
-#: engines/adl/detection.cpp:63 engines/adl/detection.cpp:73
+#: engines/adl/detection.cpp:65 engines/adl/detection.cpp:77
 msgid "Color graphics"
 msgstr "Farvegrafik"
 
-#: engines/adl/detection.cpp:64 engines/adl/detection.cpp:74
+#: engines/adl/detection.cpp:66 engines/adl/detection.cpp:78
 msgid "Use color graphics instead of monochrome"
 msgstr "Brug farvegrafik i stedet for sort/hvid"
 
-#: engines/adl/detection.cpp:83
+#: engines/adl/detection.cpp:89
 msgid "Show scanlines"
 msgstr "Vis skanlinjer"
 
-#: engines/adl/detection.cpp:84
+#: engines/adl/detection.cpp:90
 msgid "Darken every other scanline to mimic the look of a CRT"
 msgstr "Gør hver anden linje mørk for at efterligne udseendet på en CRT"
 
-#: engines/adl/detection.cpp:93
+#: engines/adl/detection.cpp:101
 msgid "Always use sharp monochrome text"
 msgstr "Brug altid skarp sort/hvid tekst"
 
-#: engines/adl/detection.cpp:94
+#: engines/adl/detection.cpp:102
 msgid "Do not emulate NTSC artifacts for text"
 msgstr "Emulér NTSC-artifacts for tekst"
 
 #: engines/agi/detection.cpp:86 engines/cine/detection.cpp:51
 #: engines/drascula/detection.cpp:298 engines/dreamweb/detection.cpp:54
-#: engines/groovie/detection.cpp:285 engines/neverhood/detection.cpp:134
-#: engines/sherlock/detection.cpp:58 engines/toltecs/detection.cpp:212
-#: engines/trecision/detection.cpp:219 engines/ultima/detection.cpp:55
-#: engines/ultima/detection.cpp:106 engines/zvision/detection_tables.h:50
+#: engines/groovie/detection.cpp:287 engines/neverhood/detection.cpp:134
+#: engines/sci/detection_options.h:105 engines/sherlock/detection.cpp:58
+#: engines/toltecs/detection.cpp:212 engines/trecision/detection.cpp:219
+#: engines/ultima/detection.cpp:55 engines/ultima/detection.cpp:120
+#: engines/zvision/detection_tables.h:50
 msgid "Use original save/load screens"
 msgstr "Brug original gem/indlæs skærme"
 
 #: engines/agi/detection.cpp:87 engines/cine/detection.cpp:52
 #: engines/drascula/detection.cpp:299 engines/dreamweb/detection.cpp:55
-#: engines/groovie/detection.cpp:286 engines/neverhood/detection.cpp:135
-#: engines/sherlock/detection.cpp:59 engines/toltecs/detection.cpp:213
-#: engines/trecision/detection.cpp:220 engines/ultima/detection.cpp:56
-#: engines/ultima/detection.cpp:107 engines/zvision/detection_tables.h:51
+#: engines/groovie/detection.cpp:288 engines/neverhood/detection.cpp:135
+#: engines/sci/detection_options.h:106 engines/sherlock/detection.cpp:59
+#: engines/toltecs/detection.cpp:213 engines/trecision/detection.cpp:220
+#: engines/ultima/detection.cpp:56 engines/ultima/detection.cpp:121
+#: engines/zvision/detection_tables.h:51
 msgid "Use the original save/load screens instead of the ScummVM ones"
 msgstr "Brug de originale gem/indlæs skærme, i stedet for dem fra ScummVM"
 
-#: engines/agi/detection.cpp:96
+#: engines/agi/detection.cpp:98
 msgid "Use an alternative palette"
 msgstr "Brug en alternativ palet"
 
-#: engines/agi/detection.cpp:97
+#: engines/agi/detection.cpp:99
 msgid ""
 "Use an alternative palette, common for all Amiga games. This was the old "
 "behavior"
@@ -4162,30 +4164,30 @@ msgstr ""
 "Brug en alternativ palet, fælles for alle Amiga spil. Det var den gamle "
 "opførsel"
 
-#: engines/agi/detection.cpp:106
+#: engines/agi/detection.cpp:110
 msgid "Mouse support"
 msgstr "Understøt mus"
 
-#: engines/agi/detection.cpp:107
+#: engines/agi/detection.cpp:111
 msgid ""
 "Enables mouse support. Allows to use mouse for movement and in game menus."
 msgstr ""
 "Aktivér muse support. Gør det muligt at bruge musen til bevægelse og i spil "
 "menuer."
 
-#: engines/agi/detection.cpp:116
+#: engines/agi/detection.cpp:122
 msgid "Use Hercules hires font"
 msgstr "Brug Hercules hires-skrifttype"
 
-#: engines/agi/detection.cpp:117
+#: engines/agi/detection.cpp:123
 msgid "Uses Hercules hires font, when font file is available."
 msgstr "Brug Hercules hires-skrifttype, når skrifttypefil er tilgængelig."
 
-#: engines/agi/detection.cpp:126
+#: engines/agi/detection.cpp:134
 msgid "Pause when entering commands"
 msgstr "Pause når kommandoer indtastes"
 
-#: engines/agi/detection.cpp:127
+#: engines/agi/detection.cpp:135
 msgid ""
 "Shows a command prompt window and pauses the game (like in SCI) instead of a "
 "real-time prompt."
@@ -4193,11 +4195,11 @@ msgstr ""
 "Vis et kommandoprompt-vindue, og pauser spillet (ligesom i SCI) i stedet for "
 "en realtids prompt."
 
-#: engines/agi/detection.cpp:136
+#: engines/agi/detection.cpp:146
 msgid "Add speed menu"
 msgstr ""
 
-#: engines/agi/detection.cpp:137
+#: engines/agi/detection.cpp:147
 msgid "Add game speed menu (similar to PC version)"
 msgstr ""
 
@@ -4328,7 +4330,7 @@ msgstr "Antialias"
 msgid "Use antialiasing to draw text even if the game does not ask for it"
 msgstr ""
 
-#: engines/ags/ags.cpp:126
+#: engines/ags/ags.cpp:125
 #, fuzzy
 msgid ""
 "The selected game uses a pre-2.5 version of the AGS engine, which is not "
@@ -4337,7 +4339,7 @@ msgstr ""
 "Spillet kræver understøttelse af 3D-karakterer, hvilket er udenfor ScummVMs "
 "område."
 
-#: engines/ags/ags.cpp:134
+#: engines/ags/ags.cpp:133
 msgid ""
 "The selected game has a data file greater than 2Gb, which isn't supported by "
 "your version of ScummVM yet."
@@ -4426,19 +4428,19 @@ msgstr "Sitcom-tilstand"
 msgid "Game will add laughter after actor's line or narration"
 msgstr "Spillet tilføjer latter efter skuespillerens linje eller fortælling"
 
-#: engines/bladerunner/detection.cpp:61
+#: engines/bladerunner/detection.cpp:63
 msgid "Shorty mode"
 msgstr "Lav-tilstand"
 
-#: engines/bladerunner/detection.cpp:62
+#: engines/bladerunner/detection.cpp:64
 msgid "Game will shrink the actors and make their voices high pitched"
 msgstr "Spillet gør skuespillerne lavere og gør deres stemmer lysere"
 
-#: engines/bladerunner/detection.cpp:70
+#: engines/bladerunner/detection.cpp:74
 msgid "Frame limiter high performance mode"
 msgstr "Billedbegrænser høj ydelse tilstand"
 
-#: engines/bladerunner/detection.cpp:71
+#: engines/bladerunner/detection.cpp:75
 msgid ""
 "This mode may result in high CPU usage! It avoids use of delayMillis() "
 "function."
@@ -4446,11 +4448,11 @@ msgstr ""
 "Tilstanden kan føre til højt CPU-forbrug! Det forhindre brug af "
 "delayMillis()-funktionen."
 
-#: engines/bladerunner/detection.cpp:79
+#: engines/bladerunner/detection.cpp:85
 msgid "Max frames per second limit"
 msgstr "Grænse for maks. billeder pr. sekund"
 
-#: engines/bladerunner/detection.cpp:80
+#: engines/bladerunner/detection.cpp:86
 msgid ""
 "This mode targets a maximum of 120 fps. When disabled, the game targets 60 "
 "fps"
@@ -4458,11 +4460,11 @@ msgstr ""
 "Tilstanden går efter et maksimum på 120 fps. Når den er deaktiveret går "
 "spillet efter 60 fps"
 
-#: engines/bladerunner/detection.cpp:88
+#: engines/bladerunner/detection.cpp:96
 msgid "Disable McCoy's quick stamina drain"
 msgstr ""
 
-#: engines/bladerunner/detection.cpp:89
+#: engines/bladerunner/detection.cpp:97
 msgid ""
 "When running, McCoy won't start slowing down as soon as the player stops "
 "clicking the mouse"
@@ -4479,7 +4481,7 @@ msgstr ""
 #: engines/bladerunner/detection_tables.h:128 engines/cge/detection.cpp:56
 #: engines/cge/detection.cpp:62 engines/cge/detection.cpp:68
 #: engines/groovie/detection.cpp:104 engines/kyra/detection_tables.h:303
-#: engines/lure/detection.cpp:249 engines/mohawk/detection_tables.h:988
+#: engines/lure/detection.cpp:251 engines/mohawk/detection_tables.h:988
 #: engines/mohawk/detection_tables.h:1094
 #: engines/mohawk/detection_tables.h:1109 engines/myst3/detection.cpp:142
 #: engines/neverhood/detection.cpp:120 engines/saga/detection_tables.h:186
@@ -4487,8 +4489,8 @@ msgstr ""
 #: engines/sci/detection_tables.h:5068 engines/sci/detection_tables.h:5076
 #: engines/sherlock/detection_tables.h:223 engines/stark/detection.cpp:319
 #: engines/teenagent/detection.cpp:117 engines/trecision/detection.cpp:199
-#: engines/zvision/detection_tables.h:190
-#: engines/zvision/detection_tables.h:210
+#: engines/zvision/detection_tables.h:200
+#: engines/zvision/detection_tables.h:220
 #, fuzzy
 msgid "Missing game code"
 msgstr "Vigtigste spilstyring:"
@@ -4682,22 +4684,22 @@ msgstr "Farveblind-tilstand"
 msgid "Enable Color Blind Mode by default"
 msgstr "Aktivér farveblind-tilstand som standard"
 
-#: engines/cge/detection.cpp:124 engines/glk/detection.cpp:238
-#: engines/supernova/detection.cpp:51
+#: engines/cge/detection.cpp:126 engines/glk/detection.cpp:238
+#: engines/sci/detection_options.h:221 engines/supernova/detection.cpp:53
 #, fuzzy
 msgid "Enable Text to Speech"
 msgstr "Brug tekst til tale"
 
-#: engines/cge/detection.cpp:125
+#: engines/cge/detection.cpp:127
 #, fuzzy
 msgid "Use TTS to read text in the game (if TTS is available)"
 msgstr "Brug cd-lyd i stedet for lyd fra spillet, hvis tilgængelig"
 
-#: engines/cine/detection.cpp:60
+#: engines/cine/detection.cpp:62
 msgid "Use transparent dialog boxes in 16 color scenes"
 msgstr ""
 
-#: engines/cine/detection.cpp:61
+#: engines/cine/detection.cpp:63
 msgid ""
 "Use transparent dialog boxes in 16 color scenes even if the original game "
 "version did not support them"
@@ -4801,30 +4803,31 @@ msgstr ""
 "Tryk på OK for at konvertere dem nu, ellers vil du blive spurgt igen, næste "
 "gang du starter spillet.\n"
 
-#: engines/dreamweb/detection.cpp:64
+#: engines/dreamweb/detection.cpp:66
 msgid "Use bright palette mode"
 msgstr "Brug lys palettilstand"
 
-#: engines/dreamweb/detection.cpp:65
+#: engines/dreamweb/detection.cpp:67
 msgid "Display graphics using the game's bright palette"
 msgstr "Vis grafik ved hjælp af spillets lyse palet"
 
-#: engines/dreamweb/detection.cpp:75
+#: engines/dreamweb/detection.cpp:79
 msgid "Enable Text to Speech for Objects, Options, and the Bible Quote"
 msgstr ""
 
-#: engines/dreamweb/detection.cpp:76 engines/lure/detection.cpp:45
-#: engines/mads/detection.cpp:114 engines/sherlock/detection.cpp:120
-#: engines/supernova/detection.cpp:52 engines/twine/detection.cpp:753
+#: engines/dreamweb/detection.cpp:80 engines/lure/detection.cpp:45
+#: engines/mads/detection.cpp:124 engines/sci/detection_options.h:222
+#: engines/sherlock/detection.cpp:132 engines/supernova/detection.cpp:54
+#: engines/twine/detection.cpp:775
 msgid "Use TTS to read the descriptions (if TTS is available)"
 msgstr ""
 
-#: engines/dreamweb/detection.cpp:85
+#: engines/dreamweb/detection.cpp:91
 #, fuzzy
 msgid "Enable Text to Speech for Subtitles"
 msgstr "Brug tekst til tale"
 
-#: engines/dreamweb/detection.cpp:86
+#: engines/dreamweb/detection.cpp:92
 #, fuzzy
 msgid "Use TTS to read the subtitles (if TTS is available)"
 msgstr "Brug cd-lyd i stedet for lyd fra spillet, hvis tilgængelig"
@@ -4834,12 +4837,12 @@ msgstr "Brug cd-lyd i stedet for lyd fra spillet, hvis tilgængelig"
 msgid "Use TTS to read the text"
 msgstr "Kunne ikke læse filen!"
 
-#: engines/glk/detection.cpp:244
+#: engines/glk/detection.cpp:246
 #, fuzzy
 msgid "Also read input text"
 msgstr "Kunne ikke læse filen!"
 
-#: engines/glk/detection.cpp:245
+#: engines/glk/detection.cpp:247
 #, fuzzy
 msgid "Use TTS to read the input text"
 msgstr "Kunne ikke læse filen!"
@@ -4936,12 +4939,12 @@ msgid "Save file created by different version."
 msgstr ""
 
 #: engines/gob/inter_playtoons.cpp:257 engines/gob/inter_v2.cpp:1479
-#: engines/gob/inter_geisha.cpp:231 engines/tinsel/saveload.cpp:553
+#: engines/gob/inter_geisha.cpp:231 engines/tinsel/saveload.cpp:554
 msgid "Failed to load saved game from file."
 msgstr "Kunne ikke indlæse gemt spil fra fil."
 
 #: engines/gob/inter_v2.cpp:1549 engines/gob/inter_geisha.cpp:262
-#: engines/tinsel/saveload.cpp:566
+#: engines/tinsel/saveload.cpp:567
 msgid "Failed to save game to file."
 msgstr "Kunne ikke gemme spil til fil."
 
@@ -4973,12 +4976,12 @@ msgid ""
 "support for using such patches."
 msgstr ""
 
-#: engines/grim/detection.cpp:78 engines/zvision/metaengine.cpp:152
+#: engines/grim/detection.cpp:80 engines/zvision/metaengine.cpp:152
 #, fuzzy
 msgid "Show FPS"
 msgstr "Vis FPS-tæller"
 
-#: engines/grim/detection.cpp:79
+#: engines/grim/detection.cpp:81
 msgid "Show the current FPS-rate, while you play."
 msgstr ""
 
@@ -5116,19 +5119,19 @@ msgstr "Hurtig filmhastighed"
 msgid "Play movies at an increased speed"
 msgstr "Afspil film med forhøjet hastighed"
 
-#: engines/groovie/detection.cpp:295
+#: engines/groovie/detection.cpp:299
 msgid "Easier AI"
 msgstr ""
 
-#: engines/groovie/detection.cpp:296
+#: engines/groovie/detection.cpp:300
 msgid "Decrease the difficulty of AI puzzles"
 msgstr ""
 
-#: engines/groovie/detection.cpp:305
+#: engines/groovie/detection.cpp:311
 msgid "Updated Credits Music"
 msgstr ""
 
-#: engines/groovie/detection.cpp:306
+#: engines/groovie/detection.cpp:312
 msgid ""
 "Play the song The Final Hour during the credits instead of reusing MIDI songs"
 msgstr ""
@@ -5208,29 +5211,47 @@ msgstr ""
 msgid "Debug"
 msgstr "Fejlsøger"
 
-#: engines/hopkins/detection.cpp:46 engines/hopkins/detection.cpp:56
+#: engines/hopkins/detection.cpp:46 engines/hopkins/detection.cpp:58
 msgid "Gore Mode"
 msgstr "Splatter-tilstand"
 
-#: engines/hopkins/detection.cpp:47 engines/hopkins/detection.cpp:57
+#: engines/hopkins/detection.cpp:47 engines/hopkins/detection.cpp:59
 msgid "Enable Gore Mode when available"
 msgstr "Aktivér splatter-tilstand når mulig"
 
-#: engines/hypno/detection.cpp:190 engines/ultima/detection.cpp:78
+#: engines/hypno/detection.cpp:211
 #, fuzzy
-msgid "Enable cheats"
+msgid "Enable original cheats"
 msgstr "Aktivér snydetilstand"
 
-#: engines/hypno/detection.cpp:191
+#: engines/hypno/detection.cpp:212
 msgid "Allow cheats using the C key."
 msgstr ""
 
-#: engines/hypno/detection.cpp:197
+#: engines/hypno/detection.cpp:220
+#, fuzzy
+msgid "Enable infinite health cheat"
+msgstr "Aktivér indholdscensurering"
+
+#: engines/hypno/detection.cpp:221
+msgid "Player health will never decrease (except for game over scenes)."
+msgstr ""
+
+#: engines/hypno/detection.cpp:229
+#, fuzzy
+msgid "Enable infinite ammo cheat"
+msgstr "Aktivér snydetilstand"
+
+#: engines/hypno/detection.cpp:230
+msgid "Player ammo will never decrease."
+msgstr ""
+
+#: engines/hypno/detection.cpp:238
 #, fuzzy
 msgid "Enable restored content"
 msgstr "Aktivér indholdscensurering"
 
-#: engines/hypno/detection.cpp:198
+#: engines/hypno/detection.cpp:239
 msgid "Add additional content that is not enabled the original implementation."
 msgstr ""
 
@@ -5245,70 +5266,70 @@ msgid "Enable studio audience"
 msgstr "Aktivér studio publikum"
 
 #. I18N: This option allows the user to skip text and cutscenes.
-#: engines/kyra/detection.cpp:72
+#: engines/kyra/detection.cpp:74
 msgid "Skip support"
 msgstr "Spring over støtte"
 
-#: engines/kyra/detection.cpp:73
+#: engines/kyra/detection.cpp:75
 msgid "Allow text and cutscenes to be skipped"
 msgstr "Tillad at tekst og filmsekvenser kan springes over"
 
 #. I18N: Helium mode makes people sound like they've inhaled Helium.
-#: engines/kyra/detection.cpp:83
+#: engines/kyra/detection.cpp:87
 msgid "Helium mode"
 msgstr "Helium-tilstand"
 
-#: engines/kyra/detection.cpp:84
+#: engines/kyra/detection.cpp:88
 msgid "Enable helium mode"
 msgstr "Aktivér helium-tilstand"
 
 #. I18N: When enabled, this option makes scrolling smoother when
 #. changing from one screen to another.
-#: engines/kyra/detection.cpp:97
+#: engines/kyra/detection.cpp:103
 msgid "Smooth scrolling"
 msgstr "Jævn bevægelse"
 
-#: engines/kyra/detection.cpp:98
+#: engines/kyra/detection.cpp:104
 msgid "Enable smooth scrolling when walking"
 msgstr "Aktivér jævn bevægelse når du går"
 
 #. I18N: When enabled, this option changes the cursor when it floats to the
 #. edge of the screen to a directional arrow. The player can then click to
 #. walk towards that direction.
-#: engines/kyra/detection.cpp:110
+#: engines/kyra/detection.cpp:118
 msgid "Floating cursors"
 msgstr "Flydende markør"
 
-#: engines/kyra/detection.cpp:111
+#: engines/kyra/detection.cpp:119
 msgid "Enable floating cursors"
 msgstr "Aktivér flydende markør"
 
 #. I18N: When enabled, this option will fill in an autogenerated savegame
 #. description into the input prompt where.
-#: engines/kyra/detection.cpp:122
+#: engines/kyra/detection.cpp:132
 #, fuzzy
 msgid "Suggest save names"
 msgstr "Gemte spil"
 
-#: engines/kyra/detection.cpp:123
+#: engines/kyra/detection.cpp:133
 msgid "Autogenerated naming suggestions for savegames"
 msgstr ""
 
 #. I18N: HP stands for Hit Points
-#: engines/kyra/detection.cpp:135
+#: engines/kyra/detection.cpp:147
 msgid "HP bar graphs"
 msgstr "HP søjlegrafer"
 
-#: engines/kyra/detection.cpp:136
+#: engines/kyra/detection.cpp:148
 msgid "Enable hit point bar graphs"
 msgstr "Aktivér træfpoint (HP) søjlediagrammer"
 
 #. I18N: L/R stands for Left/Right
-#: engines/kyra/detection.cpp:146
+#: engines/kyra/detection.cpp:160
 msgid "Fight Button L/R Swap"
 msgstr "Byt om på H/V kampknap"
 
-#: engines/kyra/detection.cpp:147
+#: engines/kyra/detection.cpp:161
 msgid "Left button to attack, right button to pick up items"
 msgstr "Venstre knap angriber, højre knap samler ting op"
 
@@ -5609,8 +5630,8 @@ msgstr ""
 "Udforskning ud over dette punkt er kun tilgængelig i den fulde version af\n"
 "spillet."
 
-#: engines/lure/detection.cpp:44 engines/mads/detection.cpp:113
-#: engines/sherlock/detection.cpp:119 engines/twine/detection.cpp:752
+#: engines/lure/detection.cpp:44 engines/mads/detection.cpp:123
+#: engines/sherlock/detection.cpp:131 engines/twine/detection.cpp:774
 msgid "TTS Narrator"
 msgstr ""
 
@@ -5637,15 +5658,15 @@ msgstr "Nem musebrugerflade"
 msgid "Shows object names when hovering the mouse over them"
 msgstr "Vis navne for genstande når musen er henover"
 
-#: engines/mads/detection.cpp:72 engines/mads/detection.cpp:73
+#: engines/mads/detection.cpp:74 engines/mads/detection.cpp:75
 msgid "Animated inventory items"
 msgstr "Animerede ting i inventar"
 
-#: engines/mads/detection.cpp:82 engines/mads/detection.cpp:83
+#: engines/mads/detection.cpp:86 engines/mads/detection.cpp:87
 msgid "Animated game interface"
 msgstr "Animeret spilbrugerflade"
 
-#: engines/mads/detection.cpp:92 engines/mads/detection.cpp:93
+#: engines/mads/detection.cpp:98 engines/mads/detection.cpp:99
 msgid "Naughty game mode"
 msgstr "Uhyggelig spiltilstand"
 
@@ -6182,21 +6203,21 @@ msgstr "Andet barn"
 msgid "Invalid Scene ID!"
 msgstr "Ugyldig sti!"
 
-#: engines/neverhood/detection.cpp:141
+#: engines/neverhood/detection.cpp:143
 msgid "Skip the Hall of Records storyboard scenes"
 msgstr "Spring \"Hall of Records\" storyboard scener over"
 
-#: engines/neverhood/detection.cpp:142
+#: engines/neverhood/detection.cpp:144
 msgid "Allows the player to skip past the Hall of Records storyboard scenes"
 msgstr ""
 "Giver spilleren mulighed for at springe \"Hall of Records\" storyboard "
 "scener over"
 
-#: engines/neverhood/detection.cpp:148
+#: engines/neverhood/detection.cpp:152
 msgid "Scale the making of videos to full screen"
 msgstr "Skalér skabelsen af videoerne til fuldskærm"
 
-#: engines/neverhood/detection.cpp:149
+#: engines/neverhood/detection.cpp:153
 msgid "Scale the making of videos, so that they use the whole screen"
 msgstr "Skalér skabelsen af videoerne, så de fylder hele skærmen"
 
@@ -6347,6 +6368,149 @@ msgstr ""
 #, fuzzy
 msgid "Error loading game resources."
 msgstr "Fejl ved læsning af gemt fil"
+
+#: engines/sci/detection_options.h:31
+msgid "Skip EGA dithering pass (full color backgrounds)"
+msgstr "Skip EGA farvereducering (fuldfarvet baggrunde)"
+
+#: engines/sci/detection_options.h:32
+msgid "Skip dithering pass in EGA games, graphics are shown with full colors"
+msgstr ""
+"Spring farvereducering i EGA spil over, grafikken bliver vist med fulde "
+"farver"
+
+#: engines/sci/detection_options.h:43
+msgid "Enable high resolution graphics"
+msgstr "Aktivér grafik i høj opløsning"
+
+#: engines/sci/detection_options.h:44
+msgid "Enable high resolution graphics/content"
+msgstr "Aktivér høj opløsnings grafik/indhold"
+
+#: engines/sci/detection_options.h:55
+msgid "Enable black-lined video"
+msgstr "Aktivér sort-linjet video"
+
+#: engines/sci/detection_options.h:56
+msgid "Draw black lines over videos to increase their apparent sharpness"
+msgstr ""
+"Tegn sorte linjer over videoer for at øge deres tilsyneladende skarphed"
+
+#: engines/sci/detection_options.h:68
+msgid "Use high-quality video scaling"
+msgstr "Brug højkvalitets video skalering"
+
+#: engines/sci/detection_options.h:69
+msgid "Use linear interpolation when upscaling videos, where possible"
+msgstr ""
+"Brug lineær interpolation ved opskalering af videoer, hvor det er muligt"
+
+#: engines/sci/detection_options.h:81
+msgid "Use high-quality \"LarryScale\" cel scaling"
+msgstr "Brug højkvalitets \"LarryScale\"-celleskalering"
+
+#: engines/sci/detection_options.h:82
+msgid "Use special cartoon scaler for drawing character sprites"
+msgstr "Brug speciel tegneserieskalering til at tegn karakter-sprites"
+
+#: engines/sci/detection_options.h:93
+msgid "Prefer digital sound effects"
+msgstr "Foretræk digitale lydeffekter"
+
+#: engines/sci/detection_options.h:94
+msgid "Prefer digital sound effects instead of synthesized ones"
+msgstr "Foretræk digitale lydeffekter i stedet for syntetiserede"
+
+#: engines/sci/detection_options.h:117
+msgid "Use CD audio"
+msgstr "Brug CD lyd"
+
+#: engines/sci/detection_options.h:118
+msgid "Use CD audio instead of in-game audio, if available"
+msgstr "Brug cd-lyd i stedet for lyd fra spillet, hvis tilgængelig"
+
+#: engines/sci/detection_options.h:130
+msgid "Use Windows cursors"
+msgstr "Brug Windows-markører"
+
+#: engines/sci/detection_options.h:131
+msgid ""
+"Use the Windows cursors (smaller and monochrome) instead of the DOS ones"
+msgstr "Brug Windows-markører (mindre og monokrome) i stedet for dem fra DOS"
+
+#: engines/sci/detection_options.h:143
+msgid "Use silver cursors"
+msgstr "Brug sølv markører"
+
+#: engines/sci/detection_options.h:144
+msgid ""
+"Use the alternate set of silver cursors instead of the normal golden ones"
+msgstr ""
+"Brug det alternative sæt af sølv markører, i stedet for de normale gyldne"
+
+#: engines/sci/detection_options.h:156
+msgid "Enable content censoring"
+msgstr "Aktivér indholdscensurering"
+
+#: engines/sci/detection_options.h:157
+msgid "Enable the game's built-in optional content censoring"
+msgstr "Aktivér spilets indbyggede valgfri indholdscensurering"
+
+#: engines/sci/detection_options.h:169
+msgid "Upscale videos"
+msgstr "Opskalér videoer"
+
+#: engines/sci/detection_options.h:170
+msgid "Upscale videos to double their size"
+msgstr "Opskalér videoer til dobbelt størrelse"
+
+#: engines/sci/detection_options.h:182
+msgid "Use RGB rendering"
+msgstr ""
+
+#: engines/sci/detection_options.h:183
+msgid "Use RGB rendering to improve screen transitions"
+msgstr ""
+
+#: engines/sci/detection_options.h:195
+msgid "Use per-resource modified palettes"
+msgstr ""
+
+#: engines/sci/detection_options.h:196
+msgid "Use custom per-resource palettes to improve visuals"
+msgstr ""
+
+#: engines/sci/detection_options.h:208
+#, fuzzy
+msgid "Enable bearded musicians"
+msgstr "Aktivér indholdscensurering"
+
+#: engines/sci/detection_options.h:209
+msgid "Enable graphics that were disabled for legal reasons"
+msgstr ""
+
+#: engines/sci/detection_options.h:237
+#, fuzzy
+msgid "MIDI mode:"
+msgstr "MIDI-forstærning:"
+
+#: engines/sci/detection_options.h:238
+msgid ""
+"When using external MIDI devices (e.g. through USB-MIDI), select your device "
+"here"
+msgstr ""
+
+#: engines/sci/detection_options.h:243
+msgid "Standard (GM / MT-32)"
+msgstr ""
+
+#: engines/sci/detection_options.h:247
+msgid "Roland D-110 / D-10 / D-20"
+msgstr ""
+
+#: engines/sci/detection_options.h:251
+msgid "Yamaha FB-01"
+msgstr ""
 
 #: engines/sci/detection_tables.h:4397
 msgid "Incomplete game detected. You have to copy data from all the CDs."
@@ -6535,50 +6699,61 @@ msgstr "Vis objektlinje"
 msgid "Show the names of objects at the bottom of the screen"
 msgstr "Vis navne på objekter nederst på skærmen"
 
-#: engines/scumm/detection.cpp:182
+#: engines/scumm/detection.cpp:184
 #, fuzzy
 msgid "Use NES Classic Palette"
 msgstr "Brug en alternativ palet"
 
-#: engines/scumm/detection.cpp:183
+#: engines/scumm/detection.cpp:185
 msgid "Use a more neutral color palette that closely emulates the NES Classic"
 msgstr ""
 
-#: engines/scumm/detection.cpp:189
+#: engines/scumm/detection.cpp:193
 msgid "Trim FM-TOWNS games to 200 pixels height"
 msgstr ""
 
-#: engines/scumm/detection.cpp:190
+#: engines/scumm/detection.cpp:194
 msgid ""
 "Cut the extra 40 pixels at the bottom of the screen, to make it standard 200 "
 "pixels height, allowing using 'aspect ratio correction'"
 msgstr ""
 
-#: engines/scumm/detection.cpp:196
+#: engines/scumm/detection.cpp:202
 msgid "Play simplified music"
 msgstr ""
 
-#: engines/scumm/detection.cpp:197
+#: engines/scumm/detection.cpp:203
 msgid ""
 "This music was presumably intended for low-end Macs, and uses only one "
 "channel."
 msgstr ""
 
-#: engines/scumm/detection.cpp:203
+#: engines/scumm/detection.cpp:211
 #, fuzzy
 msgid "Enable smooth scrolling"
 msgstr "Aktivér jævn bevægelse når du går"
 
-#: engines/scumm/detection.cpp:204
+#: engines/scumm/detection.cpp:212
 msgid "(instead of the normal 8-pixels steps scrolling)"
 msgstr ""
 
-#: engines/scumm/detection.cpp:210 engines/scumm/dialogs.cpp:730
+#: engines/scumm/detection.cpp:220
+#, fuzzy
+msgid "Allow semi-smooth scrolling"
+msgstr "Aktivér jævn bevægelse når du går"
+
+#: engines/scumm/detection.cpp:221
+msgid ""
+"Allow scrolling to be less smooth during the fast camera movement in the "
+"intro."
+msgstr ""
+
+#: engines/scumm/detection.cpp:229 engines/scumm/dialogs.cpp:730
 #, fuzzy
 msgid "Enable game-specific enhancements"
 msgstr "Aktivér indholdscensurering"
 
-#: engines/scumm/detection.cpp:211 engines/scumm/dialogs.cpp:730
+#: engines/scumm/detection.cpp:230 engines/scumm/dialogs.cpp:730
 msgid ""
 "Allow ScummVM to make small enhancements to the game, usually based on other "
 "versions of the same game."
@@ -7339,19 +7514,19 @@ msgstr ""
 "Kopiér venligst filerne til spildatamappen.\n"
 "\n"
 
-#: engines/sherlock/detection.cpp:68
+#: engines/sherlock/detection.cpp:70
 msgid "Pixellated scene transitions"
 msgstr "Pixelleret scene overgange"
 
-#: engines/sherlock/detection.cpp:69
+#: engines/sherlock/detection.cpp:71
 msgid "When changing scenes, a randomized pixel transition is done"
 msgstr "Ved sceneskift, bruges en tilfældig pixelleret overgang"
 
-#: engines/sherlock/detection.cpp:78
+#: engines/sherlock/detection.cpp:82
 msgid "Don't show hotspots when moving mouse"
 msgstr "Vis ikke hotspots, når du flytter musen"
 
-#: engines/sherlock/detection.cpp:79
+#: engines/sherlock/detection.cpp:83
 msgid ""
 "Only show hotspot names after you actually click on a hotspot or action "
 "button"
@@ -7359,27 +7534,27 @@ msgstr ""
 "Vis kun hotspot navne efter du rent faktisk klikker på et hotspot eller en "
 "handlingsknap"
 
-#: engines/sherlock/detection.cpp:88
+#: engines/sherlock/detection.cpp:94
 msgid "Show character portraits"
 msgstr "Vis karakter-portrætter"
 
-#: engines/sherlock/detection.cpp:89
+#: engines/sherlock/detection.cpp:95
 msgid "Show portraits for the characters when conversing"
 msgstr "Vis portrætter for karaktere når de taler"
 
-#: engines/sherlock/detection.cpp:98
+#: engines/sherlock/detection.cpp:106
 msgid "Slide dialogs into view"
 msgstr "Skub dialoger til syne"
 
-#: engines/sherlock/detection.cpp:99
+#: engines/sherlock/detection.cpp:107
 msgid "Slide UI dialogs into view, rather than simply showing them immediately"
 msgstr "Skub dialoger til syne, i stedet for blot at vise dem straks"
 
-#: engines/sherlock/detection.cpp:108
+#: engines/sherlock/detection.cpp:118
 msgid "Transparent windows"
 msgstr "Gennemsigtige vinduer"
 
-#: engines/sherlock/detection.cpp:109
+#: engines/sherlock/detection.cpp:119
 msgid "Show windows with a partially transparent background"
 msgstr "Vis vinduer med delvis gennemsigtig baggrund"
 
@@ -7431,22 +7606,22 @@ msgstr "Indlæs spil"
 msgid "Enable loading of external replacement assets."
 msgstr ""
 
-#: engines/stark/detection.cpp:384
+#: engines/stark/detection.cpp:386
 msgid "Enable linear filtering of the backgrounds images"
 msgstr ""
 
-#: engines/stark/detection.cpp:385
+#: engines/stark/detection.cpp:387
 msgid ""
 "When linear filtering is enabled the background graphics are smoother in "
 "full screen mode, at the cost of some details."
 msgstr ""
 
-#: engines/stark/detection.cpp:393 engines/ultima/detection.cpp:118
+#: engines/stark/detection.cpp:397 engines/ultima/detection.cpp:136
 #, fuzzy
 msgid "Enable font anti-aliasing"
 msgstr "Aktivér indholdscensurering"
 
-#: engines/stark/detection.cpp:394 engines/ultima/detection.cpp:119
+#: engines/stark/detection.cpp:398 engines/ultima/detection.cpp:137
 msgid "When font anti-aliasing is enabled, the text is smoother."
 msgstr ""
 
@@ -7481,35 +7656,35 @@ msgstr ""
 msgid "'game.exe' is recommended to get styled confirmation dialogs."
 msgstr ""
 
-#: engines/supernova/supernova.cpp:190
+#: engines/supernova/supernova.cpp:192
 #, c-format
 msgid "Unable to locate the text for %s language in engine data file."
 msgstr "Kan ikke finde teksten til %s sproget i motorens datafil."
 
-#: engines/supernova/supernova.cpp:474
+#: engines/supernova/supernova.cpp:476
 #, c-format
 msgid ""
 "Incorrect version of the '%s' engine data file found. Expected %d but got %d."
 msgstr ""
 "Ukorrekt version af '%s'-motorens datafil fundet. Forventet %d, men fandt %d."
 
-#: engines/supernova/supernova.cpp:484
+#: engines/supernova/supernova.cpp:486
 #, c-format
 msgid "Unable to find block for part %d"
 msgstr "Kan ikke finde blok for del %d"
 
-#: engines/supernova/supernova.cpp:527
+#: engines/supernova/supernova.cpp:529
 #, c-format
 msgid "Unable to find '%s' in game folder or the engine data file."
 msgstr "Kan ikke finde '%s' i spilmappen eller motorens datafil."
 
-#: engines/supernova/supernova.cpp:831
+#: engines/supernova/supernova.cpp:833
 msgid ""
 "Failed to save temporary game state. Make sure your save game directory is "
 "set in ScummVM and that you can write to it."
 msgstr ""
 
-#: engines/supernova/supernova.cpp:832
+#: engines/supernova/supernova.cpp:834
 #, fuzzy
 msgid "Failed to load temporary game state."
 msgstr "Kunne ikke indlæse gemt spil fra fil."
@@ -7667,99 +7842,99 @@ msgstr ""
 msgid "Enable the original wall collision damage"
 msgstr ""
 
-#: engines/twine/detection.cpp:681
+#: engines/twine/detection.cpp:683
 #, fuzzy
 msgid "Disable save menu"
 msgstr "Kunne ikke gemme spil"
 
-#: engines/twine/detection.cpp:682
+#: engines/twine/detection.cpp:684
 msgid ""
 "The original only had autosaves. This allows you to save whenever you want."
 msgstr ""
 
-#: engines/twine/detection.cpp:688
+#: engines/twine/detection.cpp:692
 #, fuzzy
 msgid "Enable debug mode"
 msgstr "Aktivér helium-tilstand"
 
-#: engines/twine/detection.cpp:689
+#: engines/twine/detection.cpp:693
 #, fuzzy
 msgid "Enable the debug mode"
 msgstr "Aktivér helium-tilstand"
 
-#: engines/twine/detection.cpp:695
+#: engines/twine/detection.cpp:701
 #, fuzzy
 msgid "Enable audio CD"
 msgstr "Aktivér studio publikum"
 
-#: engines/twine/detection.cpp:696
+#: engines/twine/detection.cpp:702
 msgid "Enable the original audio cd track"
 msgstr ""
 
-#: engines/twine/detection.cpp:702
+#: engines/twine/detection.cpp:710
 #, fuzzy
 msgid "Enable sound"
 msgstr "Aktivér lager"
 
-#: engines/twine/detection.cpp:703
+#: engines/twine/detection.cpp:711
 #, fuzzy
 msgid "Enable the sound for the game"
 msgstr "Fuld titel på spillet"
 
-#: engines/twine/detection.cpp:709
+#: engines/twine/detection.cpp:719
 #, fuzzy
 msgid "Enable voices"
 msgstr "Aktivér Venus"
 
-#: engines/twine/detection.cpp:710
+#: engines/twine/detection.cpp:720
 #, fuzzy
 msgid "Enable the voices for the game"
 msgstr "Aktivér Venus-hjælpesystemet"
 
-#: engines/twine/detection.cpp:716
+#: engines/twine/detection.cpp:728
 #, fuzzy
 msgid "Enable text"
 msgstr "Aktivér lager"
 
-#: engines/twine/detection.cpp:717
+#: engines/twine/detection.cpp:729
 #, fuzzy
 msgid "Enable the text for the game"
 msgstr "Fuld titel på spillet"
 
-#: engines/twine/detection.cpp:723
+#: engines/twine/detection.cpp:737
 #, fuzzy
 msgid "Enable movies"
 msgstr "Aktivér Venus"
 
-#: engines/twine/detection.cpp:724
+#: engines/twine/detection.cpp:738
 #, fuzzy
 msgid "Enable the cutscenes for the game"
 msgstr "Aktivér Venus-hjælpesystemet"
 
-#: engines/twine/detection.cpp:730
+#: engines/twine/detection.cpp:746
 #, fuzzy
 msgid "Enable mouse"
 msgstr "Aktivér Venus"
 
-#: engines/twine/detection.cpp:731
+#: engines/twine/detection.cpp:747
 #, fuzzy
 msgid "Enable the mouse for the UI"
 msgstr "Fuld titel på spillet"
 
-#: engines/twine/detection.cpp:737
+#: engines/twine/detection.cpp:755
 msgid "Use the USA version"
 msgstr ""
 
-#: engines/twine/detection.cpp:738
+#: engines/twine/detection.cpp:756
 msgid "Enable the USA specific version flags"
 msgstr ""
 
-#: engines/twine/detection.cpp:744 engines/ultima/detection.cpp:84
+#: engines/twine/detection.cpp:764 engines/ultima/detection.cpp:92
 #, fuzzy
 msgid "Enable high resolution"
 msgstr "Aktivér grafik i høj opløsning"
 
-#: engines/twine/detection.cpp:745 engines/ultima/detection.cpp:85
+#: engines/twine/detection.cpp:765 engines/ultima/detection.cpp:93
 #, fuzzy
 msgid "Enable a higher resolution for the game"
 msgstr "Fuld titel på spillet"
@@ -7922,69 +8097,74 @@ msgctxt "Options menu"
 msgid "Wall collision off"
 msgstr "Jævn bevægelse fra"
 
-#: engines/ultima/detection.cpp:66
+#: engines/ultima/detection.cpp:68
 msgid "Enable frame skipping"
 msgstr ""
 
-#: engines/ultima/detection.cpp:67
+#: engines/ultima/detection.cpp:69
 msgid "Allow the game to skip animation frames when running too slow."
 msgstr ""
 
-#: engines/ultima/detection.cpp:72
+#: engines/ultima/detection.cpp:76
 #, fuzzy
 msgid "Enable frame limiting"
 msgstr "Aktivér indholdscensurering"
 
-#: engines/ultima/detection.cpp:73
+#: engines/ultima/detection.cpp:77
 msgid "Limits the speed of the game to prevent running too fast."
 msgstr ""
 
-#: engines/ultima/detection.cpp:79
+#: engines/ultima/detection.cpp:84
+#, fuzzy
+msgid "Enable cheats"
+msgstr "Aktivér snydetilstand"
+
+#: engines/ultima/detection.cpp:85
 msgid "Allow cheats by commands and a menu when player is clicked."
 msgstr ""
 
-#: engines/ultima/detection.cpp:94
+#: engines/ultima/detection.cpp:104
 msgid "Play foot step sounds"
 msgstr ""
 
-#: engines/ultima/detection.cpp:95
+#: engines/ultima/detection.cpp:105
 msgid "Plays sound when the player moves."
-msgstr ""
-
-#: engines/ultima/detection.cpp:100
-#, fuzzy
-msgid "Enable jump to mouse position"
-msgstr "Fuld titel på spillet"
-
-#: engines/ultima/detection.cpp:101
-msgid ""
-"Jumping while not moving targets the mouse cursor rather than direction only."
 msgstr ""
 
 #: engines/ultima/detection.cpp:112
 #, fuzzy
+msgid "Enable jump to mouse position"
+msgstr "Fuld titel på spillet"
+
+#: engines/ultima/detection.cpp:113
+msgid ""
+"Jumping while not moving targets the mouse cursor rather than direction only."
+msgstr ""
+
+#: engines/ultima/detection.cpp:128
+#, fuzzy
 msgid "Enable font replacement"
 msgstr "Aktivér indholdscensurering"
 
-#: engines/ultima/detection.cpp:113
+#: engines/ultima/detection.cpp:129
 msgid "Replaces game fonts with rendered fonts"
 msgstr ""
 
 #. I18N: Silencer is the player-character in Crusader games, known as the Avatar in Ultima series.
-#: engines/ultima/detection.cpp:128
+#: engines/ultima/detection.cpp:148
 msgid "Camera moves with Silencer"
 msgstr ""
 
-#: engines/ultima/detection.cpp:129
+#: engines/ultima/detection.cpp:149
 msgid ""
 "Camera tracks the player movement rather than snapping to defined positions."
 msgstr ""
 
-#: engines/ultima/detection.cpp:142
+#: engines/ultima/detection.cpp:164
 msgid "Always enable Christmas easter-egg"
 msgstr ""
 
-#: engines/ultima/detection.cpp:143
+#: engines/ultima/detection.cpp:165
 msgid "Enable the Christmas music at any time of year."
 msgstr ""
 
@@ -8060,11 +8240,11 @@ msgstr "Vis FPS-tæller"
 msgid "Show the current number of frames per second in the upper left corner"
 msgstr "Vis det nuværende antal billeder per sekund i øverste venstre hjørne"
 
-#: engines/wintermute/detection.cpp:62
+#: engines/wintermute/detection.cpp:64
 msgid "Sprite bilinear filtering (SLOW)"
 msgstr "Sprite bilineær filtrering (langsom)"
 
-#: engines/wintermute/detection.cpp:63
+#: engines/wintermute/detection.cpp:65
 msgid "Apply bilinear filtering to individual sprites"
 msgstr "Anvend bilinær filtrering til individuelle sprites"
 
@@ -8762,11 +8942,11 @@ msgstr ""
 "Viser tingenes priser i standard-inventar-tilstand, så tingenes værdier kan "
 "sammenlignes"
 
-#: engines/xeen/detection.cpp:65
+#: engines/xeen/detection.cpp:67
 msgid "More durable armor"
 msgstr "Bedre rustning"
 
-#: engines/xeen/detection.cpp:66
+#: engines/xeen/detection.cpp:68
 msgid "Armor won't break until character is at -80HP, rather than merely -10HP"
 msgstr ""
 "Rustningen går ikke i stykker før karakteren er på -80HP, i stedet for blot "
@@ -8777,35 +8957,35 @@ msgstr ""
 msgid "Failed to autosave"
 msgstr "Kunne ikke gemme spil"
 
-#: engines/zvision/detection_tables.h:60
+#: engines/zvision/detection_tables.h:62
 msgid "Double FPS"
 msgstr "Dobbelt FPS"
 
-#: engines/zvision/detection_tables.h:61
+#: engines/zvision/detection_tables.h:63
 msgid "Increase framerate from 30 to 60 FPS"
 msgstr "Øger billedhastighed fra 30 til 60 FPS"
 
-#: engines/zvision/detection_tables.h:70
+#: engines/zvision/detection_tables.h:74
 msgid "Enable Venus"
 msgstr "Aktivér Venus"
 
-#: engines/zvision/detection_tables.h:71
+#: engines/zvision/detection_tables.h:75
 msgid "Enable the Venus help system"
 msgstr "Aktivér Venus-hjælpesystemet"
 
-#: engines/zvision/detection_tables.h:80
+#: engines/zvision/detection_tables.h:86
 msgid "Disable animation while turning"
 msgstr "Deaktivér animation, mens du drejer"
 
-#: engines/zvision/detection_tables.h:81
+#: engines/zvision/detection_tables.h:87
 msgid "Disable animation while turning in panorama mode"
 msgstr "Deaktivér animation mens du drejer i panoramatilstand"
 
-#: engines/zvision/detection_tables.h:90
+#: engines/zvision/detection_tables.h:98
 msgid "Use high resolution MPEG video"
 msgstr "Brug høj opløsning MPEG-video"
 
-#: engines/zvision/detection_tables.h:91
+#: engines/zvision/detection_tables.h:99
 msgid "Use MPEG video from the DVD version instead of lower resolution AVI"
 msgstr "Brug MPEG-video fra DVD-versionen, i stedet for lavere opløsning AVI"
 
@@ -9045,89 +9225,6 @@ msgstr ""
 #, fuzzy
 #~ msgid "Enable cross fade"
 #~ msgstr "Aktivér snydetilstand"
-
-#~ msgid "Skip EGA dithering pass (full color backgrounds)"
-#~ msgstr "Skip EGA farvereducering (fuldfarvet baggrunde)"
-
-#~ msgid ""
-#~ "Skip dithering pass in EGA games, graphics are shown with full colors"
-#~ msgstr ""
-#~ "Spring farvereducering i EGA spil over, grafikken bliver vist med fulde "
-#~ "farver"
-
-#~ msgid "Enable high resolution graphics"
-#~ msgstr "Aktivér grafik i høj opløsning"
-
-#~ msgid "Enable high resolution graphics/content"
-#~ msgstr "Aktivér høj opløsnings grafik/indhold"
-
-#~ msgid "Enable black-lined video"
-#~ msgstr "Aktivér sort-linjet video"
-
-#~ msgid "Draw black lines over videos to increase their apparent sharpness"
-#~ msgstr ""
-#~ "Tegn sorte linjer over videoer for at øge deres tilsyneladende skarphed"
-
-#~ msgid "Use high-quality video scaling"
-#~ msgstr "Brug højkvalitets video skalering"
-
-#~ msgid "Use linear interpolation when upscaling videos, where possible"
-#~ msgstr ""
-#~ "Brug lineær interpolation ved opskalering af videoer, hvor det er muligt"
-
-#~ msgid "Use high-quality \"LarryScale\" cel scaling"
-#~ msgstr "Brug højkvalitets \"LarryScale\"-celleskalering"
-
-#~ msgid "Use special cartoon scaler for drawing character sprites"
-#~ msgstr "Brug speciel tegneserieskalering til at tegn karakter-sprites"
-
-#~ msgid "Prefer digital sound effects"
-#~ msgstr "Foretræk digitale lydeffekter"
-
-#~ msgid "Prefer digital sound effects instead of synthesized ones"
-#~ msgstr "Foretræk digitale lydeffekter i stedet for syntetiserede"
-
-#~ msgid "Use CD audio"
-#~ msgstr "Brug CD lyd"
-
-#~ msgid "Use CD audio instead of in-game audio, if available"
-#~ msgstr "Brug cd-lyd i stedet for lyd fra spillet, hvis tilgængelig"
-
-#~ msgid "Use Windows cursors"
-#~ msgstr "Brug Windows-markører"
-
-#~ msgid ""
-#~ "Use the Windows cursors (smaller and monochrome) instead of the DOS ones"
-#~ msgstr ""
-#~ "Brug Windows-markører (mindre og monokrome) i stedet for dem fra DOS"
-
-#~ msgid "Use silver cursors"
-#~ msgstr "Brug sølv markører"
-
-#~ msgid ""
-#~ "Use the alternate set of silver cursors instead of the normal golden ones"
-#~ msgstr ""
-#~ "Brug det alternative sæt af sølv markører, i stedet for de normale gyldne"
-
-#~ msgid "Enable content censoring"
-#~ msgstr "Aktivér indholdscensurering"
-
-#~ msgid "Enable the game's built-in optional content censoring"
-#~ msgstr "Aktivér spilets indbyggede valgfri indholdscensurering"
-
-#~ msgid "Upscale videos"
-#~ msgstr "Opskalér videoer"
-
-#~ msgid "Upscale videos to double their size"
-#~ msgstr "Opskalér videoer til dobbelt størrelse"
-
-#, fuzzy
-#~ msgid "Enable bearded musicians"
-#~ msgstr "Aktivér indholdscensurering"
-
-#, fuzzy
-#~ msgid "MIDI mode:"
-#~ msgstr "MIDI-forstærning:"
 
 #, fuzzy
 #~ msgid "Auto"

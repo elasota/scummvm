@@ -72,6 +72,35 @@ void ScummEngine::printString(int m, const byte *msg) {
 			return;
 		}
 
+		// WORKAROUND bug #13378: In the German CD version, Sam's
+		// reactions to Max beating up the scientist run much too quick
+		// for the animation to match. We get around this by slowing
+		// down that animation.
+ 		//
+		// In the italian CD version, the whole scene is sped up to
+		// keep up with Sam's speech. We compensate for this by slowing
+		// down the other animations.
+		if (_game.id == GID_SAMNMAX && vm.slot[_currentScript].number == 65 && _enableEnhancements) {
+			Actor *a;
+
+			if (_language == Common::DE_DEU && strcmp(_game.variant, "Floppy") != 0) {
+				if (memcmp(msg + 16, "Ohh!", 4) == 0) {
+					a = derefActorSafe(2, "printString");
+					if (a)
+						a->setAnimSpeed(3);
+				}
+			} else if (_language == Common::IT_ITA && strcmp(_game.variant, "Floppy") != 0) {
+				if (memcmp(msg + 16, "Ooh.", 4) == 0) {
+					a = derefActorSafe(3, "printString");
+					if (a)
+						a->setAnimSpeed(2);
+					a = derefActorSafe(10, "printString");
+				if (a)
+						a->setAnimSpeed(2);
+				}
+			}
+		}
+
 		actorTalk(msg);
 		break;
 	case 1:
@@ -167,6 +196,203 @@ bool ScummEngine::handleNextCharsetCode(Actor *a, int *code) {
 			_keepText = false;
 			_msgCount = 0;
 			endLoop = true;
+
+			// WORKAROUND bug #13378: Some of the speech is badly
+			// synced to the subtitles, particularly in the
+			// localized versions. This happens because a single
+			// speech line is used for a text that's broken up by
+			// one or more embedded "wait" codes. Rather than
+			// relying on the calculated talk delay, hard-code
+			// better ones.
+			if (_game.id == GID_SAMNMAX && _enableEnhancements && isScriptRunning(65)) {
+				typedef struct {
+					const char *str;
+					const int16 talkDelay;
+					const byte action;
+				} TimingAdjustment;
+
+				TimingAdjustment *adjustments;
+				int numAdjustments;
+
+				// We identify the broken up strings that need
+				// adjustment by the upcoming text.
+
+				TimingAdjustment timingAdjustmentsEN[] = {
+					{ "It's just that",   100, 0 },
+					{ "you're TOO nice",  90,  0 },
+					{ "^unpredictable.",  170, 0 },
+					{ "Yikes!",           120, 0 },
+					{ "Huh?",             90,  0 },
+					{ "Why do you",       110, 0 },
+					{ "Maybe we can",     75,  0 },
+					{ "Mind if I drive?", 160, 0 }
+				};
+
+				TimingAdjustment timingAdjustmentsDEFloppy[] = {
+					{ "Und daf\x81r^",    110, 0 },
+					{ "Es ist blo\xe1^",  120, 0 },
+					{ "Hey.",             50,  0 },
+					{ "Klasse Schlag!",   30,  0 },
+					{ "Uiii!",            80,  0 },
+					{ "H\x84h?",          60,  0 },
+					{ "Kann ich seine",   110, 0 },
+					{ "Warum, glaubst",   110, 0 },
+					{ "La\xe1 uns von",   220, 0 },
+					{ "Vielleicht",       90,  0 },
+					{ "Kann ich fahren?", 220, 0 }
+				};
+
+				TimingAdjustment timingAdjustmentsDECD[] = {
+					{ "Und daf\x81r^",    110, 0 },
+					{ "Es ist blo\xe1^",  120, 0 },
+					{ "Hey.",             130, 0 },
+					{ "Klasse Schlag!",   150, 0 },
+					{ "Uiii!",            185, 1 },
+					{ "H\x84h?",          150, 0 },
+					{ "Kann ich seine",   110, 0 },
+					{ "Warum, glaubst",   110, 0 },
+					{ "Vielleicht",       90,  0 },
+					{ "Kann ich fahren?", 240, 0 }
+				};
+
+				TimingAdjustment timingAdjustmentsITFloppy[] = {
+					{ "E per questo^",    140, 0 },
+					{ "E' che^ecco^",     100, 0 },
+					{ "^imprevedibile.",  170, 0 },
+					{ "Huh?",             110, 0 },
+					{ "Perch\x82 pensi",  90,  0 },
+					{ "Andiamocene da",   230, 0 },
+					{ "Forse possiamo",   75,  0 },
+					{ "Ti dispiace",      160, 0 }
+				};
+
+				TimingAdjustment timingAdjustmentsITCD[] = {
+					{ "E per questo^",    120, 0 },
+					{ "Forse sei",        75,  0 },
+					{ "^imprevedibile.",  170, 0 },
+					{ "Oh.",              20,  0 },
+					{ "Ehi, bel colpo.",  30,  0 },
+					{ "Yikes!",           90,  0 },
+					{ "Huh?",             50,  0 },
+					{ "Posso tenere",     100, 0 },
+					{ "Perch\x82 pensi",  120, 0 },
+					{ "Andiamocene",      250, 0 },
+					{ "Forse possiamo",   90,  0 },
+					{ "Ti dispiace",      200, 0 }
+				};
+
+				TimingAdjustment timingAdjustmentsFRFloppy[] = {
+					{ "Et pour me",       120, 0 },
+					{ "C'est que^euh^",   100, 0 },
+					{ "vous \x88tes",     65,  0 },
+					{ "^impr\x82visible", 170, 0 },
+					{ "Pourquoi est-ce",  100, 0 },
+					{ "Filons de cet",    190, 0 },
+					{ "Nous pourrons",    65,  0 },
+					{ "Je peux conduire", 170, 0 },
+					{ "Je n'oublierai",   90,  0 }
+				};
+
+				TimingAdjustment timingAdjustmentsFRCD[] = {
+					{ "Oh.",              85,  0 },
+					{ "H\x82, pas mal.",  80,  0 },
+					{ "Yiik!",            110, 0 },
+					{ "Je peux garder",   130, 0 },
+					{ "Pourquoi est-ce",  120, 0 },
+					{ "Nous pourrons",    80,  0 },
+					{ "Je peux conduire", 220, 0 }
+				};
+
+				TimingAdjustment timingAdjustmentsES[] = {
+					{ "Y por eso^",       130, 0 },
+					{ "es simplemente",   100, 0 },
+					{ "eres DEMASIADO",   90,  0 },
+					{ "\xa8Hug?",         110, 0 },
+					{ "\xa8Por qu\x82",   110, 0 },
+					{ "Tal vez podamos",  75,  0 },
+					{ "\xa8Te importa",   160, 0 }
+				};
+
+				switch (_language) {
+				case Common::EN_ANY:
+					adjustments = timingAdjustmentsEN;
+					numAdjustments = ARRAYSIZE(timingAdjustmentsEN);
+					break;
+				case Common::DE_DEU:
+					if (strcmp(_game.variant, "Floppy") == 0) {
+						adjustments = timingAdjustmentsDEFloppy;
+						numAdjustments = ARRAYSIZE(timingAdjustmentsDEFloppy);
+					} else {
+						adjustments = timingAdjustmentsDECD;
+						numAdjustments = ARRAYSIZE(timingAdjustmentsDECD);
+					}
+					break;
+				case Common::IT_ITA:
+					if (strcmp(_game.variant, "Floppy") == 0) {
+						adjustments = timingAdjustmentsITFloppy;
+						numAdjustments = ARRAYSIZE(timingAdjustmentsITFloppy);
+					} else {
+						adjustments = timingAdjustmentsITCD;
+						numAdjustments = ARRAYSIZE(timingAdjustmentsITCD);
+					}
+					break;
+				case Common::FR_FRA:
+					if (strcmp(_game.variant, "Floppy") == 0) {
+						adjustments = timingAdjustmentsFRFloppy;
+						numAdjustments = ARRAYSIZE(timingAdjustmentsFRFloppy);
+					} else {
+						adjustments = timingAdjustmentsFRCD;
+						numAdjustments = ARRAYSIZE(timingAdjustmentsFRCD);
+					}
+					break;
+				case Common::ES_ESP:
+					adjustments = timingAdjustmentsES;
+					numAdjustments = ARRAYSIZE(timingAdjustmentsES);
+					break;
+				default:
+					adjustments = nullptr;
+					numAdjustments = 0;
+					break;
+				}
+
+				byte action = 0;
+
+				for (int i = 0; i < numAdjustments; i++) {
+					int len = strlen(adjustments[i].str);
+					if (memcmp(buffer, adjustments[i].str, len) == 0) {
+						_talkDelay = adjustments[i].talkDelay;
+						action = adjustments[i].action;
+						break;
+					}
+				}
+
+				if (_language == Common::DE_DEU) {
+					Actor *act;
+
+					switch (action) {
+					case 1:
+						act = derefActorSafe(2, "handleNextCharsetCode");
+						if (act)
+							act->setAnimSpeed(2);
+
+						// The actor speaks so slowly that the background
+						// animations have run their course. Try to restart
+						// them, even though it won't be quite seamless.
+
+						int actors[] = { 3, 10 };
+
+						for (int i = 0; i < ARRAYSIZE(actors); i++) {
+							act = derefActorSafe(actors[i], "handleNextCharsetCode");
+							if (act) {
+								act->startAnimActor(act->_initFrame);
+								act->animateActor(249);
+							}
+						}
+						break;
+					}
+				}
+			}
+
 			break;
 		case 8:
 			// Ignore this code here. Occurs e.g. in MI2 when you

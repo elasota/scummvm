@@ -42,14 +42,14 @@ static void cpackbitl(const uint8_t *line, size_t size, Stream *out) {
 	size_t cnt = 0;               // bytes encoded
 
 	while (cnt < size) {
-		// note that the algorithm below requires signed operations
-		int i = cnt;
+		// IMPORTANT: the algorithm below requires signed operations
+		int i = static_cast<int32_t>(cnt);
 		int j = i + 1;
 		int jmax = i + 126;
-		if ((size_t)jmax >= size)
+		if (static_cast<uint32_t>(jmax) >= size)
 			jmax = size - 1;
 
-		if (i == (int)size - 1) {        //................last byte alone
+		if (static_cast<uint32_t>(i) == size - 1) { //......last byte alone
 			out->WriteInt8(0);
 			out->WriteInt8(line[i]);
 			cnt++;
@@ -78,14 +78,14 @@ static void cpackbitl16(const uint16_t *line, size_t size, Stream *out) {
 	size_t cnt = 0;               // bytes encoded
 
 	while (cnt < size) {
-		// note that the algorithm below requires signed operations
+		// IMPORTANT: the algorithm below requires signed operations
 		int i = cnt;
 		int j = i + 1;
 		int jmax = i + 126;
-		if ((size_t)jmax >= size)
+		if (static_cast<uint32_t>(jmax) >= size)
 			jmax = size - 1;
 
-		if (i == (int)size - 1) {        //................last byte alone
+		if (static_cast<uint32_t>(i) == size - 1) { //......last byte alone
 			out->WriteInt8(0);
 			out->WriteInt16(line[i]);
 			cnt++;
@@ -114,14 +114,14 @@ static void cpackbitl32(const uint32_t *line, size_t size, Stream *out) {
 	size_t cnt = 0;               // bytes encoded
 
 	while (cnt < size) {
-		// note that the algorithm below requires signed operations
+		// IMPORTANT: the algorithm below requires signed operations
 		int i = cnt;
 		int j = i + 1;
 		int jmax = i + 126;
-		if ((size_t)jmax >= size)
+		if (static_cast<uint32_t>(jmax) >= size)
 			jmax = size - 1;
 
-		if (i == (int)size - 1) {        //................last byte alone
+		if (static_cast<uint32_t>(i) == size - 1) { //......last byte alone
 			out->WriteInt8(0);
 			out->WriteInt32(line[i]);
 			cnt++;
@@ -315,7 +315,7 @@ Shared::Bitmap *load_rle_bitmap8(Stream *in, RGB(*pal)[256]) {
 	return bmp;
 }
 
-void skip_rle_bitmap8(Shared::Stream *in) {
+void skip_rle_bitmap8(Stream *in) {
 	int w = in->ReadInt16();
 	int h = in->ReadInt16();
 	// Skip 8-bit pixel data + RGB palette
@@ -326,7 +326,7 @@ void skip_rle_bitmap8(Shared::Stream *in) {
 // LZW
 //-----------------------------------------------------------------------------
 
-void lzw_compress(const uint8_t *data, size_t data_sz, int image_bpp, Shared::Stream *out) {
+void lzw_compress(const uint8_t *data, size_t data_sz, int /*image_bpp*/, Shared::Stream *out) {
 	// LZW algorithm that we use fails on sequence less than 16 bytes.
 	if (data_sz < 16) {
 		out->Write(data, data_sz);
@@ -336,7 +336,7 @@ void lzw_compress(const uint8_t *data, size_t data_sz, int image_bpp, Shared::St
 	lzwcompress(&mem_in, out);
 }
 
-void lzw_decompress(uint8_t *data, size_t data_sz, int image_bpp, Shared::Stream *in) {
+void lzw_decompress(uint8_t *data, size_t data_sz, int /*image_bpp*/, Shared::Stream *in) {
 	// LZW algorithm that we use fails on sequence less than 16 bytes.
 	if (data_sz < 16) {
 		in->Read(data, data_sz);

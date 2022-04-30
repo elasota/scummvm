@@ -33,19 +33,19 @@ static const chapterEntry rawChapterTable[] = {
 	{21, {70, 160}, {180, 160}, {220, 185}, {44, 162},  kHypnoColorYellow}, // c21
 	{22, {70, 160}, {180, 160}, {220, 185}, {44, 162},  kHypnoColorGreen}, 	// c22
 	{23, {70, 160}, {180, 160}, {220, 185}, {44, 162},  kHypnoColorCyan}, 	// c23
-	{20, {128, 150}, {238, 150},{0,   0},   {0, 0},     kHypnoColorCyan}, 	// c20
+	{20, {128, 150}, {238, 150},{0,   0},   {209, 146}, kHypnoColorCyan}, 	// c20
 	{31, {70, 160}, {180, 160}, {220, 185}, {44, 164},  kHypnoColorGreen}, 	// c31
 	{32, {70, 160}, {180, 160}, {220, 185}, {44, 164},  kHypnoColorRed}, 	// c32
-	{33, {70, 160}, {180, 160}, {220, 185}, {44, 164},  kHypnoColorRed}, 	// c33
-	{30, {19, 3},   {246, 3}, 	{246, 11},  {0, 0},     kHypnoColorRed}, 	// c30
-	{41, {70, 160}, {180, 160}, {220, 185}, {0, 0},     kHypnoColorRed}, 	// c41
-	{42, {70, 160}, {180, 160}, {220, 185}, {0, 0},     kHypnoColorRed}, 	// c42
-	{43, {70, 160}, {180, 160}, {220, 185}, {0, 0},     kHypnoColorRed}, 	// c43
-	{44, {70, 160}, {180, 160}, {220, 185}, {0, 0},     kHypnoColorRed}, 	// c44
-	{40, {19, 3},   {246, 3}, 	{246, 11},  {0, 0},     kHypnoColorRed}, 	// c40
-	{51, {60, 167}, {190, 167}, {135, 187}, {0, 0},     kHypnoColorRed}, 	// c51
-	{52, {60, 167}, {190, 167}, {135, 187}, {0, 0},     kHypnoColorRed}, 	// c52
-	{50, {19, 3},   {246, 3}, 	{246, 11},  {0, 0},     kHypnoColorRed}, 	// c50 (fixed)
+	{33, {70, 160}, {180, 160}, {220, 185}, {44, 162},  kHypnoColorRed}, 	// c33
+	{30, {19, 3},   {246, 3}, 	{246, 11},  {2, 2},     kHypnoColorRed}, 	// c30
+	{41, {70, 160}, {180, 160}, {220, 185}, {44, 162},  kHypnoColorRed}, 	// c41
+	{42, {70, 160}, {180, 160}, {220, 185}, {44, 162},  kHypnoColorRed}, 	// c42
+	{43, {70, 160}, {180, 160}, {220, 185}, {44, 162},  kHypnoColorRed}, 	// c43
+	{44, {70, 160}, {180, 160}, {220, 185}, {44, 162},  kHypnoColorRed}, 	// c44
+	{40, {19, 3},   {246, 3}, 	{246, 11},  {2, 2},     kHypnoColorRed}, 	// c40
+	{51, {60, 167}, {190, 167}, {135, 187}, {136, 163}, kHypnoColorRed}, 	// c51
+	{52, {60, 167}, {190, 167}, {135, 187}, {136, 165}, kHypnoColorRed}, 	// c52
+	{50, {19, 3},   {246, 3}, 	{246, 11},  {2, 2}, 	kHypnoColorRed}, 	// c50 (fixed)
 	{61, {63, 167}, {187, 167}, {192, 188}, {152, 185}, kHypnoColorRed}, 	// c61
 	{60, {63, 167}, {187, 167}, {192, 188}, {152, 185}, kHypnoColorRed}, 	// c60
 	{0,  {0,  0},   {0,   0},   {0,   0},   {0, 0},     kHypnoColorRed}    	// NULL
@@ -86,6 +86,8 @@ void WetEngine::loadAssets() {
 		loadAssetsPCW();
 	else if (_variant == "PCGDemo")
 		loadAssetsPCG();
+	else if (_variant == "NonInteractive")
+		loadAssetsNI();
 	else
 		error("Invalid demo version: \"%s\"", _variant.c_str());
 }
@@ -190,6 +192,48 @@ void WetEngine::loadAssetsDemoDisc() {
 	_nextLevel = "<start>";
 }
 
+void WetEngine::loadAssetsNI() {
+	playSound("wetmusic.81m", 0, 11025);
+	Transition *movies = new Transition("<quit>");
+	movies->intros.push_back("demo/nw_logo.smk");
+	movies->intros.push_back("demo/hypnotix.smk");
+	movies->intros.push_back("demo/wetlogo.smk");
+	movies->intros.push_back("demo/c31c1.smk");
+	movies->intros.push_back("demo/demo31.smk");
+	movies->intros.push_back("demo/c31c2.smk");
+	movies->intros.push_back("demo/c31e1.smk");
+	movies->intros.push_back("demo/logo_w.smk");
+	movies->intros.push_back("demo/bar01b.smk");
+	movies->intros.push_back("demo/gun_320.smk");
+	movies->intros.push_back("demo/logo_e.smk");
+	movies->intros.push_back("demo/c30peek.smk");
+	movies->intros.push_back("demo/demo30.smk");
+	movies->intros.push_back("demo/c30knife.smk");
+	movies->intros.push_back("demo/logo_t.smk");
+	movies->intros.push_back("demo/c51teez.smk");
+	movies->intros.push_back("demo/demo21.smk");
+	movies->intros.push_back("demo/c51kill.smk");
+	movies->intros.push_back("demo/logo_l.smk");
+	movies->intros.push_back("demo/run_320.smk");
+	movies->intros.push_back("demo/logo_a.smk");
+	movies->intros.push_back("demo/demo50.smk");
+	movies->intros.push_back("demo/c50gate.smk");
+	movies->intros.push_back("demo/logo_n.smk");
+	movies->intros.push_back("demo/c22end.smk");
+	movies->intros.push_back("demo/logo_d.smk");
+	movies->intros.push_back("demo/demo44.smk");
+	movies->intros.push_back("demo/c44boom.smk");
+	movies->intros.push_back("demo/logo_s.smk");
+	movies->intros.push_back("demo/xi.smk");
+	movies->intros.push_back("demo/wetlogo.smk");
+	movies->intros.push_back("demo/c30shoot.smk");
+	movies->frameImage = "";
+	movies->frameNumber = 0;
+	_levels["<start>"] = movies;
+	_nextLevel = "<start>";
+}
+
+
 void WetEngine::loadAssetsPCW() {
 
 	LibFile *missions = loadLib("", "c_misc/missions.lib", false);
@@ -278,6 +322,7 @@ void WetEngine::loadAssetsFullGame() {
 	Code *end_credits = new Code("<credits>");
 	_levels["<credits>"] = end_credits;
 
+	ArcadeShooting *arc;
 	loadArcadeLevel("c110.mi_", "c10", "<check_lives>", "");
 	loadArcadeLevel("c111.mi_", "c10", "<check_lives>", "");
 	loadArcadeLevel("c112.mi_", "c10", "<check_lives>", "");
@@ -302,6 +347,18 @@ void WetEngine::loadAssetsFullGame() {
 	loadArcadeLevel("c201.mi_", "c31", "<check_lives>", "");
 	loadArcadeLevel("c202.mi_", "c31", "<check_lives>", "");
 
+	arc = (ArcadeShooting*) _levels["c200.mi_"];
+	arc->mouseBox.right = 320;
+	arc->mouseBox.bottom = 135;
+
+	arc = (ArcadeShooting*) _levels["c201.mi_"];
+	arc->mouseBox.right = 320;
+	arc->mouseBox.bottom = 135;
+
+	arc = (ArcadeShooting*) _levels["c202.mi_"];
+	arc->mouseBox.right = 320;
+	arc->mouseBox.bottom = 135;
+
 	loadArcadeLevel("c310.mi_", "c32", "<check_lives>", "");
 	loadArcadeLevel("c311.mi_", "c32", "<check_lives>", "");
 	loadArcadeLevel("c312.mi_", "c32", "<check_lives>", "");
@@ -315,7 +372,7 @@ void WetEngine::loadAssetsFullGame() {
 	loadArcadeLevel("c332.mi_", "c30", "<check_lives>", "");
 
 	loadArcadeLevel("c300.mi_", "c41", "<check_lives>", "");
-	ArcadeShooting *arc = (ArcadeShooting*) _levels["c300.mi_"];
+	arc = (ArcadeShooting*) _levels["c300.mi_"];
 	arc->id = 30; // Fixed from the original (3)
 
 	loadArcadeLevel("c301.mi_", "c41", "<check_lives>", "");

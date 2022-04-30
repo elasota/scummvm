@@ -62,10 +62,11 @@ static void(*_on_switchout_callback)(void) = nullptr;
 // KEYBOARD INPUT
 // ----------------------------------------------------------------------------
 
-KeyInput ags_keycode_from_scummvm(const Common::Event &event) {
+KeyInput ags_keycode_from_scummvm(const Common::Event &event, bool old_keyhandle) {
 	KeyInput ki;
 
-	ki.Key = ::AGS::g_events->scummvm_key_to_ags_key(event);
+	ki.Key = ::AGS::g_events->scummvm_key_to_ags_key(event, ki.Mod, old_keyhandle);
+	ki.CompatKey = ::AGS::g_events->scummvm_key_to_ags_key(event, ki.Mod, true);
 
 	return ki;
 }
@@ -79,7 +80,7 @@ Common::Event ags_get_next_keyevent() {
 }
 
 int ags_iskeydown(eAGSKeyCode ags_key) {
-	return ::AGS::g_events->isKeyPressed(ags_key);
+	return ::AGS::g_events->isKeyPressed(ags_key, _GP(game).options[OPT_KEYHANDLEAPI] == 0);
 }
 
 void ags_simulate_keypress(eAGSKeyCode ags_key) {
@@ -208,12 +209,8 @@ void ags_mouse_get_relxy(int &x, int &y) {
 	_G(mouse_accum_rely) = 0;
 }
 
-void ags_domouse(int what) {
-	// do mouse is "update the mouse x,y and also the cursor position", unless DOMOUSE_NOCURSOR is set.
-	if (what == DOMOUSE_NOCURSOR)
-		mgetgraphpos();
-	else
-		domouse(what);
+void ags_domouse() {
+	mgetgraphpos();
 }
 
 int ags_check_mouse_wheel() {

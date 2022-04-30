@@ -180,11 +180,17 @@ Globals::Globals() {
 	_actspswbcache = new std::vector<CachedActSpsData>();
 	_guibg = new std::vector<Shared::Bitmap *>();
 	_guibgbmp = new std::vector<Engine::IDriverDependantBitmap *>();
+	_debugRoomMaskBmp = new std::unique_ptr<Shared::Bitmap>();
+	_debugMoveListBmp = new std::unique_ptr<Shared::Bitmap>();
 
 	_maincoltable = new COLOR_MAP();
 	_palette = new color[256];
 	for (int i = 0; i < PALETTE_COUNT; ++i)
 		_palette[i].clear();
+
+	_guiobjbg = new std::vector<Shared::Bitmap *>();
+	_guiobjbmp = new std::vector<Engine::IDriverDependantBitmap *>();
+	_guiobjbmpref = new std::vector<int>();
 
 	// draw_software.cpp globals
 	_BlackRects = new DirtyRects();
@@ -196,7 +202,7 @@ Globals::Globals() {
 	_ResPaths = new ResourcePaths();
 
 	// event.cpp globals
-	_event = new EventHappened[MAXEVENTS + 1];
+	_events = new std::vector<EventHappened>();
 
 	// fonts.cpp globals
 	_fonts = new std::vector<AGS::Shared::Font>();
@@ -333,7 +339,8 @@ Globals::Globals() {
 	_renderDialogOptionsFunc = new NonBlockingScriptFunction("dialog_options_render", 1);
 	_getDialogOptionUnderCursorFunc = new NonBlockingScriptFunction("dialog_options_get_active", 1);
 	_runDialogOptionMouseClickHandlerFunc = new NonBlockingScriptFunction("dialog_options_mouse_click", 2);
-	_runDialogOptionKeyPressHandlerFunc = new NonBlockingScriptFunction("dialog_options_key_press", 2);
+	_runDialogOptionKeyPressHandlerFunc = new NonBlockingScriptFunction("dialog_options_key_press", 3);
+	_runDialogOptionTextInputHandlerFunc = new NonBlockingScriptFunction("dialog_options_text_input", 2);
 	_runDialogOptionRepExecFunc = new NonBlockingScriptFunction("dialog_options_repexec", 1);
 	_scsystem = new ScriptSystem();
 	_scriptModules = new std::vector<PScript>();
@@ -429,9 +436,14 @@ Globals::~Globals() {
 	delete _actspswbcache;
 	delete _guibg;
 	delete _guibgbmp;
+	delete _debugRoomMaskBmp;
+	delete _debugMoveListBmp;
 	delete[] _dynamicallyCreatedSurfaces;
 	delete[] _palette;
 	delete _maincoltable;
+	delete _guiobjbg;
+	delete _guiobjbmp;
+	delete _guiobjbmpref;
 
 	// draw_software.cpp globals
 	delete _BlackRects;
@@ -443,7 +455,7 @@ Globals::~Globals() {
 	delete _ResPaths;
 
 	// event.cpp globals
-	delete[] _event;
+	delete _events;
 
 	// fonts.cpp globals
 	delete _fonts;
@@ -570,6 +582,7 @@ Globals::~Globals() {
 	delete _getDialogOptionUnderCursorFunc;
 	delete _runDialogOptionMouseClickHandlerFunc;
 	delete _runDialogOptionKeyPressHandlerFunc;
+	delete _runDialogOptionTextInputHandlerFunc;
 	delete _runDialogOptionRepExecFunc;
 	delete _scsystem;
 	delete _scriptModules;

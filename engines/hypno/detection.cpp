@@ -132,6 +132,16 @@ static const ADGameDescription gameDescriptions[] = {
 		GUIO1(GUIO_NOMIDI)
 	},
 	{
+		"wetlands", // Non Interactive demo featured in several game magazines
+		"NonInteractive",
+		AD_ENTRY2s("playsmks.exe", "edc5b0c0caf3d5b01d344cb555d9a085", 422607,
+				"wetmusic.81m", "0d99c63ce19633d09569b1fdcdff1505", 2833439),
+		Common::EN_USA,
+		Common::kPlatformDOS,
+		ADGF_TESTING | ADGF_DEMO,
+		GUIO1(GUIO_NOMIDI)
+	},
+	{
 		"wetlands", // Wetlands (US)
 		nullptr,
 		AD_ENTRY2s("wetlands.exe", "15a6b1b3819ef002438df340509b5373", 647447,
@@ -159,7 +169,18 @@ static const ADGameDescription gameDescriptions[] = {
 		Common::ES_ESP,
 		Common::kPlatformDOS,
 		ADGF_UNSTABLE,
-		GUIO1(GUIO_NOMIDI)},
+		GUIO1(GUIO_NOMIDI)
+	},
+	{
+		"wetlands", // Wetlands (KO)
+		nullptr,
+		AD_ENTRY2s("wetlands.exe", "edc5b0c0caf3d5b01d344cb555d9a085", 360151,
+				"missions.lib", "aeaaa8b26ab17e37f060334a311a3ff6", 309793),
+		Common::KO_KOR,
+		Common::kPlatformDOS,
+		ADGF_UNSTABLE,
+		GUIO1(GUIO_NOMIDI)
+	},
 	{
 		"soldierboyz", // Solidier Boyz (US)
 		nullptr,
@@ -186,18 +207,40 @@ static const char *const directoryGlobs[] = {
 	nullptr
 };
 
-static const ExtraGuiOption hypnoExtraGuiOptionCheats = {
-	_s("Enable cheats"),
+static const ExtraGuiOption hypnoExtraGuiOptionOriginalCheats = {
+	_s("Enable original cheats"),
 	_s("Allow cheats using the C key."),
 	"cheats",
-	false
+	false,
+	0,
+	0
+};
+
+static const ExtraGuiOption hypnoExtraGuiOptionInfiniteHealthCheat = {
+	_s("Enable infinite health cheat"),
+	_s("Player health will never decrease (except for game over scenes)."),
+	"infiniteHealth",
+	false,
+	0,
+	0
+};
+
+static const ExtraGuiOption hypnoExtraGuiOptionInfiniteAmmoCheat = {
+	_s("Enable infinite ammo cheat"),
+	_s("Player ammo will never decrease."),
+	"infiniteAmmo",
+	false,
+	0,
+	0
 };
 
 static const ExtraGuiOption hypnoExtraGuiOptionRestoredContent = {
 	_s("Enable restored content"),
 	_s("Add additional content that is not enabled the original implementation."),
 	"restored",
-	false
+	false,
+	0,
+	0
 };
 
 class HypnoMetaEngineDetection : public AdvancedMetaEngineDetection {
@@ -231,7 +274,9 @@ public:
 
 const ExtraGuiOptions HypnoMetaEngineDetection::getExtraGuiOptions(const Common::String &target) const {
 	ExtraGuiOptions options;
-	options.push_back(hypnoExtraGuiOptionCheats);
+	options.push_back(hypnoExtraGuiOptionOriginalCheats);
+	options.push_back(hypnoExtraGuiOptionInfiniteHealthCheat);
+	options.push_back(hypnoExtraGuiOptionInfiniteAmmoCheat);
 	options.push_back(hypnoExtraGuiOptionRestoredContent);
 	return options;
 }

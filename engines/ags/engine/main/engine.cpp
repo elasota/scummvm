@@ -183,7 +183,7 @@ static String find_game_data_in_config(const String &path) {
 	ConfigTree cfg;
 	String def_cfg_file = Path::ConcatPaths(path, DefaultConfigFileName);
 	if (IniUtil::Read(def_cfg_file, cfg)) {
-		String data_file = INIreadstring(cfg, "misc", "datafile");
+		String data_file = CfgReadString(cfg, "misc", "datafile");
 		Debug::Printf("Found game config: %s", def_cfg_file.GetCStr());
 		Debug::Printf(" Cfg: data file: %s", data_file.GetCStr());
 		// Only accept if it's a relative path
@@ -326,24 +326,22 @@ void engine_init_timer() {
 
 void engine_init_audio() {
 #if !AGS_PLATFORM_SCUMMVM
-	if (usetup.audio_backend != 0)
-    {
-        Debug::Printf("Initializing audio");
-        try {
-            audio_core_init(); // audio core system
-        } catch(std::runtime_error) {
-            Debug::Printf("Failed to initialize audio, disabling.");
-            usetup.audio_backend = 0;
-        }
-    }
+	if (usetup.audio_backend != 0) {
+		Debug::Printf("Initializing audio");
+		try {
+			audio_core_init(); // audio core system
+		} catch (std::runtime_error ex) {
+			Debug::Printf(kDbgMsg_Error, "Failed to initialize audio: %s", ex.what());
+			usetup.audio_backend = 0;
+		}
+	}
 #endif
 
-	_G(our_eip) = -181;
-
-	if (_GP(usetup).audio_backend == 0) {
+	if (!_GP(usetup).audio_enabled) {
 		// all audio is disabled
 		_GP(play).voice_avail = false;
 		_GP(play).separate_music_lib = false;
+		Debug::Printf(kDbgMsg_Info, "Audio is disabled");
 	}
 }
 
@@ -382,22 +380,6 @@ int engine_load_game_data() {
 		display_game_file_error(err);
 		return EXIT_ERROR;
 	}
-	return 0;
-}
-
-int engine_check_register_game() {
-	if (_G(justRegisterGame)) {
-		_G(platform)->RegisterGameWithGameExplorer();
-		_G(proper_exit) = 1;
-		return EXIT_NORMAL;
-	}
-
-	if (_G(justUnRegisterGame)) {
-		_G(platform)->UnRegisterGameWithGameExplorer();
-		_G(proper_exit) = 1;
-		return EXIT_NORMAL;
-	}
-
 	return 0;
 }
 
@@ -947,9 +929,9 @@ void engine_read_config(ConfigTree &cfg) {
 	// Handle directive to search for the user config inside the custom directory;
 		// this option may come either from command line or default/global config.
 	if (_GP(usetup).user_conf_dir.IsEmpty())
-		_GP(usetup).user_conf_dir = INIreadstring(cfg, "misc", "user_conf_dir");
+		_GP(usetup).user_conf_dir = CfgReadString(cfg, "misc", "user_conf_dir");
 	if (_GP(usetup).user_conf_dir.IsEmpty()) // also try deprecated option
-		_GP(usetup).user_conf_dir = INIreadint(cfg, "misc", "localuserconf") != 0 ? "." : "";
+		_GP(usetup).user_conf_dir = CfgReadBoolInt(cfg, "misc", "localuserconf") ? "." : "";
 	// Test if the file is writeable, if it is then both engine and setup
 	// applications may actually use it fully as a user config, otherwise
 	// fallback to default behavior.
@@ -967,7 +949,7 @@ void engine_read_config(ConfigTree &cfg) {
 
 	// Handle directive to search for the user config inside the game directory;
 	// this option may come either from command line or default/global config.
-	_GP(usetup).local_user_conf |= INIreadint(cfg, "misc", "localuserconf", 0) != 0;
+	_GP(usetup).local_user_conf |= CfgReadInt(cfg, "misc", "localuserconf", 0) != 0;
 	if (_GP(usetup).local_user_conf) { // Test if the file is writeable, if it is then both engine and setup
 	  // applications may actually use it fully as a user config, otherwise
 	  // fallback to default behavior.
@@ -1164,10 +1146,6 @@ int initialize_engine(const ConfigTree &startup_opts) {
 	if (res != 0)
 		return res;
 
-	res = engine_check_register_game();
-	if (res != 0)
-		return res;
-
 	_G(our_eip) = -189;
 
 	res = engine_check_disk_space();
@@ -1217,6 +1195,8 @@ int initialize_engine(const ConfigTree &startup_opts) {
 
 bool engine_try_set_gfxmode_any(const DisplayModeSetup &setup) {
 	engine_shutdown_gfxmode();
+
+	sys_renderer_set_output(_GP(usetup).software_render_driver);
 
 	const Size init_desktop = get_desktop_size();
 	bool res = graphics_mode_init_any(GraphicResolution(_GP(game).GetGameRes(), _GP(game).color_depth * 8),

@@ -203,10 +203,6 @@ int main_process_cmdline(ConfigTree &cfg, int argc, const char *argv[]) {
 		} else if (ags_stricmp(arg, "--noexceptionhandler") == 0) _GP(usetup).disable_exception_handling = true;
 		else if (ags_stricmp(arg, "--setup") == 0) {
 			_G(justRunSetup) = true;
-		} else if (ags_stricmp(arg, "--registergame") == 0) {
-			_G(justRegisterGame) = true;
-		} else if (ags_stricmp(arg, "--unregistergame") == 0) {
-			_G(justUnRegisterGame) = true;
 		} else if ((ags_stricmp(arg, "--loadsavedgame") == 0) && (argc > ee + 1)) {
 			_G(loadSaveGameOnStartup) = atoi(argv[ee + 1]);
 			ee++;
@@ -236,7 +232,7 @@ int main_process_cmdline(ConfigTree &cfg, int argc, const char *argv[]) {
 			_GP(play).takeover_from[49] = 0;
 			ee += 2;
 		} else if (ags_stricmp(arg, "--clear-cache-on-room-change") == 0) {
-			INIwritestring(cfg, "misc", "clear_cache_on_room_change", "1");
+			CfgWriteString(cfg, "misc", "clear_cache_on_room_change", "1");
 		} else if (ags_strnicmp(arg, "--tell", 6) == 0) {
 			if (arg[6] == 0)
 				_G(tellInfoKeys).insert(String("all"));
@@ -255,19 +251,19 @@ int main_process_cmdline(ConfigTree &cfg, int argc, const char *argv[]) {
 		else if (ags_stricmp(arg, "--fullscreen") == 0)
 			cfg["graphics"]["windowed"] = "0";
 		else if ((ags_stricmp(arg, "--gfxdriver") == 0) && (argc > ee + 1)) {
-			INIwritestring(cfg, "graphics", "driver", argv[++ee]);
+			CfgWriteString(cfg, "graphics", "driver", argv[++ee]);
 		} else if ((ags_stricmp(arg, "--gfxfilter") == 0) && (argc > ee + 1)) {
 			// NOTE: we make an assumption here that if user provides scaling factor,
 			// this factor means to be applied to windowed mode only.
-			INIwritestring(cfg, "graphics", "filter", argv[++ee]);
+			CfgWriteString(cfg, "graphics", "filter", argv[++ee]);
 			if (argc > ee + 1 && argv[ee + 1][0] != '-')
-				INIwritestring(cfg, "graphics", "game_scale_win", argv[++ee]);
+				CfgWriteString(cfg, "graphics", "game_scale_win", argv[++ee]);
 			else
-				INIwritestring(cfg, "graphics", "game_scale_win", "max_round");
+				CfgWriteString(cfg, "graphics", "game_scale_win", "max_round");
 		} else if ((ags_stricmp(arg, "--translation") == 0) && (argc > ee + 1)) {
-			INIwritestring(cfg, "language", "translation", argv[++ee]);
+			CfgWriteString(cfg, "language", "translation", argv[++ee]);
 		} else if (ags_stricmp(arg, "--no-translation") == 0) {
-			INIwritestring(cfg, "language", "translation", "");
+			CfgWriteString(cfg, "language", "translation", "");
 		} else if (ags_stricmp(arg, "--fps") == 0) _G(display_fps) = kFPS_Forced;
 		else if (ags_stricmp(arg, "--test") == 0) _G(debug_flags) |= DBG_DEBUGMODE;
 		else if (ags_stricmp(arg, "--noiface") == 0) _G(debug_flags) |= DBG_NOIFACE;
@@ -279,11 +275,11 @@ int main_process_cmdline(ConfigTree &cfg, int argc, const char *argv[]) {
 		else if (ags_stricmp(arg, "--noscript") == 0) _G(debug_flags) |= DBG_NOSCRIPT;
 		else if (ags_stricmp(arg, "--novideo") == 0) _G(debug_flags) |= DBG_NOVIDEO;
 		else if (ags_stricmp(arg, "--rotation") == 0 && (argc > ee + 1)) {
-			INIwritestring(cfg, "graphics", "rotation", argv[++ee]);
+			CfgWriteString(cfg, "graphics", "rotation", argv[++ee]);
 		} else if (ags_strnicmp(arg, "--log-", 6) == 0 && arg[6] != 0) {
 			String logarg = arg + 6;
 			size_t split_at = logarg.FindChar('=');
-			if (split_at != String::npos)
+			if (split_at != String::NoIndex)
 				cfg["log"][logarg.Left(split_at)] = logarg.Mid(split_at + 1);
 			else
 				cfg["log"][logarg] = "";

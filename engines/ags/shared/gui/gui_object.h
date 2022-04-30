@@ -60,9 +60,14 @@ public:
 	bool            IsVisible() const;
 	// implemented separately in engine and editor
 	bool            IsClickable() const;
+    // Compatibility: should the control's graphic be clipped to its x,y,w,h
+    virtual bool    IsContentClipped() const { return true; }
+	// Tells if the object image supports alpha channel
+	virtual bool    HasAlphaChannel() const;
 
 	// Operations
-	virtual void    Draw(Bitmap *ds) {
+	virtual void    Draw(Bitmap *ds, int x = 0, int y = 0) {
+		(void)ds; (void)x; (void)y;
 	}
 	void            SetClickable(bool on);
 	void            SetEnabled(bool on);
@@ -71,7 +76,7 @@ public:
 
 	// Events
 	// Key pressed for control
-	virtual void    OnKeyPress(const KeyInput &ki) {}
+	virtual void    OnKeyPress(const KeyInput &) {}
 	// Mouse button down - return 'True' to lock focus
 	virtual bool    OnMouseDown() {
 		return false;
@@ -83,7 +88,7 @@ public:
 	virtual void    OnMouseLeave() {
 	}
 	// Mouse moves over control - x,y relative to gui
-	virtual void    OnMouseMove(int x, int y) {
+	virtual void    OnMouseMove(int /*x*/, int /*y*/) {
 	}
 	// Mouse button up
 	virtual void    OnMouseUp() {

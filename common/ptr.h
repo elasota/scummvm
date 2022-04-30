@@ -101,7 +101,6 @@ template<class T, class DL>
 class BasePtrTrackerDeletionImpl : public BasePtrTrackerInternal {
 public:
 	BasePtrTrackerDeletionImpl(T *ptr, DL d) : _ptr(ptr), _deleter(d) {}
-	~BasePtrTrackerDeletionImpl() { }
 
 private:
 	void destructObject() override {
@@ -322,32 +321,7 @@ public:
 		_tracker = new BasePtrTrackerImpl<T>(ptr);
 	}
 
-	template<class T2>
-	SharedPtr<T2> staticCast() const {
-		return SharedPtr<T2>(static_cast<T2 *>(_pointer), _tracker);
-	}
-
-	template<class T2>
-	SharedPtr<T2> constCast() const {
-		return SharedPtr<T2>(const_cast<T2 *>(_pointer), _tracker);
-	}
-
-	template<class T2>
-	SharedPtr<T2> reinterpretCast() const {
-		return SharedPtr<T2>(reinterpret_cast<T2 *>(_pointer), _tracker);
-	}
-
-	template<class T2>
-	SharedPtr<T2> dynamicCast() const {
-		return SharedPtr<T2>(dynamic_cast<T2 *>(_pointer), _tracker);
-	}
-
 private:
-	SharedPtr(T *pointer, BasePtrTrackerInternal *tracker) : _pointer(pointer), _tracker(tracker) {
-		if (tracker)
-			tracker->incStrong();
-	}
-
 	T *_pointer;
 	BasePtrTrackerInternal *_tracker;
 };
@@ -433,16 +407,6 @@ public:
 		return *this;
 	}
 
-	template<class T2>
-	bool operator==(const WeakPtr<T2> &r) const {
-		return _pointer == r._pointer && _tracker == r._tracker;
-	}
-
-	template<class T2>
-	bool operator!=(const WeakPtr<T2> &r) const {
-		return !((*this) == r);
-	}
-
 	/**
 	 * Resets the object to a NULL pointer.
 	 */
@@ -485,32 +449,7 @@ public:
 			oldTracker->decWeak();
 	}
 
-	template<class T2>
-	WeakPtr<T2> staticCast() const {
-		return WeakPtr<T2>(static_cast<T2 *>(_pointer), _tracker);
-	}
-
-	template<class T2>
-	WeakPtr<T2> constCast() const {
-		return WeakPtr<T2>(const_cast<T2 *>(_pointer), _tracker);
-	}
-
-	template<class T2>
-	WeakPtr<T2> reinterpretCast() const {
-		return WeakPtr<T2>(reinterpret_cast<T2 *>(_pointer), _tracker);
-	}
-
-	template<class T2>
-	WeakPtr<T2> dynamicCast() const {
-		return WeakPtr<T2>(dynamic_cast<T2 *>(_pointer), _tracker);
-	}
-
 private:
-	WeakPtr(T *pointer, BasePtrTrackerInternal *tracker) : _pointer(pointer), _tracker(tracker) {
-		if (tracker)
-			tracker->incWeak();
-	}
-
 	T *_pointer;
 	BasePtrTrackerInternal *_tracker;
 };

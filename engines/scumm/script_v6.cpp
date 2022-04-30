@@ -1115,6 +1115,20 @@ void ScummEngine_v6::o6_setCameraAt() {
 
 void ScummEngine_v6::o6_loadRoom() {
 	int room = pop();
+
+	// WORKAROUND bug #13378: During Sam's reactions to Max beating up the
+	// scientist in the intro, we sometimes have to slow down animations
+	// artificially. This is where we speed them back up again.
+	if (_game.id == GID_SAMNMAX && vm.slot[_currentScript].number == 65 && room == 6 && _enableEnhancements) {
+		int actors[] = { 2, 3, 10 };
+
+		for (int i = 0; i < ARRAYSIZE(actors); i++) {
+			Actor *a = derefActorSafe(actors[i], "o6_animateActor");
+			if (a && a->getAnimSpeed() > 0)
+				a->setAnimSpeed(0);
+		}
+	}
+
 	startScene(room, nullptr, 0);
 	if (_game.heversion >= 61) {
 		setCameraAt(camera._cur.x, 0);
@@ -1249,6 +1263,17 @@ void ScummEngine_v6::o6_animateActor() {
 			stopTalk();
 		}
 	}
+	if (_game.id == GID_SAMNMAX && _roomResource == 47 && vm.slot[_currentScript].number == 202 &&
+		act == 2 && anim == 249 && _enableEnhancements) {
+		// WORKAROUND for bug #3832: parts of Bruno are left on the screen when he
+		// escapes Bumpusville with Trixie. Bruno (act. 11) and Trixie (act. 12) are
+		// properly removed from the scene by the script, but not the combined actor
+		// which is used by this animation (act. 6).
+		Actor *a = derefActorSafe(6, "o6_animateActor");
+		if (a && a->_costume == 243)
+			a->putActor(0, 0, 0);
+	}
+
 	Actor *a = derefActor(act, "o6_animateActor");
 	a->animateActor(anim);
 }

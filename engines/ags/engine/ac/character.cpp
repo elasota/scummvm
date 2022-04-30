@@ -701,17 +701,13 @@ void Character_SayAt(CharacterInfo *chaa, int x, int y, int width, const char *t
 }
 
 ScriptOverlay *Character_SayBackground(CharacterInfo *chaa, const char *texx) {
-
 	int ovltype = DisplaySpeechBackground(chaa->index_id, texx);
 	int ovri = find_overlay_of_type(ovltype);
 	if (ovri < 0)
 		quit("!SayBackground internal error: no overlay");
 
 	ScriptOverlay *scOver = create_scriptobj_for_overlay(_GP(screenover)[ovri]);
-	scOver->borderHeight = 0;
-	scOver->borderWidth = 0;
-	scOver->isBackgroundSpeech = 1;
-
+	scOver->hasInternalRef = true; // keep at least until internal timeout
 	return scOver;
 }
 
@@ -2351,7 +2347,7 @@ void _displayspeech(const char *texx, int aschar, int xx, int yy, int widd, int 
 	Bitmap *closeupface = nullptr;
 	// TODO: we always call _display_at later which may also start voice-over;
 	// find out if this may be refactored and voice started only in one place.
-	try_auto_play_speech(texx, texx, aschar, true);
+	try_auto_play_speech(texx, texx, aschar);
 
 	if (_GP(game).options[OPT_SPEECHTYPE] == 3)
 		remove_screen_overlay(OVER_COMPLETE);
@@ -3546,7 +3542,7 @@ void ScPl_Character_Think(CharacterInfo *chaa, const char *texx, ...) {
 	Character_Think(chaa, scsf_buffer);
 }
 
-void RegisterCharacterAPI(ScriptAPIVersion base_api, ScriptAPIVersion compat_api) {
+void RegisterCharacterAPI(ScriptAPIVersion base_api, ScriptAPIVersion /* compat_api */) {
 	ccAddExternalObjectFunction("Character::AddInventory^2",            Sc_Character_AddInventory);
 	ccAddExternalObjectFunction("Character::AddWaypoint^2",             Sc_Character_AddWaypoint);
 	ccAddExternalObjectFunction("Character::Animate^5",                 Sc_Character_Animate);

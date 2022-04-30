@@ -1313,11 +1313,14 @@ void Actor_v3::walkActor() {
 			return;
 		}
 
-		// Can't walk through locked boxes
-		int flags = _vm->getBoxFlags(next_box);
-		if ((flags & kBoxLocked) && !((flags & kBoxPlayerOnly) && !isPlayer())) {
-			_moving |= MF_LAST_LEG;
-			return;
+		// This is version specific for ZAK FM-TOWNS. The flags check that is present in later SCUMM versions does not exist
+		// in SCUMM3. I have looked at disams of ZAK FM-TOWNS, LOOM FM-TOWNS, LOOM DOS EGA, INDY3 FM-TOWNS, INDY3 DOS VGA.
+		if (_vm->_game.id == GID_ZAK) {
+			// Check for equals, not for a bit mask (otherwise: bug no. 13399)
+			if (_vm->getBoxFlags(next_box) == kBoxLocked) {
+				_moving |= MF_LAST_LEG;
+				return;
+			}
 		}
 
 		_walkdata.curbox = next_box;
@@ -1516,6 +1519,21 @@ void Actor::setDirection(int direction) {
 		vald = _cost.frame[i];
 		if (vald == 0xFFFF)
 			continue;
+		if (!(_vm->_game.features & GF_NEW_COSTUMES)) {
+			// Fix bug mentioned here: https://github.com/scummvm/scummvm/pull/3795/
+			// For versions 1 to 6 we need to store the direction info in the frame array (like
+			// the original interpreters do). I haven't found any signs that v7/8 require it, though.
+			// I haven't checked HE, but since it uses the same AKOS costumes as v7/8 I leave that
+			// as it is...	
+			if ((vald & 3) == newDirToOldDir(_facing)) {
+				// v1/2 skip the frame only if everything is equal...
+				if (_vm->_game.version > 2 || (vald >> 2) == _frame)
+					continue;
+			}
+			vald >>= 2;
+			if (_vm->_game.version < 3)
+				_frame = vald;
+		}
 		_vm->_costumeLoader->costumeDecodeData(this, vald, (_vm->_game.version <= 2) ? 0xFFFF : aMask);
 	}
 
@@ -3799,6 +3817,16 @@ void Actor::saveLoadWithSerializer(Common::Serializer &s) {
 		}
 
 		setDirection(_facing);
+	}
+
+	if (s.isLoading() && _vm->_game.version > 0 && !(_vm->_game.features & GF_NEW_COSTUMES) && s.getVersion() < VER(105)) {
+		// For older saves, we can't reconstruct the frame's direction if it is different from the actor
+		// direction, this is the best we can do. However, it seems to be relevant only for very rare
+		// edge cases, anyway...
+		for (int i = 0; i < 16; ++i) {
+			if (_cost.frame[i] != 0xffff)
+				_cost.frame[i] = (_cost.frame[i] << 2) | newDirToOldDir(_facing);
+		}
 	}
 }
 

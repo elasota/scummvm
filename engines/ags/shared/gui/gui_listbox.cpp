@@ -19,8 +19,9 @@
  *
  */
 
-#include "ags/shared/font/fonts.h"
 #include "ags/shared/gui/gui_listbox.h"
+#include "ags/shared/ac/game_version.h"
+#include "ags/shared/font/fonts.h"
 #include "ags/shared/gui/gui_main.h"
 #include "ags/shared/util/stream.h"
 #include "ags/shared/util/string_utils.h"
@@ -92,7 +93,7 @@ void GUIListBox::Clear() {
 	NotifyParentChanged();
 }
 
-void GUIListBox::Draw(Shared::Bitmap *ds) {
+void GUIListBox::Draw(Bitmap *ds, int x, int y) {
 	const int width = Width - 1;
 	const int height = Height - 1;
 	const int pixel_size = get_fixed_pixel_size(1);
@@ -100,58 +101,59 @@ void GUIListBox::Draw(Shared::Bitmap *ds) {
 	color_t text_color = ds->GetCompatibleColor(TextColor);
 	color_t draw_color = ds->GetCompatibleColor(TextColor);
 	if (IsBorderShown()) {
-		ds->DrawRect(Rect(X, Y, X + width + (pixel_size - 1), Y + height + (pixel_size - 1)), draw_color);
+		ds->DrawRect(Rect(x, y, x + width + (pixel_size - 1), y + height + (pixel_size - 1)), draw_color);
 		if (pixel_size > 1)
-			ds->DrawRect(Rect(X + 1, Y + 1, X + width, Y + height), draw_color);
+			ds->DrawRect(Rect(x + 1, y + 1, x + width, y + height), draw_color);
 	}
 
-	int right_hand_edge = (X + width) - pixel_size - 1;
+	int right_hand_edge = (x + width) - pixel_size - 1;
 
 	// update the RowHeight and VisibleItemCount
 	// FIXME: find a way to update this whenever relevant things change in the engine
 	UpdateMetrics();
 
 	// draw the scroll bar in if necessary
-	if (ItemCount > VisibleItemCount && IsBorderShown() && AreArrowsShown()) {
+	bool scrollbar = (ItemCount > VisibleItemCount) && IsBorderShown() && AreArrowsShown();
+	if (scrollbar) {
 		int xstrt, ystrt;
-		ds->DrawRect(Rect(X + width - get_fixed_pixel_size(7), Y, (X + (pixel_size - 1) + width) - get_fixed_pixel_size(7), Y + height), draw_color);
-		ds->DrawRect(Rect(X + width - get_fixed_pixel_size(7), Y + height / 2, X + width, Y + height / 2 + (pixel_size - 1)), draw_color);
+		ds->DrawRect(Rect(x + width - get_fixed_pixel_size(7), y, (x + (pixel_size - 1) + width) - get_fixed_pixel_size(7), y + height), draw_color);
+		ds->DrawRect(Rect(x + width - get_fixed_pixel_size(7), y + height / 2, x + width, y + height / 2 + (pixel_size - 1)), draw_color);
 
-		xstrt = (X + width - get_fixed_pixel_size(6)) + (pixel_size - 1);
-		ystrt = (Y + height - 3) - get_fixed_pixel_size(5);
+		xstrt = (x + width - get_fixed_pixel_size(6)) + (pixel_size - 1);
+		ystrt = (y + height - 3) - get_fixed_pixel_size(5);
 
 		draw_color = ds->GetCompatibleColor(TextColor);
 		ds->DrawTriangle(Triangle(xstrt, ystrt, xstrt + get_fixed_pixel_size(4), ystrt,
-		                          xstrt + get_fixed_pixel_size(2),
-		                          ystrt + get_fixed_pixel_size(5)), draw_color);
+			xstrt + get_fixed_pixel_size(2),
+			ystrt + get_fixed_pixel_size(5)), draw_color);
 
-		ystrt = Y + 3;
+		ystrt = y + 3;
 		ds->DrawTriangle(Triangle(xstrt, ystrt + get_fixed_pixel_size(5),
-		                          xstrt + get_fixed_pixel_size(4),
-		                          ystrt + get_fixed_pixel_size(5),
-		                          xstrt + get_fixed_pixel_size(2), ystrt), draw_color);
+			xstrt + get_fixed_pixel_size(4),
+			ystrt + get_fixed_pixel_size(5),
+			xstrt + get_fixed_pixel_size(2), ystrt), draw_color);
 
 		right_hand_edge -= get_fixed_pixel_size(7);
 	}
 
-	// FIXME: cut this out, and let editor add real items for display
-	DrawItemsFix();
-
+	Rect old_clip = ds->GetClip();
+	if (scrollbar && GUI::Options.ClipControls)
+		ds->SetClip(Rect(x, y, right_hand_edge + 1, y + Height - 1));
 	for (int item = 0; item < VisibleItemCount; ++item) {
 		if (item + TopItem >= ItemCount)
 			break;
 
-		int at_y = Y + pixel_size + item * RowHeight;
+		int at_y = y + pixel_size + item * RowHeight;
 		if (item + TopItem == SelectedItem) {
 			text_color = ds->GetCompatibleColor(SelectedTextColor);
 			if (SelectedBgColor > 0) {
-				int stretch_to = (X + width) - pixel_size;
+				int stretch_to = (x + width) - pixel_size;
 				// draw the SelectedItem item bar (if colour not transparent)
 				draw_color = ds->GetCompatibleColor(SelectedBgColor);
 				if ((VisibleItemCount < ItemCount) && IsBorderShown() && AreArrowsShown())
 					stretch_to -= get_fixed_pixel_size(7);
 
-				ds->FillRect(Rect(X + pixel_size, at_y, stretch_to, at_y + RowHeight - pixel_size), draw_color);
+				ds->FillRect(Rect(x + pixel_size, at_y, stretch_to, at_y + RowHeight - pixel_size), draw_color);
 			}
 		} else
 			text_color = ds->GetCompatibleColor(TextColor);
@@ -159,11 +161,10 @@ void GUIListBox::Draw(Shared::Bitmap *ds) {
 		int item_index = item + TopItem;
 		PrepareTextToDraw(Items[item_index]);
 
-		GUI::DrawTextAlignedHor(ds, _textToDraw.GetCStr(), Font, text_color, X + 1 + pixel_size, right_hand_edge, at_y + 1,
-		                        (FrameAlignment)TextAlignment);
+		GUI::DrawTextAlignedHor(ds, _textToDraw.GetCStr(), Font, text_color, x + 1 + pixel_size, right_hand_edge, at_y + 1,
+			(FrameAlignment)TextAlignment);
 	}
-
-	DrawItemsUnfix();
+	ds->SetClip(old_clip);
 }
 
 int GUIListBox::InsertItem(int index, const String &text) {
@@ -267,7 +268,9 @@ void GUIListBox::OnResized() {
 }
 
 void GUIListBox::UpdateMetrics() {
-	RowHeight = get_font_height(Font) + get_fixed_pixel_size(2);
+	int font_height = (_G(loaded_game_file_version) < kGameVersion_360_21) ?
+		get_font_height(Font) : get_font_height_outlined(Font);
+	RowHeight = font_height + get_fixed_pixel_size(2); // +1 top/bottom margin
 	VisibleItemCount = Height / RowHeight;
 	if (ItemCount <= VisibleItemCount)
 		TopItem = 0; // reset scroll if all items are visible

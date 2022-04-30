@@ -100,6 +100,8 @@ public:
 	Common::Platform _platform;
 	Common::String _variant;
 	bool _cheatsEnabled;
+	bool _infiniteHealthCheat;
+	bool _infiniteAmmoCheat;
 	bool _restoredContentEnabled;
 
 	Audio::SoundHandle _soundHandle;
@@ -240,6 +242,11 @@ public:
 	// Arcade
 	Common::String _arcadeMode;
 	MVideo *_background;
+	Filename _currentPalette;
+	virtual bool availableObjectives();
+	virtual bool checkArcadeObjectives();
+	virtual bool checkTransition(ArcadeTransitions &transitions, ArcadeShooting *arc);
+	virtual Common::Point getPlayerPosition(bool needsUpdate);
 	virtual Common::Point computeTargetPosition(const Common::Point &mousePos);
 	virtual int detectTarget(const Common::Point &mousePos);
 	virtual void pressedKey(const int keycode);
@@ -288,6 +295,7 @@ public:
 
 	Common::String _difficulty;
 	bool _skipLevel;
+	bool _loseLevel;
 	bool _skipDefeatVideo;
 
 	virtual void drawCursorArcade(const Common::Point &mousePos);
@@ -368,6 +376,8 @@ public:
 	void loadAssetsPCW();
 	void loadAssetsPCG();
 	void loadAssetsFullGame();
+	void loadAssetsNI();
+
 	void loadFonts() override;
 	void drawString(const Filename &name, const Common::String &str, int x, int y, int w, uint32 c) override;
 
@@ -394,6 +404,8 @@ public:
 	void saveProfile(const Common::String &name, int levelId);
 
 	// Arcade
+	Common::Point getPlayerPosition(bool needsUpdate) override;
+	bool checkTransition(ArcadeTransitions &transitions, ArcadeShooting *arc) override;
 	void pressedKey(const int keycode) override;
 	void runBeforeArcade(ArcadeShooting *arc) override;
 	void runAfterArcade(ArcadeShooting *arc) override;
@@ -408,6 +420,9 @@ private:
 	void endCredits(Code *code);
 	void showDemoScore();
 	uint32 findPaletteIndexZones(uint32 id);
+
+	Frames _c33PlayerCursor;
+	Common::Point _c33PlayerPosition;
 
 	Common::BitArray _font05;
 	Common::BitArray _font08;

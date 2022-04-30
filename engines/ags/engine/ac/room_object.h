@@ -46,6 +46,8 @@ using namespace AGS; // FIXME later
 // keep that in mind if extending this struct, and dont change existing fields
 // unless you plan on adjusting plugin API as well.
 struct RoomObject {
+	static const uint16_t NoView = UINT16_MAX;
+
 	int   x, y;
 	int   transparent;    // current transparency setting
 	short tint_r, tint_g;   // specific object tint
@@ -79,8 +81,6 @@ struct RoomObject {
 	}
 
 	void UpdateCyclingView(int ref_id);
-	void update_cycle_view_forwards();
-	void update_cycle_view_backwards();
 
 	void ReadFromSavegame(Shared::Stream *in, int save_ver);
 	void WriteToSavegame(Shared::Stream *out) const;

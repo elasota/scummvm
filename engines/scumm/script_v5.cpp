@@ -511,6 +511,11 @@ void ScummEngine_v5::o5_actorOps() {
 			// remap the colors, it uses the wrong indexes. The
 			// CD animation uses colors 1-3, where the floppy
 			// version uses 2, 3, and 9.
+			//
+			// We don't touch the colours in general - the Special
+			// edition have pretty much made them canon anyway -
+			// but for the Smirk close-up we want the same colors
+			// as the floppy version.
 
 			if (_game.id == GID_MONKEY && _currentRoom == 76) {
 				if (i == 3)
@@ -1700,6 +1705,13 @@ void ScummEngine_v5::o5_putActor() {
 		} else if (x == 176 && y == 78) {
 			x = 172;
 		}
+	} else if (_game.id == GID_ZAK && _game.platform == Common::kPlatformFMTowns && _currentRoom == 42 && vm.slot[_currentScript].number == 201 && act == 6 && x == 136 && y == 0 && _enableEnhancements) {
+		// WORKAROUND: bug #2762: When switching back to Zak after using the blue
+		// crystal on the bird in Lima, the bird will disappear, come back and
+		// disappear again. This is really strange and only happens with the
+		// FM-TOWNS version, which adds an unconditional putActor(6,136,0) sequence
+		// that will always negate the getActorX()/getActorY() checks that follow.
+		return;
 	}
 
 	Actor *a = derefActor(act, "o5_putActor");
@@ -1965,10 +1977,11 @@ void ScummEngine_v5::o5_roomOps() {
 			// we want the original color 3 for the cigar smoke. It
 			// should be ok since there is no GUI in this scene.
 
-			if (_game.id == GID_MONKEY && _currentRoom == 76 && d == 3 && _enableEnhancements)
-				break;
-
-			setPalColor(d, a, b, c);	/* index, r, g, b */
+			if (_game.id == GID_MONKEY && _currentRoom == 76 && d == 3 && _enableEnhancements) {
+				// Do nothing
+			} else {
+				setPalColor(d, a, b, c);	/* index, r, g, b */
+			}
 		}
 		break;
 	case 5:		// SO_ROOM_SHAKE_ON

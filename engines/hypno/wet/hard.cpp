@@ -49,9 +49,12 @@ void WetEngine::runCode(Code *code) {
 }
 
 void WetEngine::runCheckLives(Code *code) {
-	if (_lives < 0)
+	if (_lives < 0) {
 		_nextLevel = "<game_over>";
-	else
+		_score = 0;
+		_lives = 2;
+		saveProfile(_name, _lastLevel);
+	} else
 		_nextLevel = _checkpoint;
 }
 
@@ -79,6 +82,7 @@ void WetEngine::runLevelMenu(Code *code) {
 	loadPalette((byte *) &lime, 192+currentLevel, 1);
 	drawImage(*menu, 0, 0, false);
 	bool cont = true;
+	playSound("sound/bub01.raw", 0, 22050);
 	while (!shouldQuit() && cont) {
 		while (g_system->getEventManager()->pollEvent(event)) {
 			// Events
@@ -90,12 +94,13 @@ void WetEngine::runLevelMenu(Code *code) {
 
 			case Common::EVENT_KEYDOWN:
 				if (event.kbd.keycode == Common::KEYCODE_DOWN && currentLevel < _lastLevel) {
-					playSound("sound/extra.raw", 1, 11025);
+					playSound("sound/m_hilite.raw", 1, 11025);
 					currentLevel++;
 				} else if (event.kbd.keycode == Common::KEYCODE_UP && currentLevel > 0) {
-					playSound("sound/extra.raw", 1, 11025);
+					playSound("sound/m_hilite.raw", 1, 11025);
 					currentLevel--;
 				} else if (event.kbd.keycode == Common::KEYCODE_RETURN ) {
+					playSound("sound/m_choice.raw", 1, 11025);
 					_nextLevel = Common::String::format("c%d", _ids[currentLevel]);
 					cont = false;
 				}
@@ -179,11 +184,27 @@ void WetEngine::runMainMenu(Code *code) {
 	} else
 		_lastLevel = 0;
 
+	if (_name == "ELRAPIDO") {
+		_infiniteAmmoCheat = true;
+		playSound("sound/extra.raw", 1);
+	}
+
+	if (_name == "SAVANNAH") {
+		_infiniteHealthCheat = true;
+		playSound("sound/extra.raw", 1);
+	}
+
 	_name.toLowercase();
 	bool found = loadProfile(_name);
 
-	if (found)
+	if (found) {
+		menu->free();
+		delete menu;
+		overlay->free();
+		delete overlay;
 		return;
+	}
+
 
 	saveProfile(_name, _ids[_lastLevel]);
 
@@ -252,7 +273,10 @@ void WetEngine::runMainMenu(Code *code) {
 
 	_difficulty = difficulties[idx];
 	_nextLevel = code->levelIfWin;
-
+	menu->free();
+	delete menu;
+	overlay->free();
+	delete overlay;
 }
 
 void WetEngine::showDemoScore() {

@@ -196,19 +196,13 @@ void set_game_speed(int new_fps) {
 void setup_for_dialog() {
 	_G(cbuttfont) = _GP(play).normal_font;
 	_G(acdialog_font) = _GP(play).normal_font;
-	if (!_GP(play).mouse_cursor_hidden)
-		ags_domouse(DOMOUSE_ENABLE);
 	_G(oldmouse) = _G(cur_cursor);
 	set_mouse_cursor(CURS_ARROW);
 }
 void restore_after_dialog() {
 	set_mouse_cursor(_G(oldmouse));
-	if (!_GP(play).mouse_cursor_hidden)
-		ags_domouse(DOMOUSE_DISABLE);
 	invalidate_screen();
 }
-
-
 
 String get_save_game_directory() {
 	return _G(saveGameDirectory);
@@ -393,7 +387,7 @@ void unload_game_file() {
 
 	_GP(dialogScriptsScript).reset();
 
-	for (int i = 0; i < _G(numScriptModules); ++i) {
+	for (size_t i = 0; i < _G(numScriptModules); ++i) {
 		delete _GP(moduleInstFork)[i];
 		delete _GP(moduleInst)[i];
 		_GP(scriptModules)[i].reset();
@@ -409,6 +403,7 @@ void unload_game_file() {
 	_GP(getDialogOptionUnderCursorFunc).moduleHasFunction.resize(0);
 	_GP(runDialogOptionMouseClickHandlerFunc).moduleHasFunction.resize(0);
 	_GP(runDialogOptionKeyPressHandlerFunc).moduleHasFunction.resize(0);
+	_GP(runDialogOptionTextInputHandlerFunc).moduleHasFunction.resize(0);
 	_GP(runDialogOptionRepExecFunc).moduleHasFunction.resize(0);
 	_G(numScriptModules) = 0;
 
@@ -954,9 +949,11 @@ bool read_savedgame_screenshot(const String &savedgame, int &want_shot) {
 
 // Test if the game file contains expected GUID / legacy id
 bool test_game_guid(const String &filepath, const String &guid, int legacy_id) {
+	std::unique_ptr<AssetManager> amgr(new AssetManager());
+	if (amgr->AddLibrary(filepath) != kAssetNoError)
+		return false;
 	MainGameSource src;
-	HGameFileError err = OpenMainGameFileFromDefaultAsset(src);
-	if (!err)
+	if (!OpenMainGameFileFromDefaultAsset(src, amgr.get()))
 		return false;
 	GameSetupStruct g;
 	PreReadGameData(g, src.InputStream.get(), src.DataVersion);
@@ -998,7 +995,7 @@ HSaveError load_game(const String &path, int slotNumber, bool &data_overwritten)
 			String gamefile = FindGameData(_GP(ResPaths).DataDir, TestGame);
 
 			if (Shared::File::TestReadFile(gamefile)) {
-				RunAGSGame(desc.MainDataFilename, 0, 0);
+				RunAGSGame(gamefile.GetCStr(), 0, 0);
 				_G(load_new_game_restore) = slotNumber;
 				return HSaveError::None();
 			}
@@ -1341,11 +1338,11 @@ void get_message_text(int msnum, char *buffer, char giveErr) {
 	replace_tokens(get_translation(_GP(thisroom).Messages[msnum].GetCStr()), buffer, maxlen);
 }
 
-bool unserialize_audio_script_object(int index, const char *objectType, const char *serializedData, int dataSize) {
+bool unserialize_audio_script_object(int index, const char *objectType, Stream *in, size_t data_sz) {
 	if (strcmp(objectType, "AudioChannel") == 0) {
-		_GP(ccDynamicAudio).Unserialize(index, serializedData, dataSize);
+		_GP(ccDynamicAudio).Unserialize(index, in, data_sz);
 	} else if (strcmp(objectType, "AudioClip") == 0) {
-		_GP(ccDynamicAudioClip).Unserialize(index, serializedData, dataSize);
+		_GP(ccDynamicAudioClip).Unserialize(index, in, data_sz);
 	} else {
 		return false;
 	}

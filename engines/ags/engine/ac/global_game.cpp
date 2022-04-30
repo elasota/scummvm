@@ -186,8 +186,8 @@ void FillSaveList(std::vector<SaveListItem> &saves, size_t max_count) {
 	for (uint idx = 0; idx < saveList.size(); ++idx) {
 		int saveGameSlot = saveList[idx].getSaveSlot();
 
-		// only list games .000 to .099 (to allow higher slots for other perposes)
-		if (saveGameSlot > 99)
+		// only list games .000 to .xxx (to allow higher slots for other perposes)
+		if (saveGameSlot < 0 || saveGameSlot > TOP_LISTEDSAVESLOT)
 			continue;
 
 		String description;
@@ -771,6 +771,10 @@ void SetGraphicalVariable(const char *varName, int p_value) {
 }
 
 int WaitImpl(int skip_type, int nloops) {
+	// if skipping cutscene and expecting user input: don't wait at all
+	if (_GP(play).fast_forward && ((skip_type & ~SKIP_AUTOTIMER) != 0))
+		return 0;
+
 	_GP(play).wait_counter = nloops;
 	_GP(play).wait_skipped_by = SKIP_NONE;
 	_GP(play).wait_skipped_by = SKIP_AUTOTIMER; // we set timer flag by default to simplify that case
@@ -805,6 +809,10 @@ int WaitMouseKey(int nloops) {
 
 void SkipWait() {
 	_GP(play).wait_counter = 0;
+}
+
+void scStartRecording(int /*keyToStop*/) {
+	debug_script_warn("StartRecording: not supported");
 }
 
 } // namespace AGS3

@@ -31,6 +31,9 @@ BoyzEngine::BoyzEngine(OSystem *syst, const ADGameDescription *gd) : HypnoEngine
 	_screenH = 200;
 	_lives = 2;
 	_currentWeapon = 0;
+	_currentActor = 0;
+	_currentMode = NonInteractive;
+	_crosshairsPalette = nullptr;
 }
 
 void BoyzEngine::loadAssets() {
@@ -153,6 +156,9 @@ void BoyzEngine::loadAssets() {
 	_crosshairsTarget[6].create(cursorBox.width(), cursorBox.height(), _pixelFormat);
 	_crosshairsTarget[6].copyRectToSurface(*targets, 0, 0, cursorBox);
 	*/
+
+	targets->free();
+	delete targets;
 	_nextLevel = "c11.mi_";
 }
 

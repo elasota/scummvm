@@ -318,7 +318,7 @@ HError ReadMainBlock(RoomStruct *room, Stream *in, RoomFileVersion data_ver) {
 }
 
 // Room script sources (original text)
-HError ReadScriptBlock(char *&buf, Stream *in, RoomFileVersion data_ver) {
+HError ReadScriptBlock(char *&buf, Stream *in, RoomFileVersion /*data_ver*/) {
 	size_t len = in->ReadInt32();
 	buf = new char[len + 1];
 	in->Read(buf, len);
@@ -329,7 +329,7 @@ HError ReadScriptBlock(char *&buf, Stream *in, RoomFileVersion data_ver) {
 }
 
 // Compiled room script
-HError ReadCompSc3Block(RoomStruct *room, Stream *in, RoomFileVersion data_ver) {
+HError ReadCompSc3Block(RoomStruct *room, Stream *in, RoomFileVersion /*data_ver*/) {
 	room->CompiledScript.reset(ccScript::CreateFromStream(in));
 	if (room->CompiledScript == nullptr)
 		return new RoomFileError(kRoomFileErr_ScriptLoadFailed, _G(ccErrorString));
@@ -338,10 +338,10 @@ HError ReadCompSc3Block(RoomStruct *room, Stream *in, RoomFileVersion data_ver) 
 
 // Room object names
 HError ReadObjNamesBlock(RoomStruct *room, Stream *in, RoomFileVersion data_ver) {
-	size_t name_count = in->ReadByte();
+	size_t name_count = static_cast<uint8_t>(in->ReadInt8());
 	if (name_count != room->ObjectCount)
 		return new RoomFileError(kRoomFileErr_InconsistentData,
-			String::FromFormat("In the object names block, expected name count: %d, got %d", room->ObjectCount, name_count));
+			String::FromFormat("In the object names block, expected name count: %zu, got %zu", room->ObjectCount, name_count));
 
 	for (size_t i = 0; i < room->ObjectCount; ++i) {
 		if (data_ver >= kRoomVersion_3415)
@@ -354,10 +354,10 @@ HError ReadObjNamesBlock(RoomStruct *room, Stream *in, RoomFileVersion data_ver)
 
 // Room object script names
 HError ReadObjScNamesBlock(RoomStruct *room, Stream *in, RoomFileVersion data_ver) {
-	size_t name_count = in->ReadByte();
+	size_t name_count = static_cast<uint8_t>(in->ReadInt8());
 	if (name_count != room->ObjectCount)
 		return new RoomFileError(kRoomFileErr_InconsistentData,
-			String::FromFormat("In the object script names block, expected name count: %d, got %d", room->ObjectCount, name_count));
+			String::FromFormat("In the object script names block, expected name count: %zu, got %zu", room->ObjectCount, name_count));
 
 	for (size_t i = 0; i < room->ObjectCount; ++i) {
 		if (data_ver >= kRoomVersion_3415)
@@ -389,7 +389,7 @@ HError ReadAnimBgBlock(RoomStruct *room, Stream *in, RoomFileVersion data_ver) {
 }
 
 // Read custom properties
-HError ReadPropertiesBlock(RoomStruct *room, Stream *in, RoomFileVersion data_ver) {
+HError ReadPropertiesBlock(RoomStruct *room, Stream *in, RoomFileVersion /*data_ver*/) {
 	int prop_ver = in->ReadInt32();
 	if (prop_ver != 1)
 		return new RoomFileError(kRoomFileErr_PropertiesBlockFormat, String::FromFormat("Expected version %d, got %d", 1, prop_ver));
@@ -476,7 +476,8 @@ private:
 	}
 
 	HError ReadBlock(int block_id, const String &ext_id,
-		soff_t block_len, bool &read_next) override {
+			soff_t block_len, bool &read_next) override {
+		read_next = true;
 		return ReadRoomBlock(_room, _in, (RoomFileBlock)block_id, ext_id, block_len, _dataVer);
 	}
 
@@ -611,7 +612,8 @@ HRoomFileError UpdateRoomData(RoomStruct *room, RoomFileVersion data_ver, bool g
 	// Older format room messages had flags appended to the message string
 	// TODO: find out which data versions had these; is it safe to assume this was before kRoomVersion_pre114_3?
 	for (size_t i = 0; i < room->MessageCount; ++i) {
-		if (!room->Messages[i].IsEmpty() && room->Messages[i].GetLast() == (char)ROOM_MESSAGE_FLAG_DISPLAYNEXT) {
+		if (!room->Messages[i].IsEmpty() &&
+				static_cast<uint8_t>(room->Messages[i].GetLast()) == ROOM_MESSAGE_FLAG_DISPLAYNEXT) {
 			room->Messages[i].ClipRight(1);
 			room->MessageInfos[i].Flags |= MSG_DISPLAYNEXT;
 		}

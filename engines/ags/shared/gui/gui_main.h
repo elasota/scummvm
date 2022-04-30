@@ -105,19 +105,20 @@ public:
 	// Clears changed flag
 	void        ClearChanged();
 
-	int32_t FindControlUnderMouse() const;
-	// this version allows some extra leeway in the Editor so that
-	// the user can grab tiny controls
-	int32_t FindControlUnderMouse(int leeway) const;
-	int32_t FindControlUnderMouse(int leeway, bool must_be_clickable) const;
+	// Finds a control under given screen coordinates, returns control's child ID.
+	// Optionally allows extra leeway (offset in all directions) to let the user grab tiny controls.
+	// Optionally only allows clickable controls, ignoring non-clickable ones.
+	int32_t FindControlAt(int atx, int aty, int leeway = 0, bool must_be_clickable = true) const;
 	// Gets the number of the GUI child controls
 	int32_t GetControlCount() const;
 	// Gets control by its child's index
-	GUIObject *GetControl(int index) const;
+	GUIObject *GetControl(int32_t index) const;
 	// Gets child control's type, looks up with child's index
-	GUIControlType GetControlType(int index) const;
+	GUIControlType GetControlType(int32_t index) const;
 	// Gets child control's global ID, looks up with child's index
-	int32_t GetControlID(int index) const;
+	int32_t GetControlID(int32_t index) const;
+	// Gets an array of child control indexes in the z-order, from bottom to top
+	const std::vector<int> &GetControlsDrawOrder() const;
 
 	// Child control management
 	// Note that currently GUIMain does not own controls (should not delete them)
@@ -125,20 +126,21 @@ public:
 	void    RemoveAllControls();
 
 	// Operations
-	bool    BringControlToFront(int index);
-	void    Draw(Bitmap *ds);
-	void    DrawAt(Bitmap *ds, int x, int y);
-	void    Poll();
+	bool    BringControlToFront(int32_t index);
+	void    DrawSelf(Bitmap *ds);
+	void    DrawWithControls(Bitmap *ds);
+	// Polls GUI state, providing current cursor (mouse) coordinates
+	void    Poll(int mx, int my);
 	HError  RebuildArray();
 	void    ResortZOrder();
-	bool    SendControlToBack(int index);
+	bool    SendControlToBack(int32_t index);
 	// Sets whether GUI should react to player clicking on it
 	void    SetClickable(bool on);
 	// Override GUI visibility; when in concealed mode GUI won't show up
 	// even if Visible = true
 	void    SetConceal(bool on);
 	// Attempts to change control's zorder; returns if zorder changed
-	bool    SetControlZOrder(int index, int zorder);
+	bool    SetControlZOrder(int32_t index, int zorder);
 	// Changes GUI style to the text window or back
 	void    SetTextWindow(bool on);
 	// Sets GUI transparency as a percentage (0 - 100) where 100 = invisible
@@ -147,7 +149,7 @@ public:
 	void    SetVisible(bool on);
 
 	// Events
-	void    OnMouseButtonDown();
+	void    OnMouseButtonDown(int mx, int my);
 	void    OnMouseButtonUp();
 	void    OnControlPositionChanged();
 
@@ -161,6 +163,8 @@ public:
 
 private:
 	void    DrawBlob(Bitmap *ds, int x, int y, color_t draw_color);
+	// Same as FindControlAt but expects local space coordinates
+	int32_t FindControlAtLocal(int atx, int aty, int leeway, bool must_be_clickable) const;
 
 	// TODO: all members are currently public; hide them later
 public:
@@ -189,7 +193,7 @@ public:
 
 	String  OnClickHandler; // script function name
 
-	private:
+private:
 	int32_t _flags;         // style and behavior flags
 	bool    _hasChanged;    // flag tells whether GUI has graphically changed recently
 
@@ -245,9 +249,6 @@ void ApplyLegacyVisibility(GUIMain &gui, LegacyGUIVisState vis);
 extern int get_adjusted_spritewidth(int spr);
 extern int get_adjusted_spriteheight(int spr);
 extern bool is_sprite_alpha(int spr);
-
-// Those function have distinct implementations in Engine and Editor
-extern int get_text_width_outlined(Shared::Bitmap *ds, const char *tex, int font);
 
 #define SET_EIP(x) set_our_eip(x);
 extern void set_eip_guiobj(int eip);

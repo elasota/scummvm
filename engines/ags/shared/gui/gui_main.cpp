@@ -91,7 +91,12 @@ void GUIMain::InitDefaults() {
 	_ctrlDrawOrder.clear();
 }
 
-int32_t GUIMain::FindControlUnderMouse(int leeway, bool must_be_clickable) const {
+int32_t GUIMain::FindControlAt(int atx, int aty, int leeway, bool must_be_clickable) const {
+	// translate to GUI's local coordinates
+	return FindControlAtLocal(atx - X, aty - Y, leeway, must_be_clickable);
+}
+
+int32_t GUIMain::FindControlAtLocal(int atx, int aty, int leeway, bool must_be_clickable) const {
 	if (_G(loaded_game_file_version) <= kGameVersion_262) {
 		// Ignore draw order On 2.6.2 and lower
 		for (size_t i = 0; i < _controls.size(); ++i) {
@@ -99,7 +104,7 @@ int32_t GUIMain::FindControlUnderMouse(int leeway, bool must_be_clickable) const
 				continue;
 			if (!_controls[i]->IsClickable() && must_be_clickable)
 				continue;
-			if (_controls[i]->IsOverControl(_G(mousex), _G(mousey), leeway))
+			if (_controls[i]->IsOverControl(atx, aty, leeway))
 				return i;
 		}
 	} else {
@@ -109,41 +114,37 @@ int32_t GUIMain::FindControlUnderMouse(int leeway, bool must_be_clickable) const
 				continue;
 			if (!_controls[ctrl_index]->IsClickable() && must_be_clickable)
 				continue;
-			if (_controls[ctrl_index]->IsOverControl(_G(mousex), _G(mousey), leeway))
+			if (_controls[ctrl_index]->IsOverControl(atx, aty, leeway))
 				return ctrl_index;
 		}
 	}
 	return -1;
 }
 
-int32_t GUIMain::FindControlUnderMouse() const {
-	return FindControlUnderMouse(0, true);
-}
-
-int32_t GUIMain::FindControlUnderMouse(int leeway) const {
-	return FindControlUnderMouse(leeway, true);
-}
-
 int32_t GUIMain::GetControlCount() const {
 	return (int32_t)_controls.size();
 }
 
-GUIObject *GUIMain::GetControl(int index) const {
+GUIObject *GUIMain::GetControl(int32_t index) const {
 	if (index < 0 || (size_t)index >= _controls.size())
 		return nullptr;
 	return _controls[index];
 }
 
-GUIControlType GUIMain::GetControlType(int index) const {
+GUIControlType GUIMain::GetControlType(int32_t index) const {
 	if (index < 0 || (size_t)index >= _ctrlRefs.size())
 		return kGUIControlUndefined;
 	return _ctrlRefs[index].first;
 }
 
-int32_t GUIMain::GetControlID(int index) const {
+int32_t GUIMain::GetControlID(int32_t index) const {
 	if (index < 0 || (size_t)index >= _ctrlRefs.size())
 		return -1;
 	return _ctrlRefs[index].second;
+}
+
+const std::vector<int> &GUIMain::GetControlsDrawOrder() const {
+	return _ctrlDrawOrder;
 }
 
 bool GUIMain::IsClickable() const {
@@ -203,50 +204,48 @@ void GUIMain::RemoveAllControls() {
 	_controls.clear();
 }
 
-bool GUIMain::BringControlToFront(int index) {
+bool GUIMain::BringControlToFront(int32_t index) {
 	return SetControlZOrder(index, (int)_controls.size() - 1);
 }
 
-void GUIMain::Draw(Bitmap *ds) {
-	DrawAt(ds, X, Y);
-}
-
-void GUIMain::DrawAt(Bitmap *ds, int x, int y) {
-	SET_EIP(375)
+void GUIMain::DrawSelf(Bitmap *ds) {
+	SET_EIP(375);
 
 	if ((Width < 1) || (Height < 1))
 		return;
 
-	Bitmap subbmp;
-	subbmp.CreateSubBitmap(ds, RectWH(x, y, Width, Height));
-
-	SET_EIP(376)
+	SET_EIP(376);
 	// stop border being transparent, if the whole GUI isn't
 	if ((FgColor == 0) && (BgColor != 0))
 		FgColor = 16;
 
 	if (BgColor != 0)
-		subbmp.Fill(subbmp.GetCompatibleColor(BgColor));
+		ds->Fill(ds->GetCompatibleColor(BgColor));
 
-	SET_EIP(377)
+	SET_EIP(377);
 
 	color_t draw_color;
 	if (FgColor != BgColor) {
-		draw_color = subbmp.GetCompatibleColor(FgColor);
-		subbmp.DrawRect(Rect(0, 0, subbmp.GetWidth() - 1, subbmp.GetHeight() - 1), draw_color);
+		draw_color = ds->GetCompatibleColor(FgColor);
+		ds->DrawRect(Rect(0, 0, ds->GetWidth() - 1, ds->GetHeight() - 1), draw_color);
 		if (get_fixed_pixel_size(1) > 1)
-			subbmp.DrawRect(Rect(1, 1, subbmp.GetWidth() - 2, subbmp.GetHeight() - 2), draw_color);
+			ds->DrawRect(Rect(1, 1, ds->GetWidth() - 2, ds->GetHeight() - 2), draw_color);
 	}
 
-	SET_EIP(378)
+	SET_EIP(378);
 
 	if (BgImage > 0 && _GP(spriteset)[BgImage] != nullptr)
-		draw_gui_sprite(&subbmp, BgImage, 0, 0, false);
+		draw_gui_sprite(ds, BgImage, 0, 0, false);
 
-	SET_EIP(379)
+	SET_EIP(379);
+}
+
+void GUIMain::DrawWithControls(Bitmap *ds) {
+	ds->ResetClip();
+	DrawSelf(ds);
 
 	if ((_G(all_buttons_disabled) >= 0) && (GUI::Options.DisabledStyle == kGuiDis_Blackout))
-        return; // don't draw GUI controls
+		return; // don't draw GUI controls
 
 	for (size_t ctrl_index = 0; ctrl_index < _controls.size(); ++ctrl_index) {
 		set_eip_guiobj(_ctrlDrawOrder[ctrl_index]);
@@ -258,53 +257,52 @@ void GUIMain::DrawAt(Bitmap *ds, int x, int y) {
 		if (!objToDraw->IsVisible())
 			continue;
 
-		if (GUI::Options.ClipControls)
-			subbmp.SetClip(RectWH(objToDraw->X, objToDraw->Y, objToDraw->Width, objToDraw->Height));
-		objToDraw->Draw(&subbmp);
+		if (GUI::Options.ClipControls && objToDraw->IsContentClipped())
+			ds->SetClip(RectWH(objToDraw->X, objToDraw->Y, objToDraw->Width, objToDraw->Height));
+		else
+			ds->ResetClip();
+		objToDraw->Draw(ds, objToDraw->X, objToDraw->Y);
 
 		int selectedColour = 14;
 
 		if (HighlightCtrl == _ctrlDrawOrder[ctrl_index]) {
 			if (GUI::Options.OutlineControls)
 				selectedColour = 13;
-			draw_color = subbmp.GetCompatibleColor(selectedColour);
-			DrawBlob(&subbmp, objToDraw->X + objToDraw->Width - get_fixed_pixel_size(1) - 1, objToDraw->Y, draw_color);
-			DrawBlob(&subbmp, objToDraw->X, objToDraw->Y + objToDraw->Height - get_fixed_pixel_size(1) - 1, draw_color);
-			DrawBlob(&subbmp, objToDraw->X, objToDraw->Y, draw_color);
-			DrawBlob(&subbmp, objToDraw->X + objToDraw->Width - get_fixed_pixel_size(1) - 1,
-			         objToDraw->Y + objToDraw->Height - get_fixed_pixel_size(1) - 1, draw_color);
+			color_t draw_color = ds->GetCompatibleColor(selectedColour);
+			DrawBlob(ds, objToDraw->X + objToDraw->Width - get_fixed_pixel_size(1) - 1, objToDraw->Y, draw_color);
+			DrawBlob(ds, objToDraw->X, objToDraw->Y + objToDraw->Height - get_fixed_pixel_size(1) - 1, draw_color);
+			DrawBlob(ds, objToDraw->X, objToDraw->Y, draw_color);
+			DrawBlob(ds, objToDraw->X + objToDraw->Width - get_fixed_pixel_size(1) - 1,
+				objToDraw->Y + objToDraw->Height - get_fixed_pixel_size(1) - 1, draw_color);
 		}
 		if (GUI::Options.OutlineControls) {
 			// draw a dotted outline round all objects
-			draw_color = subbmp.GetCompatibleColor(selectedColour);
+			color_t draw_color = ds->GetCompatibleColor(selectedColour);
 			for (int i = 0; i < objToDraw->Width; i += 2) {
-				subbmp.PutPixel(i + objToDraw->X, objToDraw->Y, draw_color);
-				subbmp.PutPixel(i + objToDraw->X, objToDraw->Y + objToDraw->Height - 1, draw_color);
+				ds->PutPixel(i + objToDraw->X, objToDraw->Y, draw_color);
+				ds->PutPixel(i + objToDraw->X, objToDraw->Y + objToDraw->Height - 1, draw_color);
 			}
 			for (int i = 0; i < objToDraw->Height; i += 2) {
-				subbmp.PutPixel(objToDraw->X, i + objToDraw->Y, draw_color);
-				subbmp.PutPixel(objToDraw->X + objToDraw->Width - 1, i + objToDraw->Y, draw_color);
+				ds->PutPixel(objToDraw->X, i + objToDraw->Y, draw_color);
+				ds->PutPixel(objToDraw->X + objToDraw->Width - 1, i + objToDraw->Y, draw_color);
 			}
 		}
 	}
 
-	SET_EIP(380)
+	SET_EIP(380);
 }
 
 void GUIMain::DrawBlob(Bitmap *ds, int x, int y, color_t draw_color) {
 	ds->FillRect(Rect(x, y, x + get_fixed_pixel_size(1), y + get_fixed_pixel_size(1)), draw_color);
 }
 
-void GUIMain::Poll() {
-	int mxwas = _G(mousex), mywas = _G(mousey);
-
-	_G(mousex) -= X;
-	_G(mousey) -= Y;
-	if (_G(mousex) != MouseWasAt.X || _G(mousey) != MouseWasAt.Y) {
-		int ctrl_index = FindControlUnderMouse();
+void GUIMain::Poll(int mx, int my) {
+	mx -= X, my -= Y; // translate to GUI's local coordinates
+	if (mx != MouseWasAt.X || my != MouseWasAt.Y) {
+		int ctrl_index = FindControlAtLocal(mx, my, 0, true);
 
 		if (MouseOverCtrl == MOVER_MOUSEDOWNLOCKED)
-			_controls[MouseDownCtrl]->OnMouseMove(_G(mousex), _G(mousey));
+			_controls[MouseDownCtrl]->OnMouseMove(mx, my);
 		else if (ctrl_index != MouseOverCtrl) {
 			if (MouseOverCtrl >= 0)
 				_controls[MouseOverCtrl]->OnMouseLeave();
@@ -320,18 +318,16 @@ void GUIMain::Poll() {
 				MouseOverCtrl = ctrl_index;
 				if (MouseOverCtrl >= 0) {
 					_controls[MouseOverCtrl]->OnMouseEnter();
-					_controls[MouseOverCtrl]->OnMouseMove(_G(mousex), _G(mousey));
+					_controls[MouseOverCtrl]->OnMouseMove(mx, my);
 				}
 			}
 			//MarkChanged(); // TODO: only do if anything really changed
 		} else if (MouseOverCtrl >= 0)
-			_controls[MouseOverCtrl]->OnMouseMove(_G(mousex), _G(mousey));
+			_controls[MouseOverCtrl]->OnMouseMove(mx, my);
 	}
 
-	MouseWasAt.X = _G(mousex);
-	MouseWasAt.Y = _G(mousey);
-	_G(mousex) = mxwas;
-	_G(mousey) = mywas;
+	MouseWasAt.X = mx;
+	MouseWasAt.Y = my;
 }
 
 HError GUIMain::RebuildArray() {
@@ -397,11 +393,11 @@ void GUIMain::SetConceal(bool on) {
 	MarkChanged();
 }
 
-bool GUIMain::SendControlToBack(int index) {
+bool GUIMain::SendControlToBack(int32_t index) {
 	return SetControlZOrder(index, 0);
 }
 
-bool GUIMain::SetControlZOrder(int index, int zorder) {
+bool GUIMain::SetControlZOrder(int32_t index, int zorder) {
 	if (index < 0 || (size_t)index >= _controls.size())
 		return false; // no such control
 
@@ -457,19 +453,19 @@ void GUIMain::OnControlPositionChanged() {
 	MarkChanged();
 }
 
-void GUIMain::OnMouseButtonDown() {
+void GUIMain::OnMouseButtonDown(int mx, int my) {
 	if (MouseOverCtrl < 0)
 		return;
 
 	// don't activate disabled buttons
 	if (!IsGUIEnabled(_controls[MouseOverCtrl]) || !_controls[MouseOverCtrl]->IsVisible() ||
-	        !_controls[MouseOverCtrl]->IsClickable())
+		!_controls[MouseOverCtrl]->IsClickable())
 		return;
 
 	MouseDownCtrl = MouseOverCtrl;
 	if (_controls[MouseOverCtrl]->OnMouseDown())
 		MouseOverCtrl = MOVER_MOUSEDOWNLOCKED;
-	_controls[MouseDownCtrl]->OnMouseMove(_G(mousex) - X, _G(mousey) - Y);
+	_controls[MouseDownCtrl]->OnMouseMove(mx - X, my - Y);
 	//MarkChanged(); // TODO: only do if anything really changed
 }
 
@@ -649,15 +645,15 @@ void DrawDisabledEffect(Bitmap *ds, const Rect &rc) {
 }
 
 void DrawTextAligned(Bitmap *ds, const char *text, int font, color_t text_color, const Rect &frame, FrameAlignment align) {
-	int text_height = get_font_height(font);
-	if (align & kMAlignVCenter)
-		text_height++; // CHECKME
-	Rect item = AlignInRect(frame, RectWH(0, 0, get_text_width(text, font), text_height), align);
+	int text_height = (_G(loaded_game_file_version) < kGameVersion_360_21) ?
+		get_font_height(font) + ((align & kMAlignVCenter) ? 1 : 0) :
+		get_font_height_outlined(font);
+	Rect item = AlignInRect(frame, RectWH(0, 0, get_text_width_outlined(text, font), text_height), align);
 	wouttext_outline(ds, item.Left, item.Top, font, text_color, text);
 }
 
 void DrawTextAlignedHor(Bitmap *ds, const char *text, int font, color_t text_color, int x1, int x2, int y, FrameAlignment align) {
-	int x = AlignInHRange(x1, x2, 0, get_text_width(text, font), align);
+	int x = AlignInHRange(x1, x2, 0, get_text_width_outlined(text, font), align);
 	wouttext_outline(ds, x, y, font, text_color, text);
 }
 
@@ -718,8 +714,7 @@ GUILabelMacro FindLabelMacros(const String &text) {
 				// Test which macro it is (if any)
 				macro_at++;
 				const size_t macro_len = ptr - macro_at;
-				if (macro_len == (size_t)-1 || macro_len > 20); // skip zero-length or too long substrings
-				else if (ags_strnicmp(macro_at, "gamename", macro_len) == 0)
+				if (ags_strnicmp(macro_at, "gamename", macro_len) == 0)
 					macro_flags |= kLabelMacro_Gamename;
 				else if (ags_strnicmp(macro_at, "overhotspot", macro_len) == 0)
 					macro_flags |= kLabelMacro_Overhotspot;
@@ -736,16 +731,15 @@ GUILabelMacro FindLabelMacros(const String &text) {
 	return (GUILabelMacro)macro_flags;
 }
 
-HError ResortGUI(std::vector<GUIMain> &theGuis, bool bwcompat_ctrl_zorder = false) {
+static HError ResortGUI(bool bwcompat_ctrl_zorder = false) {
 	// set up the reverse-lookup array
-	for (size_t gui_index = 0; gui_index < theGuis.size(); ++gui_index) {
-		GUIMain &gui = theGuis[gui_index];
+	for (auto &gui : _GP(guis)) {
 		HError err = gui.RebuildArray();
 		if (!err)
 			return err;
 		for (int ctrl_index = 0; ctrl_index < gui.GetControlCount(); ++ctrl_index) {
 			GUIObject *gui_ctrl = gui.GetControl(ctrl_index);
-			gui_ctrl->ParentId = gui_index;
+			gui_ctrl->ParentId = gui.ID;
 			gui_ctrl->Id = ctrl_index;
 			if (bwcompat_ctrl_zorder)
 				gui_ctrl->ZOrder = ctrl_index;
@@ -857,7 +851,7 @@ HError ReadGUI(Stream *in, bool is_savegame) {
 			_GP(guilist)[i].ReadFromFile(in, GameGuiVersion);
 		}
 	}
-	return ResortGUI(_GP(guis), GameGuiVersion < kGuiVersion_272e);
+	return ResortGUI(GameGuiVersion < kGuiVersion_272e);
 }
 
 void WriteGUI(Stream *out) {

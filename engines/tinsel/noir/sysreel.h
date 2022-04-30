@@ -19,13 +19,31 @@
  *
  */
 
-#include "ags/engine/ac/global_record.h"
-#include "ags/shared/ac/common.h"
+#ifndef TINSEL_SYSREEL_H // prevent multiple includes
+#define TINSEL_SYSREEL_H
 
-namespace AGS3 {
+#include "tinsel/dw.h"
 
-void scStartRecording(int keyToStop) {
-	quit("!StartRecording: not supported");
-}
+namespace Tinsel {
 
-} // namespace AGS3
+class SystemReel {
+public:
+	SystemReel() = default;
+
+	SCNHANDLE Get(int32 index);
+	void Set(int32 index, SCNHANDLE reel);
+
+private:
+	const static int32 MAX_SYSREELS = 0x28;
+
+	enum {
+		SYSREEL_CURSOR = 11,
+		SYSREEL_LOADSCREEN = 0x1f
+	};
+
+	SCNHANDLE _reels[MAX_SYSREELS];
+};
+
+} // End of namespace Tinsel
+
+#endif

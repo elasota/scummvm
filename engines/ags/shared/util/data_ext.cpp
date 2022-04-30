@@ -37,8 +37,8 @@ String GetDataExtErrorText(DataExtErrorType err) {
 		return "Block data overlapping.";
 	case kDataExtErr_BlockNotFound:
 		return "Block not found.";
+	default: return "Unknown error.";
 	}
-	return "Unknown error.";
 }
 
 HError DataExtParser::OpenBlock() {
@@ -126,7 +126,7 @@ void WriteExtBlock(int block, const String &ext_id, PfnWriteExtBlock writer, int
 	// Write block's header
 	(flags & kDataExt_NumID32) != 0 ?
 		out->WriteInt32(block) :
-		out->WriteInt8(block);
+		out->WriteInt8(static_cast<int8_t>(block));
 	if (block == 0) // new-style string id
 		ext_id.WriteCount(out, 16);
 	soff_t sz_at = out->GetPosition();

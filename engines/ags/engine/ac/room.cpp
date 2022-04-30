@@ -245,7 +245,7 @@ void unload_old_room() {
 	}
 
 	cancel_all_scripts();
-	_G(numevents) = 0;  // cancel any pending room events
+	_GP(events).clear();  // cancel any pending room events
 
 	if (_G(roomBackgroundBmp) != nullptr) {
 		_G(gfxDriver)->DestroyDDB(_G(roomBackgroundBmp));
@@ -261,6 +261,8 @@ void unload_old_room() {
 		_G(roominst) = nullptr;
 	} else _G(croom)->tsdatasize = 0;
 	memset(&_GP(play).walkable_areas_on[0], 1, MAX_WALK_AREAS + 1);
+	_GP(play).bg_frame = 0;
+	_GP(play).bg_frame_locked = 0;
 	remove_screen_overlay(-1);
 	delete _G(raw_saved_screen);
 	_G(raw_saved_screen) = nullptr;
@@ -469,6 +471,10 @@ void load_new_room(int newnum, CharacterInfo *forchar) {
 	_GP(play).anim_background_speed = _GP(thisroom).BgAnimSpeed;
 	_GP(play).bg_anim_delay = _GP(play).anim_background_speed;
 
+	// Fixup the frame index, in case the new room does not have enough background frames
+	if (_GP(play).bg_frame < 0 || static_cast<size_t>(_GP(play).bg_frame) >= _GP(thisroom).BgFrameCount)
+		_GP(play).bg_frame = 0;
+
 	// do the palette
 	for (cc = 0; cc < 256; cc++) {
 		if (_GP(game).paluses[cc] == PAL_BACKGROUND)
@@ -563,7 +569,7 @@ void load_new_room(int newnum, CharacterInfo *forchar) {
 			_G(croom)->obj[cc].y = _GP(thisroom).Objects[cc].Y;
 			_G(croom)->obj[cc].num = Math::InRangeOrDef<uint16_t>(_GP(thisroom).Objects[cc].Sprite, 0);
 			_G(croom)->obj[cc].on = _GP(thisroom).Objects[cc].IsOn;
-			_G(croom)->obj[cc].view = (uint16) - 1;
+			_G(croom)->obj[cc].view = RoomObject::NoView;
 			_G(croom)->obj[cc].loop = 0;
 			_G(croom)->obj[cc].frame = 0;
 			_G(croom)->obj[cc].wait = 0;
@@ -927,7 +933,7 @@ void new_room(int newnum, CharacterInfo *forchar) {
 
 	load_new_room(newnum, forchar);
 
-	// Reset background frame state (it's not a part of the RoomStatus currently)
+	// Update background frame state (it's not a part of the RoomStatus currently)
 	_GP(play).bg_frame = 0;
 	_GP(play).bg_frame_locked = (_GP(thisroom).Options.Flags & kRoomFlag_BkgFrameLocked) != 0;
 }
@@ -970,7 +976,7 @@ void check_new_room() {
 		evh.type = EV_RUNEVBLOCK;
 		evh.data1 = EVB_ROOM;
 		evh.data2 = 0;
-		evh.data3 = 5;
+		evh.data3 = EVROM_BEFOREFADEIN;
 		evh.player = _GP(game).playercharacter;
 		// make sure that any script calls don't re-call enters screen
 		int newroom_was = _G(in_new_room);
