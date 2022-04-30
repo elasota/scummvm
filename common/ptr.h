@@ -409,7 +409,7 @@ public:
 	 */
 	template<class T2>
 	WeakPtr<T2> staticCast() const {
-		return expired() ? WeakPtr<T2>() : WeakPtr<T2>(static_cast<T2 *>(_pointer), _tracker);
+		return WeakPtr<T2>(expired() ? nullptr : static_cast<T2 *>(_pointer), _tracker);
 	}
 
 	/**
@@ -417,7 +417,7 @@ public:
 	 */
 	template<class T2>
 	WeakPtr<T2> dynamicCast() const {
-		return expired() ? WeakPtr<T2>() : WeakPtr<T2>(dynamic_cast<T2 *>(_pointer), _tracker);
+		return WeakPtr<T2>(expired() ? nullptr : dynamic_cast<T2 *>(_pointer), _tracker);
 	}
 
 	/**
@@ -425,7 +425,7 @@ public:
 	 */
 	template<class T2>
 	WeakPtr<T2> constCast() const {
-		return expired() ? WeakPtr<T2>() : WeakPtr<T2>(const_cast<T2 *>(_pointer), _tracker);
+		return WeakPtr<T2>(expired() ? nullptr : const_cast<T2 *>(_pointer), _tracker);
 	}
 
 	/**
@@ -433,7 +433,7 @@ public:
 	 */
 	template<class T2>
 	WeakPtr<T2> reinterpretCast() const {
-		return expired() ? WeakPtr<T2>() : WeakPtr<T2>(reinterpret_cast<T2 *>(_pointer), _tracker);
+		return WeakPtr<T2>(expired() ? nullptr : reinterpret_cast<T2 *>(_pointer), _tracker);
 	}
 
 	/**
