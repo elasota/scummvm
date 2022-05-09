@@ -11,6 +11,7 @@ Umfangreichere Informationen über die Änderungen des aktuellen Codes findest D
    - Unterstützung für Clandestiny hinzugefügt.
    - Unterstützung für Tender Loving Care (CD-ROM-Versionen) hinzugefügt.
    - Unterstützung für Uncle Henry's Playhouse hinzugefügt.
+   - Unterstützung für Wetlands hinzugefügt.
 
  Allgemein:
    - Die Lizenz des Projektes wurde auf GPLv3+ aktualisiert.
@@ -73,6 +74,7 @@ Umfangreichere Informationen über die Änderungen des aktuellen Codes findest D
      Abstands in den 16-Farben-Versionen für Macintosh von Indiana Jones and the Last Crusade
      findest du jetzt dort.
    - Fehler bei der Wiedergabe von MIDI-Musik in der EGA/VGA-Diskettenversion von The Secret of Monkey Island behoben.
+   - Fehlerhafte Grafik-Darstellung in Full Throttle korrigiert, die auftritt, wenn Ben am Eingang von Corley Motors vorbeiläuft.
 
  Sherlock:
    - Fehler in der Wiedergabegeschwindigkeit im Intro von Serrated Scalpel behoben, der auftritt,

@@ -59,13 +59,11 @@ enum RendererFlip {
 
 class ALSoftwareBitmap : public BaseDDB {
 public:
-	// Transparency is a bit counter-intuitive
-	// 0=not transparent, 255=invisible, 1..254 barely visible .. mostly visible
-	int  GetTransparency() const override {
-		return _transparency;
+	int  GetAlpha() const override {
+		return _alpha;
 	}
-	void SetTransparency(int transparency) override {
-		_transparency = transparency;
+	void SetAlpha(int alpha) override {
+		_alpha = alpha;
 	}
 	void SetFlippedLeftRight(bool isFlipped) override {
 		_flipped = isFlipped;
@@ -80,9 +78,7 @@ public:
 	Bitmap *_bmp = nullptr;
 	bool _flipped = false;
 	int _stretchToWidth = 0, _stretchToHeight = 0;
-	bool _opaque = false; // no mask color
-	bool _hasAlpha = false;
-	int _transparency = 0;
+	int _alpha = 255;
 
 	ALSoftwareBitmap(int width, int height, int color_depth, bool opaque) {
 		_width = width;
@@ -143,14 +139,13 @@ private:
 typedef SpriteDrawListEntry<ALSoftwareBitmap> ALDrawListEntry;
 // Software renderer's sprite batch
 struct ALSpriteBatch {
-	// List of sprites to render
-	std::vector<ALDrawListEntry> List;
+	uint32_t ID = 0;
 	// Intermediate surface which will be drawn upon and transformed if necessary
-	std::shared_ptr<Bitmap>      Surface;
+	std::shared_ptr<Bitmap> Surface;
 	// Whether surface is a virtual screen's region
-	bool                         IsVirtualScreen;
+	bool IsVirtualScreen = false;
 	// Tells whether the surface is treated as opaque or transparent
-	bool                         Opaque;
+	bool Opaque = false;
 };
 typedef std::vector<ALSpriteBatch> ALSpriteBatches;
 
@@ -181,10 +176,10 @@ public:
 	int  GetCompatibleBitmapFormat(int color_depth) override;
 	IDriverDependantBitmap *CreateDDB(int width, int height, int color_depth, bool opaque) override;
 	IDriverDependantBitmap *CreateDDBFromBitmap(Bitmap *bitmap, bool hasAlpha, bool opaque) override;
-	void UpdateDDBFromBitmap(IDriverDependantBitmap *bitmapToUpdate, Bitmap *bitmap, bool hasAlpha) override;
-	void DestroyDDB(IDriverDependantBitmap *bitmap) override;
+	void UpdateDDBFromBitmap(IDriverDependantBitmap *ddb, Bitmap *bitmap, bool hasAlpha) override;
+	void DestroyDDB(IDriverDependantBitmap *ddb) override;
 
-	void DrawSprite(int x, int y, IDriverDependantBitmap *bitmap) override;
+	void DrawSprite(int x, int y, IDriverDependantBitmap *ddb) override;
 	void SetScreenFade(int red, int green, int blue) override;
 	void SetScreenTint(int red, int green, int blue) override;
 
@@ -252,7 +247,10 @@ private:
 	Bitmap *_stageVirtualScreen;
 	int _tint_red, _tint_green, _tint_blue;
 
+	// Sprite batches (parent scene nodes)
 	ALSpriteBatches _spriteBatches;
+	// List of sprites to render
+	std::vector<ALDrawListEntry> _spriteList;
 
 	void InitSpriteBatch(size_t index, const SpriteBatchDesc &desc) override;
 	void ResetAllBatches() override;
@@ -263,7 +261,7 @@ private:
 	// Unset parameters and release resources related to the display mode
 	void ReleaseDisplayMode();
 	// Renders single sprite batch on the precreated surface
-	void RenderSpriteBatch(const ALSpriteBatch &batch, Shared::Bitmap *surface, int surf_offx, int surf_offy);
+	size_t RenderSpriteBatch(const ALSpriteBatch &batch, size_t from, Shared::Bitmap *surface, int surf_offx, int surf_offy);
 
 	void highcolor_fade_in(Bitmap *vs, void(*draw_callback)(), int offx, int offy, int speed, int targetColourRed, int targetColourGreen, int targetColourBlue);
 	void highcolor_fade_out(Bitmap *vs, void(*draw_callback)(), int offx, int offy, int speed, int targetColourRed, int targetColourGreen, int targetColourBlue);

@@ -19,15 +19,49 @@
  *
  */
 
-#ifndef AGS_SHARED_SCRIPT_CC_ERROR_H
-#define AGS_SHARED_SCRIPT_CC_ERROR_H
+#ifndef XYZZY_DETECTION_H
+#define XYZZY_DETECTION_H
 
-#include "ags/shared/util/string.h"
+#include "engines/advancedDetector.h"
 
-namespace AGS3 {
+namespace Xyzzy {
 
-extern void cc_error(const char *, ...);
+enum XyzzyDebugChannels {
+	kDebugGraphics = 1 << 0,
+	kDebugPath     = 1 << 1,
+	kDebugScan     = 1 << 2,
+	kDebugFilePath = 1 << 3,
+	kDebugScript   = 1 << 4
+};
 
-} // namespace AGS3
+extern const PlainGameDescriptor GAME_NAMES[];
+
+extern const ADGameDescription GAME_DESCRIPTIONS[];
+
+} // namespace Xyzzy
+
+class XyzzyMetaEngineDetection : public AdvancedMetaEngineDetection {
+	static const DebugChannelDef debugFlagList[];
+
+public:
+	XyzzyMetaEngineDetection();
+	~XyzzyMetaEngineDetection() override {}
+
+	const char *getEngineId() const override {
+		return "xyzzy";
+	}
+
+	const char *getName() const override {
+		return "Xyzzy";
+	}
+
+	const char *getOriginalCopyright() const override {
+		return "Xyzzy (C)";
+	}
+
+	const DebugChannelDef *getDebugChannels() const override {
+		return debugFlagList;
+	}
+};
 
 #endif

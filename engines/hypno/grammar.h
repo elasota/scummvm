@@ -78,6 +78,7 @@ enum ActionType {
 	WalNAction,
 	GlobalAction,
 	TalkAction,
+	SwapPointerAction,
 	ChangeLevelAction
 };
 
@@ -105,6 +106,7 @@ public:
 	Common::String flags[3];
 	Common::Rect rect;
 	Common::String setting;
+	Common::String background;
 	Actions actions;
 	Hotspots *smenu;
 };
@@ -117,6 +119,15 @@ public:
 		index = index_;
 	}
 	Filename path;
+	uint32 index;
+};
+
+class SwapPointer : public Action {
+public:
+	SwapPointer(uint32 index_) {
+		type = SwapPointerAction;
+		index = index_;
+	}
 	uint32 index;
 };
 
@@ -339,6 +350,7 @@ public:
 	Level() {
 		type = CodeLevel;
 		musicRate = 22050;
+		playMusicDuringIntro = false;
 	}
 	virtual ~Level() {} // needed to make Level polymorphic
 	LevelType type;
@@ -346,6 +358,7 @@ public:
 	Filename prefix;
 	Filename levelIfWin;
 	Filename levelIfLose;
+	bool playMusicDuringIntro;
 	Filename music;
 	uint32 musicRate;
 };
@@ -533,9 +546,11 @@ public:
 		shootSoundRate = 0;
 		enemySoundRate = 0;
 		hitSoundRate = 0;
+		additionalSoundRate = 0;
 	}
 	void clear() {
 		nextLevelVideo.clear();
+		postStatsVideo.clear();
 		backgroundVideo.clear();
 		transitions.clear();
 		maskVideo.clear();
@@ -552,6 +567,7 @@ public:
 		beforeVideo.clear();
 		briefingVideo.clear();
 		additionalVideo.clear();
+		additionalSound.clear();
 		segments.clear();
 		script.clear();
 		objKillsRequired[0] = 0;
@@ -581,6 +597,7 @@ public:
 
 	// Videos
 	Filename nextLevelVideo;
+	Filename postStatsVideo;
 	Filename defeatNoEnergyFirstVideo;
 	Filename defeatNoEnergySecondVideo;
 	Filename defeatMissBossVideo;
@@ -609,6 +626,8 @@ public:
 	uint32 enemySoundRate;
 	Filename hitSound;
 	uint32 hitSoundRate;
+	Filename additionalSound;
+	uint32 additionalSoundRate;
 };
 
 class Transition : public Level {

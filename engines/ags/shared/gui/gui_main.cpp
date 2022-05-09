@@ -63,6 +63,8 @@ void GUIMain::InitDefaults() {
 	ID = 0;
 	Name.Empty();
 	_flags = kGUIMain_DefFlags;
+	_hasChanged = true;
+	_hasControlsChanged = true;
 
 	X = 0;
 	Y = 0;
@@ -186,12 +188,24 @@ bool GUIMain::HasChanged() const {
 	return _hasChanged;
 }
 
+bool GUIMain::HasControlsChanged() const {
+	return _hasControlsChanged;
+}
+
 void GUIMain::MarkChanged() {
 	_hasChanged = true;
 }
 
+void GUIMain::MarkControlsChanged() {
+	_hasControlsChanged = true;
+	// force it to re-check for which control is under the mouse
+	MouseWasAt.X = -1;
+	MouseWasAt.Y = -1;
+}
+
 void GUIMain::ClearChanged() {
 	_hasChanged = false;
+	_hasControlsChanged = false;
 }
 
 void GUIMain::AddControl(GUIControlType type, int32_t id, GUIObject *control) {
@@ -247,21 +261,32 @@ void GUIMain::DrawWithControls(Bitmap *ds) {
 	if ((_G(all_buttons_disabled) >= 0) && (GUI::Options.DisabledStyle == kGuiDis_Blackout))
 		return; // don't draw GUI controls
 
+	Bitmap tempbmp; // in case we need transforms
 	for (size_t ctrl_index = 0; ctrl_index < _controls.size(); ++ctrl_index) {
 		set_eip_guiobj(_ctrlDrawOrder[ctrl_index]);
 
 		GUIObject *objToDraw = _controls[_ctrlDrawOrder[ctrl_index]];
 
+		if (!objToDraw->IsVisible() || (objToDraw->Width <= 0 || objToDraw->Height <= 0))
+			continue;
 		if (!objToDraw->IsEnabled() && (GUI::Options.DisabledStyle == kGuiDis_Blackout))
 			continue;
-		if (!objToDraw->IsVisible())
-			continue;
 
-		if (GUI::Options.ClipControls && objToDraw->IsContentClipped())
-			ds->SetClip(RectWH(objToDraw->X, objToDraw->Y, objToDraw->Width, objToDraw->Height));
-		else
-			ds->ResetClip();
-		objToDraw->Draw(ds, objToDraw->X, objToDraw->Y);
+		// Depending on draw properties - draw directly on the gui surface, or use a buffer
+		if (objToDraw->GetTransparency() == 0) {
+			if (GUI::Options.ClipControls && objToDraw->IsContentClipped())
+				ds->SetClip(RectWH(objToDraw->X, objToDraw->Y, objToDraw->Width, objToDraw->Height));
+			else
+				ds->ResetClip();
+			objToDraw->Draw(ds, objToDraw->X, objToDraw->Y);
+		} else {
+			const Rect rc = objToDraw->CalcGraphicRect(GUI::Options.ClipControls && objToDraw->IsContentClipped());
+			tempbmp.CreateTransparent(rc.GetWidth(), rc.GetHeight());
+			objToDraw->Draw(&tempbmp, -rc.Left, -rc.Top);
+			draw_gui_sprite(ds, true, objToDraw->X + rc.Left, objToDraw->Y + rc.Top,
+				&tempbmp, objToDraw->HasAlphaChannel(), kBlendMode_Alpha,
+				GfxDef::LegacyTrans255ToAlpha255(objToDraw->GetTransparency()));
+		}
 
 		int selectedColour = 14;
 
@@ -321,7 +346,6 @@ void GUIMain::Poll(int mx, int my) {
 					_controls[MouseOverCtrl]->OnMouseMove(mx, my);
 				}
 			}
-			//MarkChanged(); // TODO: only do if anything really changed
 		} else if (MouseOverCtrl >= 0)
 			_controls[MouseOverCtrl]->OnMouseMove(mx, my);
 	}
@@ -390,7 +414,6 @@ void GUIMain::SetConceal(bool on) {
 		_flags |= kGUIMain_Concealed;
 	else
 		_flags &= ~kGUIMain_Concealed;
-	MarkChanged();
 }
 
 bool GUIMain::SendControlToBack(int32_t index) {
@@ -422,7 +445,7 @@ bool GUIMain::SetControlZOrder(int32_t index, int zorder) {
 		}
 	}
 	ResortZOrder();
-	OnControlPositionChanged(); // this marks GUI as changed
+	MarkControlsChanged();
 	return true;
 }
 
@@ -435,7 +458,6 @@ void GUIMain::SetTextWindow(bool on) {
 
 void GUIMain::SetTransparencyAsPercentage(int percent) {
 	Transparency = GfxDef::Trans100ToLegacyTrans255(percent);
-	MarkChanged();
 }
 
 void GUIMain::SetVisible(bool on) {
@@ -443,14 +465,6 @@ void GUIMain::SetVisible(bool on) {
 		_flags |= kGUIMain_Visible;
 	else
 		_flags &= ~kGUIMain_Visible;
-	MarkChanged();
-}
-
-void GUIMain::OnControlPositionChanged() {
-	// force it to re-check for which control is under the mouse
-	MouseWasAt.X = -1;
-	MouseWasAt.Y = -1;
-	MarkChanged();
 }
 
 void GUIMain::OnMouseButtonDown(int mx, int my) {
@@ -466,7 +480,6 @@ void GUIMain::OnMouseButtonDown(int mx, int my) {
 	if (_controls[MouseOverCtrl]->OnMouseDown())
 		MouseOverCtrl = MOVER_MOUSEDOWNLOCKED;
 	_controls[MouseDownCtrl]->OnMouseMove(mx - X, my - Y);
-	//MarkChanged(); // TODO: only do if anything really changed
 }
 
 void GUIMain::OnMouseButtonUp() {
@@ -482,7 +495,6 @@ void GUIMain::OnMouseButtonUp() {
 
 	_controls[MouseDownCtrl]->OnMouseUp();
 	MouseDownCtrl = -1;
-	//MarkChanged(); // TODO: only do if anything really changed
 }
 
 void GUIMain::ReadFromFile(Stream *in, GuiVersion gui_version) {
@@ -635,6 +647,21 @@ namespace GUI {
 
 GuiVersion GameGuiVersion = kGuiVersion_Initial;
 
+Rect CalcTextPosition(const char *text, int font, const Rect &frame, FrameAlignment align) {
+	int use_height = (_G(loaded_game_file_version) < kGameVersion_360_21) ?
+		get_font_height(font) + ((align & kMAlignVCenter) ? 1 : 0) :
+		get_font_height_outlined(font);
+	Rect rc = AlignInRect(frame, RectWH(0, 0, get_text_width_outlined(text, font), use_height), align);
+	rc.SetHeight(get_font_surface_height(font));
+	return rc;
+}
+
+Line CalcTextPositionHor(const char *text, int font, int x1, int x2, int y, FrameAlignment align) {
+	int w = get_text_width_outlined(text, font);
+	int x = AlignInHRange(x1, x2, 0, w, align);
+	return Line(x, y, x + w - 1, y);
+}
+
 void DrawDisabledEffect(Bitmap *ds, const Rect &rc) {
 	color_t draw_color = ds->GetCompatibleColor(8);
 	for (int at_x = rc.Left; at_x <= rc.Right; ++at_x) {
@@ -645,47 +672,46 @@ void DrawDisabledEffect(Bitmap *ds, const Rect &rc) {
 }
 
 void DrawTextAligned(Bitmap *ds, const char *text, int font, color_t text_color, const Rect &frame, FrameAlignment align) {
-	int text_height = (_G(loaded_game_file_version) < kGameVersion_360_21) ?
-		get_font_height(font) + ((align & kMAlignVCenter) ? 1 : 0) :
-		get_font_height_outlined(font);
-	Rect item = AlignInRect(frame, RectWH(0, 0, get_text_width_outlined(text, font), text_height), align);
+	Rect item = CalcTextPosition(text, font, frame, align);
 	wouttext_outline(ds, item.Left, item.Top, font, text_color, text);
 }
 
 void DrawTextAlignedHor(Bitmap *ds, const char *text, int font, color_t text_color, int x1, int x2, int y, FrameAlignment align) {
-	int x = AlignInHRange(x1, x2, 0, get_text_width_outlined(text, font), align);
-	wouttext_outline(ds, x, y, font, text_color, text);
+	Line line = CalcTextPositionHor(text, font, x1, x2, y, align);
+	wouttext_outline(ds, line.X1, y, font, text_color, text);
 }
 
 void MarkAllGUIForUpdate() {
 	for (auto &gui : _GP(guis)) {
 		gui.MarkChanged();
+		for (int i = 0; i < gui.GetControlCount(); ++i)
+			gui.GetControl(i)->MarkChanged();
 	}
 }
 
 void MarkForFontUpdate(int font) {
 	for (auto &btn : _GP(guibuts)) {
 		if (btn.Font == font)
-			btn.NotifyParentChanged();
+			btn.MarkChanged();
 	}
 	for (auto &lbl : _GP(guilabels)) {
 		if (lbl.Font == font)
-			lbl.NotifyParentChanged();
+			lbl.MarkChanged();
 	}
 	for (auto &list : _GP(guilist)) {
 		if (list.Font == font)
-			list.NotifyParentChanged();
+			list.MarkChanged();
 	}
 	for (auto &tb : _GP(guitext)) {
 		if (tb.Font == font)
-			tb.NotifyParentChanged();
+			tb.MarkChanged();
 	}
 }
 
 void MarkSpecialLabelsForUpdate(GUILabelMacro macro) {
 	for (auto &lbl : _GP(guilabels)) {
 		if ((lbl.GetTextMacros() & macro) != 0) {
-			lbl.NotifyParentChanged();
+			lbl.MarkChanged();
 		}
 	}
 }
@@ -693,7 +719,7 @@ void MarkSpecialLabelsForUpdate(GUILabelMacro macro) {
 void MarkInventoryForUpdate(int char_id, bool is_player) {
 	for (auto &inv : _GP(guiinv)) {
 		if ((char_id < 0) || (inv.CharId == char_id) || (is_player && inv.CharId < 0)) {
-			inv.NotifyParentChanged();
+			inv.MarkChanged();
 		}
 	}
 }

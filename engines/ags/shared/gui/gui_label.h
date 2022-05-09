@@ -37,12 +37,14 @@ class GUILabel : public GUIObject {
 public:
 	GUILabel();
 
+	bool HasAlphaChannel() const override;
 	// Gets label's text property in original set form (with macros etc)
 	String       GetText() const;
 	// Gets which macro are contained within label's text
 	GUILabelMacro GetTextMacros() const;
 
 	// Operations
+	Rect CalcGraphicRect(bool clipped) override;
 	void Draw(Bitmap *ds, int x = 0, int y = 0) override;
 	void SetText(const String &text);
 

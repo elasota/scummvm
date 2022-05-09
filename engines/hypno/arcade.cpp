@@ -216,6 +216,7 @@ void HypnoEngine::runArcade(ArcadeShooting *arc) {
 	_levelId = arc->id;
 	_shootSound = arc->shootSound;
 	_hitSound = arc->hitSound;
+	_additionalSound = arc->additionalSound;
 	_health = arc->health;
 	_maxHealth = _health;
 	debugC(1, kHypnoDebugArcade, "Starting segment of type %x", segments[_segmentIdx].type);
@@ -248,6 +249,13 @@ void HypnoEngine::runArcade(ArcadeShooting *arc) {
 	}
 	_currentPalette = arc->backgroundPalette;
 	loadPalette(_currentPalette);
+
+	if (segments[_segmentIdx].start > 1) {
+		_background->decoder->forceSeekToFrame(segments[_segmentIdx].start - 10);
+		segments[_segmentIdx].size -= segments[_segmentIdx].start;
+		segments[_segmentIdx].start = 1;
+	}
+
 	bool shootingPrimary = false;
 	bool shootingSecondary = false;
 	bool needsUpdate = true;
@@ -289,6 +297,9 @@ void HypnoEngine::runArcade(ArcadeShooting *arc) {
 
 			case Common::EVENT_KEYDOWN:
 				pressedKey(event.kbd.keycode);
+				if (event.kbd.keycode == Common::KEYCODE_LCTRL)
+					if (clickedPrimaryShoot(mousePos))
+						shootingPrimary = true;
 				break;
 
 			case Common::EVENT_LBUTTONDOWN:
@@ -311,18 +322,20 @@ void HypnoEngine::runArcade(ArcadeShooting *arc) {
 					g_system->warpMouse(arc->mouseBox.right-1, mousePos.y);
 				} else if (mousePos.y >= arc->mouseBox.bottom-1) {
 					g_system->warpMouse(mousePos.x, arc->mouseBox.bottom-1);
-				} else if (mousePos.x <= 100 && offset.x < 0) {
+				} else if (mousePos.x <= 40 && offset.x < 0) {
 					for (Shoots::iterator it = _shoots.begin(); it != _shoots.end(); ++it) {
 						if (it->video && it->video->decoder)
 							it->video->position.x = it->video->position.x + 1;
 					}
 					offset.x = offset.x + 1;
-				} else if (mousePos.x >= 300 && offset.x > 320 - _background->decoder->getWidth()) {
+					needsUpdate = true;
+				} else if (mousePos.x >= 280 && offset.x > 320 - _background->decoder->getWidth()) {
 					for (Shoots::iterator it = _shoots.begin(); it != _shoots.end(); ++it) {
 						if (it->video && it->video->decoder)
 							it->video->position.x = it->video->position.x - 1;
 					}
 					offset.x = offset.x - 1;
+					needsUpdate = true;
 				}
 				_background->position = offset;
 				break;

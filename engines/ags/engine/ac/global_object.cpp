@@ -31,7 +31,6 @@
 #include "ags/engine/ac/global_character.h"
 #include "ags/engine/ac/global_translation.h"
 #include "ags/engine/ac/object.h"
-#include "ags/engine/ac/object_cache.h"
 #include "ags/engine/ac/properties.h"
 #include "ags/engine/ac/room_object.h"
 #include "ags/engine/ac/room_status.h"
@@ -200,8 +199,8 @@ void SetObjectBaseline(int obn, int basel) {
 	if (!is_valid_object(obn)) quit("!SetObjectBaseline: invalid object number specified");
 	// baseline has changed, invalidate the cache
 	if (_G(objs)[obn].baseline != basel) {
-		_G(objcache)[obn].ywas = -9999;
 		_G(objs)[obn].baseline = basel;
+		mark_object_changed(obn);
 	}
 }
 
@@ -411,8 +410,7 @@ void SetObjectIgnoreWalkbehinds(int cha, int clik) {
 	_G(objs)[cha].flags &= ~OBJF_NOWALKBEHINDS;
 	if (clik)
 		_G(objs)[cha].flags |= OBJF_NOWALKBEHINDS;
-	// clear the cache
-	_G(objcache)[cha].ywas = -9999;
+	mark_object_changed(cha);
 }
 
 void RunObjectInteraction(int aa, int mood) {
@@ -521,12 +519,12 @@ void GetObjectPropertyText(int item, const char *property, char *bufer) {
 
 Bitmap *GetObjectImage(int obj, int *isFlipped) {
 	if (!_G(gfxDriver)->HasAcceleratedTransform()) {
-		if (_GP(actsps)[obj] != nullptr) {
-			// the actsps image is pre-flipped, so no longer register the image as such
+		Bitmap *actsp = get_cached_object_image(obj);
+		if (actsp) {
+			// the cached image is pre-flipped, so no longer register the image as such
 			if (isFlipped)
 				*isFlipped = 0;
-
-			return _GP(actsps)[obj];
+			return actsp;
 		}
 	}
 	return _GP(spriteset)[_G(objs)[obj].num];

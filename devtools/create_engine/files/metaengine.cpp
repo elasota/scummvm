@@ -19,30 +19,32 @@
  *
  */
 
-#ifndef AGS_ENGINE_AC_CHARACTER_CACHE_H
-#define AGS_ENGINE_AC_CHARACTER_CACHE_H
+#include "xyzzy/metaengine.h"
+#include "xyzzy/detection.h"
+#include "xyzzy/xyzzy.h"
 
-namespace AGS3 {
+const char *XyzzyMetaEngine::getName() const {
+	return "xyzzy";
+}
 
-namespace AGS {
-namespace Shared {
-class Bitmap;
-} // namespace Shared
-} // namespace AGS
+Common::Error XyzzyMetaEngine::createInstance(OSystem *syst, Engine **engine, const ADGameDescription *desc) const {
+	*engine = new Xyzzy::XyzzyEngine(syst, desc);
+	return Common::kNoError;
+}
 
-using namespace AGS; // FIXME later
+bool XyzzyMetaEngine::hasFeature(MetaEngineFeature f) const {
+	return
+		(f == kSavesUseExtendedFormat) ||
+		(f == kSimpleSavesNames) ||
+	    (f == kSupportsListSaves) ||
+	    (f == kSupportsDeleteSave) ||
+	    (f == kSavesSupportMetaInfo) ||
+	    (f == kSavesSupportThumbnail) ||
+	    (f == kSupportsLoadingDuringStartup);
+}
 
-// stores cached info about the character
-struct CharacterCache {
-	Shared::Bitmap *image;
-	int sppic;
-	int scaling;
-	int inUse;
-	short tintredwas, tintgrnwas, tintbluwas, tintamntwas;
-	short lightlevwas, tintlightwas;
-	// no mirroredWas is required, since the code inverts the sprite number
-};
-
-} // namespace AGS3
-
+#if PLUGIN_ENABLED_DYNAMIC(XYZZY)
+REGISTER_PLUGIN_DYNAMIC(XYZZY, PLUGIN_TYPE_ENGINE, XyzzyMetaEngine);
+#else
+REGISTER_PLUGIN_STATIC(XYZZY, PLUGIN_TYPE_ENGINE, XyzzyMetaEngine);
 #endif

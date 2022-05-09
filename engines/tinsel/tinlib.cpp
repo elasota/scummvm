@@ -155,7 +155,8 @@ enum MASTER_LIB_CODES {
 	WAITSCROLL, WAITTIME, WALK, WALKED, WALKEDPOLY, WALKEDTAG, WALKINGACTOR, WALKPOLY,
 	WALKTAG, WALKXPOS, WALKYPOS, WHICHCD, WHICHINVENTORY, ZZZZZZ, DEC3D, DECINVMAIN,
 	ADDNOTEBOOK, ADDINV3, ADDCONV, SET3DTEXTURE, FADEMUSIC, VOICEOVER, SETVIEW,
-	HELDOBJECTORTOPIC, BOOKADDHYPERLINK, HIGHEST_LIBCODE
+	HELDOBJECTORTOPIC, BOOKADDHYPERLINK, OPENNOTEBOOK, NTBPOLYENTRY, NTBPOLYPREVPAGE,
+	NTBPOLYNEXTPAGE, HIGHEST_LIBCODE
 };
 
 static const MASTER_LIB_CODES DW1DEMO_CODES[] = {
@@ -623,7 +624,7 @@ static void AddTopic(int icon) {
  */
 static void AddInv(int invno, int object) {
 	// illegal inventory number
-	assert(invno == INV_1 || invno == INV_2 || invno == INV_OPEN || invno == INV_DEFAULT);
+	assert(invno == INV_1 || invno == INV_2 || invno == INV_3 || invno == INV_OPEN || invno == INV_DEFAULT);
 
 	_vm->_dialogs->AddToInventory(invno, object, false);
 }
@@ -2093,8 +2094,7 @@ static void Print(CORO_PARAM, int x, int y, SCNHANDLE text, int time, bool bSust
 	}
 
 	// Delete the text
-	if (_ctx->pText != NULL)
-		MultiDeleteObject(_vm->_bg->GetPlayfieldList(FIELD_STATUS), _ctx->pText);
+	MultiDeleteObjectIfExists(FIELD_STATUS, &_ctx->pText);
 	_vm->_mixer->stopHandle(_ctx->handle);
 
 	CORO_END_CODE;
@@ -2225,8 +2225,7 @@ static void PrintObj(CORO_PARAM, const SCNHANDLE hText, const INV_OBJECT *pinvo,
 					// Give way to non-POINTED-generated text
 					if (g_bNotPointedRunning) {
 						// Delete the text, and wait for the all-clear
-						MultiDeleteObject(_vm->_bg->GetPlayfieldList(FIELD_STATUS), _ctx->pText);
-						_ctx->pText = nullptr;
+						MultiDeleteObjectIfExists(FIELD_STATUS, &_ctx->pText);
 
 						while (g_bNotPointedRunning)
 							CORO_SLEEP(1);
@@ -2311,8 +2310,7 @@ static void PrintObj(CORO_PARAM, const SCNHANDLE hText, const INV_OBJECT *pinvo,
 		}
 
 		// Delete the text, if haven't already
-		if (_ctx->pText)
-			MultiDeleteObject(_vm->_bg->GetPlayfieldList(FIELD_STATUS), _ctx->pText);
+		MultiDeleteObjectIfExists(FIELD_STATUS, &_ctx->pText);
 
 		// If it hasn't already finished, stop sample
 		if (_ctx->bSample)
@@ -2342,8 +2340,7 @@ static void PrintObjPointed(CORO_PARAM, const SCNHANDLE text, const INV_OBJECT *
 			// Give way to non-POINTED-generated text
 			if (g_bNotPointedRunning) {
 				// Delete the text, and wait for the all-clear
-				MultiDeleteObject(_vm->_bg->GetPlayfieldList(FIELD_STATUS), pText);
-				pText = nullptr;
+				MultiDeleteObjectIfExists(FIELD_STATUS, &pText);
 				while (g_bNotPointedRunning)
 					CORO_SLEEP(1);
 
@@ -3555,10 +3552,8 @@ static void TalkOrSay(CORO_PARAM, SPEECH_TYPE speechType, SCNHANDLE hText, int x
 			}
 		} while (1);
 
-		if (_ctx->pText != NULL) {
-			MultiDeleteObject(_vm->_bg->GetPlayfieldList(FIELD_STATUS), _ctx->pText);
-			_ctx->pText = nullptr;
-		}
+		MultiDeleteObjectIfExists(FIELD_STATUS, &_ctx->pText);
+
 		if ((TinselVersion >= 2) && _ctx->bSample)
 			_vm->_sound->stopSpecSample(hText, _ctx->sub);
 	}
@@ -3570,8 +3565,7 @@ static void TalkOrSay(CORO_PARAM, SPEECH_TYPE speechType, SCNHANDLE hText, int x
 	 */
 	if (_ctx->bTalkReel)
 		CORO_INVOKE_2(FinishTalkingReel, _ctx->pActor, _ctx->actor);
-	if (_ctx->pText != NULL)
-		MultiDeleteObject(_vm->_bg->GetPlayfieldList(FIELD_STATUS), _ctx->pText);
+	MultiDeleteObjectIfExists(FIELD_STATUS, &_ctx->pText);
 
 	if (TinselVersion >= 2) {
 		if ((_ctx->whatSort == IS_SAY) || (_ctx->whatSort == IS_SAYAT)) {
@@ -4472,7 +4466,6 @@ NoirMapping translateNoirLibCode(int libCode, int32 *pp) {
 		debug(7, "%s(0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X)", mapping.name, pp[0], pp[1], pp[2], pp[3], pp[4], pp[5], pp[6], pp[7]);
 		break;
 	case 44: // Changed in Noir
-		warning("TODO: Implement DECINV2 v3");
 		mapping = NoirMapping{"DECINV2", DECINV2, 8};
 		pp -= mapping.numArgs - 1;
 		debug(7, "%s(0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X)", mapping.name, pp[0], pp[1], pp[2], pp[3], pp[4], pp[5], pp[6], pp[7]);
@@ -4675,9 +4668,9 @@ NoirMapping translateNoirLibCode(int libCode, int32 *pp) {
 		debug(7, "%s(%d)", mapping.name, pp[0]);
 		break;
 	case 90: // 2 parameters, play anim based on item
-		mapping = NoirMapping{"INVPLAY", ZZZZZZ, 2};
+		mapping = NoirMapping{"INVPLAY", INVPLAY, 2};
 		pp -= mapping.numArgs - 1;
-		debug(7, "%s(%d, %d)", mapping.name, pp[0], pp[1]);
+		debug(7, "%s(%d %d)", mapping.name, pp[0], pp[1]);
 		break;
 	case 91:
 		mapping = NoirMapping{"INWHICHINV", INWHICHINV, 0};
@@ -4729,7 +4722,9 @@ NoirMapping translateNoirLibCode(int libCode, int32 *pp) {
 		debug(7, "%s(0x%08X, 0x%08X, 0x%08X, 0x%08X)", mapping.name, pp[0], pp[1], pp[2], pp[3]);
 		break;
 	case 103: // 0 parameters
-		error("Unsupported libCode %d open_notebook", libCode);
+		mapping = NoirMapping{"OPENNOTEBOOK", OPENNOTEBOOK, 0};
+		debug(7, "%s()", mapping.name);
+		break;
 	case 104: // 1 parameter
 		error("Unsupported libCode %d OFFSET variant", libCode);
 	case 105: // 0 parameters
@@ -5202,32 +5197,28 @@ NoirMapping translateNoirLibCode(int libCode, int32 *pp) {
 		mapping = NoirMapping{"WHICHCD", WHICHCD, 0};
 		debug(7, "%s()", mapping.name);
 		break;
-	case 208: // WhichInventory is implemented differently in v3, checking notebookstate
-		warning("TODO: Implement WHICHINVENTORY v3");
+	case 208:
 		mapping = NoirMapping{"WHICHINVENTORY", WHICHINVENTORY, 0};
 		debug(7, "%s()", mapping.name);
 		break;
 	case 209:
-		mapping = NoirMapping{"ZZZZZZ", ZZZZZZ, 0};
+		mapping = NoirMapping{"ZZZZZZ", ZZZZZZ, 1};
 		debug(7, "%s()", mapping.name);
 		break;
 	case 210: // STUBBED
-		warning("TODO: Implement OP210");
-		mapping = NoirMapping{"OP210", ZZZZZZ, 8};
+		mapping = NoirMapping{"NTBPOLYENTRY", NTBPOLYENTRY, 8};
 		pp -= mapping.numArgs - 1;
 		debug(7, "%s(0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X)", mapping.name, pp[0], pp[1], pp[2], pp[3], pp[4], pp[5], pp[6], pp[7]);
 		break;
 	case 211: // 4 parameters
 		error("Unsupported libCode %d PLAYSEQUENCE", libCode);
 	case 212: // STUBBED
-		warning("TODO: Implement OP212");
-		mapping = NoirMapping{"OP212", ZZZZZZ, 8};
+		mapping = NoirMapping{"NTBPOLYPREVPAGE", NTBPOLYPREVPAGE, 8};
 		pp -= mapping.numArgs - 1;
 		debug(7, "%s(0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X)", mapping.name, pp[0], pp[1], pp[2], pp[3], pp[4], pp[5], pp[6], pp[7]);
 		break;
 	case 213: // STUBBED
-		warning("TODO: Implement OP213");
-		mapping = NoirMapping{"OP213", ZZZZZZ, 8};
+		mapping = NoirMapping{"NTBPOLYNEXTPAGE", NTBPOLYNEXTPAGE, 8};
 		pp -= mapping.numArgs - 1;
 		debug(7, "%s(0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X)", mapping.name, pp[0], pp[1], pp[2], pp[3], pp[4], pp[5], pp[6], pp[7]);
 		break;
@@ -5399,7 +5390,7 @@ int CallLibraryRoutine(CORO_PARAM, int operand, int32 *pp, const INT_CONTEXT *pi
 
 	case ADDINV3:
 		// Noir only
-		warning("TODO: Implement ADDINV3");
+		AddInv(INV_3, pp[0]);
 		return -1;
 
 	case ADDNOTEBOOK:
@@ -6011,6 +6002,33 @@ int CallLibraryRoutine(CORO_PARAM, int operand, int32 *pp, const INT_CONTEXT *pi
 		g_bNoPause = true;
 		return 0;
 
+	case NTBPOLYENTRY:
+		// Noir only
+		pp -= 7; // 8 Parameters
+		NotebookPolyEntry(Common::Point(pp[0], pp[1]),
+						  Common::Point(pp[2], pp[3]),
+						  Common::Point(pp[4], pp[5]),
+						  Common::Point(pp[6], pp[7]));
+		return -8;
+
+	case NTBPOLYNEXTPAGE:
+		// Noir only
+		pp -= 7; // 8 Parameters
+		NotebookPolyNextPage(Common::Point(pp[0], pp[1]),
+							 Common::Point(pp[2], pp[3]),
+							 Common::Point(pp[4], pp[5]),
+							 Common::Point(pp[6], pp[7]));
+		return -8;
+
+	case NTBPOLYPREVPAGE:
+		// Noir only
+		pp -= 7; // 8 Parameters
+		NotebookPolyPrevPage(Common::Point(pp[0], pp[1]),
+							 Common::Point(pp[2], pp[3]),
+							 Common::Point(pp[4], pp[5]),
+							 Common::Point(pp[6], pp[7]));
+		return -8;
+
 	case NOSCROLL:
 		// Common to both DW1 & DW2
 		pp -= 3;			// 4 parameters
@@ -6037,6 +6055,11 @@ int CallLibraryRoutine(CORO_PARAM, int operand, int32 *pp, const INT_CONTEXT *pi
 	case OTHEROBJECT:
 		// DW2 only
 		pp[0] = OtherObject(pic->pinvo);
+		return 0;
+
+	case OPENNOTEBOOK:
+		// Noir only
+		_vm->_notebook->Show(0);
 		return 0;
 
 	case PAUSE:
@@ -6411,7 +6434,7 @@ int CallLibraryRoutine(CORO_PARAM, int operand, int32 *pp, const INT_CONTEXT *pi
 	case SETVIEW:
 		// Noir only
 		pp -= 1;
-		warning("TODO: Implement SETVIEW(0x%08X, %i)", pp[0], pp[1]);
+		SetView(pp[0], pp[1]);
 		return -2;
 
 	case SHELL:

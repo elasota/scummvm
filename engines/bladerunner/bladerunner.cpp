@@ -296,6 +296,8 @@ bool BladeRunnerEngine::canSaveGameStateCurrently() {
 	return
 		playerHasControl() &&
 		_gameIsRunning &&
+		!_actorIsSpeaking &&
+		!_vqaIsPlaying &&
 		!_gameJustLaunched &&
 		!_sceneScript->isInsideScript() &&
 		!_aiScripts->isInsideScript() &&
@@ -1217,9 +1219,21 @@ void BladeRunnerEngine::gameTick() {
 		//      Fixing this (storing ambient sounds and restoring them after the outtake has finished)
 		//      is too cumbersome to be worth it.
 		int ambientSoundsPreOuttakeVol = _mixer->getVolumeForSoundType(_mixer->kPlainSoundType);
+		int musicPreOuttakeVol = _mixer->getVolumeForSoundType(_mixer->kMusicSoundType);
+		int sfxPreOuttakeVol = _mixer->getVolumeForSoundType(_mixer->kSFXSoundType);
+		// Speech Sound Type (kSpeechSoundType) is the volume of the outtake video,
+		// so we don't mute that one
+		_mixer->setVolumeForSoundType(_mixer->kMusicSoundType, 0);
 		_mixer->setVolumeForSoundType(_mixer->kPlainSoundType, 0);
-		outtakePlay(_debugger->_dbgPendingOuttake.outtakeId, _debugger->_dbgPendingOuttake.notLocalized, _debugger->_dbgPendingOuttake.container);
+		_mixer->setVolumeForSoundType(_mixer->kSFXSoundType, 0);
+		if (_debugger->_dbgPendingOuttake.outtakeId == -1 && _debugger->_dbgPendingOuttake.container < -1) {
+			outtakePlay(_debugger->_dbgPendingOuttake.externalFilename, _debugger->_dbgPendingOuttake.notLocalized, _debugger->_dbgPendingOuttake.container);
+		} else {
+			outtakePlay(_debugger->_dbgPendingOuttake.outtakeId, _debugger->_dbgPendingOuttake.notLocalized, _debugger->_dbgPendingOuttake.container);
+		}
+		_mixer->setVolumeForSoundType(_mixer->kSFXSoundType, sfxPreOuttakeVol);
 		_mixer->setVolumeForSoundType(_mixer->kPlainSoundType, ambientSoundsPreOuttakeVol);
+		_mixer->setVolumeForSoundType(_mixer->kMusicSoundType, musicPreOuttakeVol);
 		_debugger->resetPendingOuttake();
 	}
 
@@ -2256,9 +2270,13 @@ void BladeRunnerEngine::loopQueuedDialogueStillPlaying() {
 void BladeRunnerEngine::outtakePlay(int id, bool noLocalization, int container) {
 	Common::String name = _gameInfo->getOuttake(id);
 
+	outtakePlay(name, noLocalization, container);
+}
+
+void BladeRunnerEngine::outtakePlay(const Common::String &basenameNoExt, bool noLocalization, int container) {
 	OuttakePlayer player(this);
 
-	player.play(name, noLocalization, container);
+	player.play(basenameNoExt, noLocalization, container);
 }
 
 bool BladeRunnerEngine::openArchive(const Common::String &name) {

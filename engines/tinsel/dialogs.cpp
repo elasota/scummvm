@@ -57,6 +57,7 @@
 #include "tinsel/tinlib.h"
 #include "tinsel/tinsel.h" // For engine access
 #include "tinsel/token.h"
+#include "tinsel/noir/notebook.h"
 #include "tinsel/noir/sysreel.h"
 
 #include "common/textconsole.h"
@@ -1040,10 +1041,7 @@ void Dialogs::HopAction() {
  */
 void Dialogs::DumpIconArray() {
 	for (int i = 0; i < MAX_ICONS; i++) {
-		if (_iconArray[i] != NULL) {
-			MultiDeleteObject(_vm->_bg->GetPlayfieldList(FIELD_STATUS), _iconArray[i]);
-			_iconArray[i] = nullptr;
-		}
+		MultiDeleteObjectIfExists(FIELD_STATUS, &_iconArray[i]);
 	}
 }
 
@@ -1052,10 +1050,7 @@ void Dialogs::DumpIconArray() {
  */
 void Dialogs::DumpDobjArray() {
 	for (int i = 0; i < MAX_WCOMP; i++) {
-		if (_dispObjArray[i] != NULL) {
-			MultiDeleteObject(_vm->_bg->GetPlayfieldList(FIELD_STATUS), _dispObjArray[i]);
-			_dispObjArray[i] = nullptr;
-		}
+		MultiDeleteObjectIfExists(FIELD_STATUS, &_dispObjArray[i]);
 	}
 }
 
@@ -1064,10 +1059,7 @@ void Dialogs::DumpDobjArray() {
  */
 void Dialogs::DumpObjArray() {
 	for (int i = 0; i < MAX_WCOMP; i++) {
-		if (_objArray[i] != NULL) {
-			MultiDeleteObject(_vm->_bg->GetPlayfieldList(FIELD_STATUS), _objArray[i]);
-			_objArray[i] = nullptr;
-		}
+		MultiDeleteObjectIfExists(FIELD_STATUS, &_objArray[i]);
 	}
 }
 
@@ -1167,7 +1159,7 @@ void Dialogs::InventoryIconCursor(bool bNewItem) {
 					INV_OBJECT *invObj = GetInvObject(_heldItem);
 
 					if (invObj->attribute & V3ATTR_X200) {
-						_heldFilm = _vm->_systemReel->Get(objIndex);
+						_heldFilm = _vm->_systemReel->Get((SysReel)objIndex);
 					} else {
 						_heldFilm = _invFilms[objIndex];
 					}
@@ -1191,10 +1183,14 @@ bool Dialogs::InventoryActive() {
 }
 
 int Dialogs::WhichInventoryOpen() {
+	if (TinselVersion == 3 && _vm->_notebook->IsOpen()) {
+		return INV_NOTEBOOK;
+	}
 	if (_inventoryState != ACTIVE_INV)
 		return 0;
-	else
+	else {
 		return _activeInv;
+	}
 }
 
 /**************************************************************************/
@@ -1254,18 +1250,9 @@ void Dialogs::InvLoadGame() {
 	if (cd.selBox != NOBOX && (cd.selBox + cd.extraBase < cd.numSaved)) {
 		rGame = cd.selBox;
 		cd.selBox = NOBOX;
-		if (_iconArray[HL3] != NULL) {
-			MultiDeleteObject(_vm->_bg->GetPlayfieldList(FIELD_STATUS), _iconArray[HL3]);
-			_iconArray[HL3] = nullptr;
-		}
-		if (_iconArray[HL2] != NULL) {
-			MultiDeleteObject(_vm->_bg->GetPlayfieldList(FIELD_STATUS), _iconArray[HL2]);
-			_iconArray[HL2] = nullptr;
-		}
-		if (_iconArray[HL1] != NULL) {
-			MultiDeleteObject(_vm->_bg->GetPlayfieldList(FIELD_STATUS), _iconArray[HL1]);
-			_iconArray[HL1] = nullptr;
-		}
+		MultiDeleteObjectIfExists(FIELD_STATUS, &_iconArray[HL3]);
+		MultiDeleteObjectIfExists(FIELD_STATUS, &_iconArray[HL2]);
+		MultiDeleteObjectIfExists(FIELD_STATUS, &_iconArray[HL1]);
 		RestoreGame(rGame + cd.extraBase);
 	}
 }
@@ -1330,10 +1317,7 @@ static bool InvKeyIn(const Common::KeyState &kbd) {
 			* Delete display of text currently being edited,
 			* and replace it with freshly edited text.
 			*/
-			if (_vm->_dialogs->_iconArray[HL3] != NULL) {
-				MultiDeleteObject(_vm->_bg->GetPlayfieldList(FIELD_STATUS), _vm->_dialogs->_iconArray[HL3]);
-				_vm->_dialogs->_iconArray[HL3] = nullptr;
-			}
+			MultiDeleteObjectIfExists(FIELD_STATUS, &_vm->_dialogs->_iconArray[HL3]);
 			_vm->_dialogs->_iconArray[HL3] = ObjectTextOut(
 			    _vm->_bg->GetPlayfieldList(FIELD_STATUS), _vm->_dialogs->_saveGameDesc, 0,
 			    _vm->_dialogs->CurrentInventoryX() + cd.box[cd.selBox].xpos + 2,
@@ -1373,14 +1357,8 @@ void Dialogs::Select(int i, bool force) {
 	cd.selBox = i;
 
 	// Clear previous selected highlight and text
-	if (_iconArray[HL2] != NULL) {
-		MultiDeleteObject(_vm->_bg->GetPlayfieldList(FIELD_STATUS), _iconArray[HL2]);
-		_iconArray[HL2] = nullptr;
-	}
-	if (_iconArray[HL3] != NULL) {
-		MultiDeleteObject(_vm->_bg->GetPlayfieldList(FIELD_STATUS), _iconArray[HL3]);
-		_iconArray[HL3] = nullptr;
-	}
+	MultiDeleteObjectIfExists(FIELD_STATUS, &_iconArray[HL2]);
+	MultiDeleteObjectIfExists(FIELD_STATUS, &_iconArray[HL3]);
 
 	// New highlight box
 	switch (cd.box[i].boxType) {
@@ -1437,10 +1415,10 @@ void Dialogs::Select(int i, bool force) {
 	case FRGROUP:
 		_iconArray[HL2] = RectangleObject(_vm->_bg->BgPal(), COL_HILIGHT, cd.box[i].w + 6, cd.box[i].h + 6);
 		MultiInsertObject(_vm->_bg->GetPlayfieldList(FIELD_STATUS), _iconArray[HL2]);
-		MultiSetAniXY(_iconArray[HL2],
-		              _invD[_activeInv].inventoryX + cd.box[i].xpos - 2,
-		              _invD[_activeInv].inventoryY + cd.box[i].ypos - 2);
-		MultiSetZPosition(_iconArray[HL2], Z_INV_BRECT + 1);
+		MultiSetAniXYZ(_iconArray[HL2],
+		               _invD[_activeInv].inventoryX + cd.box[i].xpos - 2,
+		               _invD[_activeInv].inventoryY + cd.box[i].ypos - 2,
+		               Z_INV_BRECT + 1);
 
 		break;
 
@@ -1486,7 +1464,7 @@ void Dialogs::AddToInventory(int invno, int icon, bool hold) {
 	INV_OBJECT *invObj;
 
 	// Validate trying to add to a legal inventory
-	assert(invno == INV_1 || invno == INV_2 || invno == INV_CONV || invno == INV_OPEN || (invno == INV_DEFAULT && TinselVersion >= 2));
+	assert(invno == INV_1 || invno == INV_2 || invno == INV_3 || invno == INV_CONV || invno == INV_OPEN || (invno == INV_DEFAULT && TinselVersion >= 2));
 
 	if (invno == INV_OPEN) {
 		assert(_inventoryState == ACTIVE_INV && (_activeInv == INV_1 || _activeInv == INV_2)); // addopeninv() with inventry not open
@@ -1914,7 +1892,8 @@ int Dialogs::InvItemId(int x, int y) {
 int Dialogs::WhichMenuBox(int curX, int curY, bool bSlides) {
 	if (bSlides) {
 		for (int i = 0; i < _numMdSlides; i++) {
-			if (curY > MultiHighest(_mdSlides[i].obj) && curY < MultiLowest(_mdSlides[i].obj) && curX > MultiLeftmost(_mdSlides[i].obj) && curX < MultiRightmost(_mdSlides[i].obj))
+			Common::Rect bounds = MultiBounds(_mdSlides[i].obj);
+			if (curY > bounds.top && curY < bounds.bottom && curX > bounds.left && curX < bounds.right)
 				return _mdSlides[i].num | IS_SLIDER;
 		}
 	}
@@ -2019,17 +1998,11 @@ void Dialogs::InvBoxes(bool InBody, int curX, int curY) {
 	if (index < 0) {
 		// unhigh-light box (if one was)
 		cd.pointBox = NOBOX;
-		if (_iconArray[HL1] != NULL) {
-			MultiDeleteObject(_vm->_bg->GetPlayfieldList(FIELD_STATUS), _iconArray[HL1]);
-			_iconArray[HL1] = nullptr;
-		}
+		MultiDeleteObjectIfExists(FIELD_STATUS, &_iconArray[HL1]);
 	} else if (index != cd.pointBox) {
 		cd.pointBox = index;
 		// A new box is pointed to - high-light it
-		if (_iconArray[HL1] != NULL) {
-			MultiDeleteObject(_vm->_bg->GetPlayfieldList(FIELD_STATUS), _iconArray[HL1]);
-			_iconArray[HL1] = nullptr;
-		}
+		MultiDeleteObjectIfExists(FIELD_STATUS, &_iconArray[HL1]);
 		if ((cd.box[cd.pointBox].boxType == ARSBUT && cd.selBox != NOBOX) ||
 		    ///* I don't agree */ cd.box[cd.pointBox].boxType == RGROUP ||
 		    cd.box[cd.pointBox].boxType == AATBUT ||
@@ -2038,10 +2011,10 @@ void Dialogs::InvBoxes(bool InBody, int curX, int curY) {
 			                                   ((TinselVersion >= 2) ? HighlightColor() : COL_HILIGHT),
 			                                   cd.box[cd.pointBox].w, cd.box[cd.pointBox].h);
 			MultiInsertObject(_vm->_bg->GetPlayfieldList(FIELD_STATUS), _iconArray[HL1]);
-			MultiSetAniXY(_iconArray[HL1],
-			              _invD[_activeInv].inventoryX + cd.box[cd.pointBox].xpos,
-			              _invD[_activeInv].inventoryY + cd.box[cd.pointBox].ypos);
-			MultiSetZPosition(_iconArray[HL1], Z_INV_ICONS + 1);
+			MultiSetAniXYZ(_iconArray[HL1],
+			               _invD[_activeInv].inventoryX + cd.box[cd.pointBox].xpos,
+			               _invD[_activeInv].inventoryY + cd.box[cd.pointBox].ypos,
+			               Z_INV_ICONS + 1);
 		} else if (cd.box[cd.pointBox].boxType == AAGBUT ||
 		           cd.box[cd.pointBox].boxType == ARSGBUT ||
 		           cd.box[cd.pointBox].boxType == TOGGLE ||
@@ -2050,10 +2023,10 @@ void Dialogs::InvBoxes(bool InBody, int curX, int curY) {
 			pfilm = (const FILM *)_vm->_handle->LockMem(_hWinParts);
 
 			_iconArray[HL1] = AddObject(&pfilm->reels[cd.box[cd.pointBox].bi + HIGRAPH], -1);
-			MultiSetAniXY(_iconArray[HL1],
-			              _invD[_activeInv].inventoryX + cd.box[cd.pointBox].xpos,
-			              _invD[_activeInv].inventoryY + cd.box[cd.pointBox].ypos);
-			MultiSetZPosition(_iconArray[HL1], Z_INV_ICONS + 1);
+			MultiSetAniXYZ(_iconArray[HL1],
+			               _invD[_activeInv].inventoryX + cd.box[cd.pointBox].xpos,
+			               _invD[_activeInv].inventoryY + cd.box[cd.pointBox].ypos,
+			               Z_INV_ICONS + 1);
 		} else if (cd.box[cd.pointBox].boxType == ROTATE) {
 			if (_noLanguage)
 				return;
@@ -2063,16 +2036,16 @@ void Dialogs::InvBoxes(bool InBody, int curX, int curY) {
 			rotateIndex = cd.box[cd.pointBox].bi;
 			if (rotateIndex == IX2_LEFT1) {
 				_iconArray[HL1] = AddObject(&pfilm->reels[IX2_LEFT2], -1);
-				MultiSetAniXY(_iconArray[HL1],
-				              _invD[_activeInv].inventoryX + cd.box[cd.pointBox].xpos - ROTX1,
-				              _invD[_activeInv].inventoryY + cd.box[cd.pointBox].ypos);
-				MultiSetZPosition(_iconArray[HL1], Z_INV_ICONS + 1);
+				MultiSetAniXYZ(_iconArray[HL1],
+				               _invD[_activeInv].inventoryX + cd.box[cd.pointBox].xpos - ROTX1,
+				               _invD[_activeInv].inventoryY + cd.box[cd.pointBox].ypos,
+				               Z_INV_ICONS + 1);
 			} else if (rotateIndex == IX2_RIGHT1) {
 				_iconArray[HL1] = AddObject(&pfilm->reels[IX2_RIGHT2], -1);
-				MultiSetAniXY(_iconArray[HL1],
-				              _invD[_activeInv].inventoryX + cd.box[cd.pointBox].xpos + ROTX1,
-				              _invD[_activeInv].inventoryY + cd.box[cd.pointBox].ypos);
-				MultiSetZPosition(_iconArray[HL1], Z_INV_ICONS + 1);
+				MultiSetAniXYZ(_iconArray[HL1],
+				               _invD[_activeInv].inventoryX + cd.box[cd.pointBox].xpos + ROTX1,
+				               _invD[_activeInv].inventoryY + cd.box[cd.pointBox].ypos,
+				               Z_INV_ICONS + 1);
 			}
 		}
 	}
@@ -2229,8 +2202,10 @@ void Dialogs::FillInInventory() {
 			else if (_invD[_activeInv].contents[Index] != _heldItem) {
 				// Create a display object and position it
 				_iconArray[n] = AddInvObject(_invD[_activeInv].contents[Index], &pfr, &pfilm);
-				MultiSetAniXY(_iconArray[n], _invD[_activeInv].inventoryX + xpos, _invD[_activeInv].inventoryY + ypos);
-				MultiSetZPosition(_iconArray[n], Z_INV_ICONS);
+				MultiSetAniXYZ(_iconArray[n],
+				               _invD[_activeInv].inventoryX + xpos,
+				               _invD[_activeInv].inventoryY + ypos,
+				               Z_INV_ICONS);
 
 				InitStepAnimScript(&_iconAnims[n], _iconArray[n], FROM_32(pfr->script), ONE_SECOND / FROM_32(pfilm->frate));
 
@@ -2259,9 +2234,9 @@ void Dialogs::AddBackground(OBJECT **rect, OBJECT **title, int extraH, int extra
 
 	// add it to display list and position it
 	MultiInsertObject(_vm->_bg->GetPlayfieldList(FIELD_STATUS), *rect);
-	MultiSetAniXY(*rect, _invD[_activeInv].inventoryX + NM_BG_POS_X,
-	              _invD[_activeInv].inventoryY + NM_BG_POS_Y);
-	MultiSetZPosition(*rect, Z_INV_BRECT);
+	MultiSetAniXYZ(*rect, _invD[_activeInv].inventoryX + NM_BG_POS_X,
+	               _invD[_activeInv].inventoryY + NM_BG_POS_Y,
+	               Z_INV_BRECT);
 
 	if (title == NULL)
 		return;
@@ -2289,6 +2264,15 @@ void Dialogs::AddBackground(OBJECT **rect, OBJECT **title, int extraH, int extra
  */
 void Dialogs::AddBackground(OBJECT **rect, int extraH, int extraV) {
 	AddBackground(rect, NULL, extraH, extraV, 0);
+}
+
+Common::Rect MultiBounds(OBJECT *obj) {
+	Common::Rect bounds;
+	bounds.left = MultiLeftmost(obj);
+	bounds.right = MultiRightmost(obj);
+	bounds.top = MultiHighest(obj);
+	bounds.bottom = MultiLowest(obj);
+	return bounds;
 }
 
 /**
@@ -2347,9 +2331,9 @@ OBJECT *Dialogs::AddObject(const FREEL *pfreel, int num) {
 
 void Dialogs::AddSlider(OBJECT **slide, const FILM *pfilm) {
 	_slideObject = *slide = AddObject(&pfilm->reels[IX_SLIDE], -1);
-	MultiSetAniXY(*slide, MultiRightmost(_rectObject) + ((TinselVersion >= 2) ? NM_SLX : -M_SXOFF + 2),
-	              _invD[_activeInv].inventoryY + _sliderYpos);
-	MultiSetZPosition(*slide, Z_INV_MFRAME);
+	MultiSetAniXYZ(*slide, MultiRightmost(_rectObject) + ((TinselVersion >= 2) ? NM_SLX : -M_SXOFF + 2),
+	               _invD[_activeInv].inventoryY + _sliderYpos,
+	               Z_INV_MFRAME);
 }
 
 /**
@@ -2372,8 +2356,7 @@ void Dialogs::AddBox(int *pi, const int i) {
 		_iconArray[*pi] = RectangleObject(_vm->_bg->BgPal(), (TinselVersion >= 2) ? BoxColor() : COL_BOX,
 		                                   cd.box[i].w, cd.box[i].h);
 		MultiInsertObject(_vm->_bg->GetPlayfieldList(FIELD_STATUS), _iconArray[*pi]);
-		MultiSetAniXY(_iconArray[*pi], x, y);
-		MultiSetZPosition(_iconArray[*pi], Z_INV_BRECT + 1);
+		MultiSetAniXYZ(_iconArray[*pi], x, y, Z_INV_BRECT + 1);
 		*pi += 1;
 
 		// Stick in the text
@@ -2434,8 +2417,7 @@ void Dialogs::AddBox(int *pi, const int i) {
 		pFilm = (const FILM *)_vm->_handle->LockMem(_hWinParts);
 
 		_iconArray[*pi] = AddObject(&pFilm->reels[cd.box[i].bi + NORMGRAPH], -1);
-		MultiSetAniXY(_iconArray[*pi], x, y);
-		MultiSetZPosition(_iconArray[*pi], Z_INV_BRECT + 1);
+		MultiSetAniXYZ(_iconArray[*pi], x, y, Z_INV_BRECT + 1);
 		*pi += 1;
 
 		break;
@@ -2449,8 +2431,7 @@ void Dialogs::AddBox(int *pi, const int i) {
 			cd.box[i].bi = FIX_USA;
 
 		_iconArray[*pi] = AddObject(&pFilm->reels[cd.box[i].bi], -1);
-		MultiSetAniXY(_iconArray[*pi], x, y);
-		MultiSetZPosition(_iconArray[*pi], Z_INV_BRECT + 2);
+		MultiSetAniXYZ(_iconArray[*pi], x, y, Z_INV_BRECT + 2);
 		*pi += 1;
 
 		break;
@@ -2462,8 +2443,7 @@ void Dialogs::AddBox(int *pi, const int i) {
 			_iconArray[*pi] = AddObject(&pFilm->reels[cd.box[i].bi], -1);
 		else
 			_iconArray[*pi] = AddObject(&pFilm->reels[cd.box[i].bi + 1], -1);
-		MultiSetAniXY(_iconArray[*pi], x, y);
-		MultiSetZPosition(_iconArray[*pi], Z_INV_BRECT + 1);
+		MultiSetAniXYZ(_iconArray[*pi], x, y, Z_INV_BRECT + 1);
 		*pi += 1;
 
 		// Stick in the text
@@ -2487,8 +2467,7 @@ void Dialogs::AddBox(int *pi, const int i) {
 
 		cd.box[i].bi = *pival ? IX_TICK1 : IX_CROSS1;
 		_iconArray[*pi] = AddObject(&pFilm->reels[cd.box[i].bi + NORMGRAPH], -1);
-		MultiSetAniXY(_iconArray[*pi], x, y);
-		MultiSetZPosition(_iconArray[*pi], Z_INV_BRECT + 1);
+		MultiSetAniXYZ(_iconArray[*pi], x, y, Z_INV_BRECT + 1);
 		*pi += 1;
 
 		// Stick in the text
@@ -2519,12 +2498,10 @@ void Dialogs::AddBox(int *pi, const int i) {
 		xdisp = SLIDE_RANGE * (*pival) / cd.box[i].w;
 
 		_iconArray[*pi] = AddObject(&pFilm->reels[IX_MDGROOVE], -1);
-		MultiSetAniXY(_iconArray[*pi], x, y);
-		MultiSetZPosition(_iconArray[*pi], Z_MDGROOVE);
+		MultiSetAniXYZ(_iconArray[*pi], x, y, Z_MDGROOVE);
 		*pi += 1;
 		_iconArray[*pi] = AddObject(&pFilm->reels[IX_MDSLIDER], -1);
-		MultiSetAniXY(_iconArray[*pi], x + SLIDE_MINX + xdisp, y);
-		MultiSetZPosition(_iconArray[*pi], Z_MDSLIDER);
+		MultiSetAniXYZ(_iconArray[*pi], x + SLIDE_MINX + xdisp, y, Z_MDSLIDER);
 		assert(_numMdSlides < MAXSLIDES);
 		_mdSlides[_numMdSlides].num = i;
 		_mdSlides[_numMdSlides].min = x + SLIDE_MINX;
@@ -2552,14 +2529,12 @@ void Dialogs::AddBox(int *pi, const int i) {
 		// Left one
 		if (!_noLanguage) {
 			_iconArray[*pi] = AddObject(&pFilm->reels[IX2_LEFT1], -1);
-			MultiSetAniXY(_iconArray[*pi], x - ROTX1, y);
-			MultiSetZPosition(_iconArray[*pi], Z_INV_BRECT + 1);
+			MultiSetAniXYZ(_iconArray[*pi], x - ROTX1, y, Z_INV_BRECT + 1);
 			*pi += 1;
 
 			// Right one
 			_iconArray[*pi] = AddObject(&pFilm->reels[IX2_RIGHT1], -1);
-			MultiSetAniXY(_iconArray[*pi], x + ROTX1, y);
-			MultiSetZPosition(_iconArray[*pi], Z_INV_BRECT + 1);
+			MultiSetAniXYZ(_iconArray[*pi], x + ROTX1, y, Z_INV_BRECT + 1);
 			*pi += 1;
 
 			// Stick in the text
@@ -2585,8 +2560,7 @@ void Dialogs::AddBox(int *pi, const int i) {
 		// Current language's flag
 		pFilm = (const FILM *)_vm->_handle->LockMem(LanguageFlag(_displayedLanguage));
 		_iconArray[*pi] = AddObject(&pFilm->reels[0], -1);
-		MultiSetAniXY(_iconArray[*pi], x + FLAGX, y + FLAGY);
-		MultiSetZPosition(_iconArray[*pi], Z_INV_BRECT + 1);
+		MultiSetAniXYZ(_iconArray[*pi], x + FLAGX, y + FLAGY, Z_INV_BRECT + 1);
 		*pi += 1;
 		break;
 	}
@@ -2643,8 +2617,7 @@ void Dialogs::AddBoxes(bool bPosnSlide) {
  */
 void Dialogs::AddEWSlider(OBJECT **slide, const FILM *pfilm) {
 	_slideObject = *slide = AddObject(&pfilm->reels[IX_SLIDE], -1);
-	MultiSetAniXY(*slide, _invD[_activeInv].inventoryX + 24 + 127, _sliderYpos);
-	MultiSetZPosition(*slide, Z_INV_MFRAME);
+	MultiSetAniXYZ(*slide, _invD[_activeInv].inventoryX + 24 + 127, _sliderYpos, Z_INV_MFRAME);
 }
 
 /**
@@ -2662,56 +2635,43 @@ int Dialogs::AddExtraWindow(int x, int y, OBJECT **retObj) {
 
 	// Draw the four corners
 	retObj[n] = AddObject(&pfilm->reels[IX_RTL], -1); // Top left
-	MultiSetAniXY(retObj[n], x, y);
-	MultiSetZPosition(retObj[n], Z_INV_MFRAME);
-	n++;
+	MultiSetAniXYZ(retObj[n++], x, y, Z_INV_MFRAME);
 	retObj[n] = AddObject(&pfilm->reels[IX_NTR], -1); // Top right
-	MultiSetAniXY(retObj[n], x + ((TinselVersion >= 2) ? _TLwidth + 312 : 152), y);
-	MultiSetZPosition(retObj[n], Z_INV_MFRAME);
-	n++;
+	MultiSetAniXYZ(retObj[n++], x + ((TinselVersion >= 2) ? _TLwidth + 312 : 152), y, Z_INV_MFRAME);
 	retObj[n] = AddObject(&pfilm->reels[IX_BL], -1); // Bottom left
-	MultiSetAniXY(retObj[n], x, y + ((TinselVersion >= 2) ? _TLheight + 208 : 124));
-	MultiSetZPosition(retObj[n], Z_INV_MFRAME);
-	n++;
+	MultiSetAniXYZ(retObj[n++], x, y + ((TinselVersion >= 2) ? _TLheight + 208 : 124), Z_INV_MFRAME);
 	retObj[n] = AddObject(&pfilm->reels[IX_BR], -1); // Bottom right
-	MultiSetAniXY(retObj[n], x + ((TinselVersion >= 2) ? _TLwidth + 312 : 152),
-	              y + ((TinselVersion >= 2) ? _TLheight + 208 : 124));
-	MultiSetZPosition(retObj[n], Z_INV_MFRAME);
-	n++;
+	MultiSetAniXYZ(retObj[n++], x + ((TinselVersion >= 2) ? _TLwidth + 312 : 152),
+	               y + ((TinselVersion >= 2) ? _TLheight + 208 : 124),
+	               Z_INV_MFRAME);
 
 	// Draw the edges
 	retObj[n] = AddObject(&pfilm->reels[IX_H156], -1); // Top
-	MultiSetAniXY(retObj[n], x + ((TinselVersion >= 2) ? _TLwidth : 6), y + NM_TBT);
-	MultiSetZPosition(retObj[n], Z_INV_MFRAME);
-	n++;
+	MultiSetAniXYZ(retObj[n++], x + ((TinselVersion >= 2) ? _TLwidth : 6), y + NM_TBT, Z_INV_MFRAME);
 	retObj[n] = AddObject(&pfilm->reels[IX_H156], -1); // Bottom
-	MultiSetAniXY(retObj[n], x + ((TinselVersion >= 2) ? _TLwidth : 6), y + ((TinselVersion >= 2) ? _TLheight + 208 + _BLheight + NM_BSY : 143));
-	MultiSetZPosition(retObj[n], Z_INV_MFRAME);
-	n++;
+	MultiSetAniXYZ(retObj[n++], x + ((TinselVersion >= 2) ? _TLwidth : 6),
+	               y + ((TinselVersion >= 2) ? _TLheight + 208 + _BLheight + NM_BSY : 143),
+	               Z_INV_MFRAME);
 	retObj[n] = AddObject(&pfilm->reels[IX_V104], -1); // Left
-	MultiSetAniXY(retObj[n], x + NM_LSX, y + ((TinselVersion >= 2) ? _TLheight : 20));
-	MultiSetZPosition(retObj[n], Z_INV_MFRAME);
-	n++;
+	MultiSetAniXYZ(retObj[n++], x + NM_LSX, y + ((TinselVersion >= 2) ? _TLheight : 20), Z_INV_MFRAME);
 	retObj[n] = AddObject(&pfilm->reels[IX_V104], -1); // Right 1
-	MultiSetAniXY(retObj[n], x + ((TinselVersion >= 2) ? _TLwidth + 312 + _TRwidth + NM_RSX : 179),
-	              y + ((TinselVersion >= 2) ? _TLheight : 20));
-	MultiSetZPosition(retObj[n], Z_INV_MFRAME);
-	n++;
+	MultiSetAniXYZ(retObj[n++], x + ((TinselVersion >= 2) ? _TLwidth + 312 + _TRwidth + NM_RSX : 179),
+	               y + ((TinselVersion >= 2) ? _TLheight : 20),
+	               Z_INV_MFRAME);
 	retObj[n] = AddObject(&pfilm->reels[IX_V104], -1); // Right 2
-	MultiSetAniXY(retObj[n], x + ((TinselVersion >= 2) ? _TLwidth + 312 + _TRwidth + NM_SBL : 188),
-	              y + ((TinselVersion >= 2) ? _TLheight : 20));
-	MultiSetZPosition(retObj[n], Z_INV_MFRAME);
-	n++;
+	MultiSetAniXYZ(retObj[n++], x + ((TinselVersion >= 2) ? _TLwidth + 312 + _TRwidth + NM_SBL : 188),
+	               y + ((TinselVersion >= 2) ? _TLheight : 20),
+	               Z_INV_MFRAME);
 
 	if (TinselVersion >= 2) {
 		_sliderYpos = _sliderYmin = y + 27;
 		_sliderYmax = y + 273;
 
 		retObj[n++] = _slideObject = AddObject(&pfilm->reels[IX_SLIDE], -1);
-		MultiSetAniXY(_slideObject,
-		              x + _TLwidth + 320 + _TRwidth - NM_BG_POS_X + NM_BG_SIZ_X - 2,
-		              _sliderYpos);
-		MultiSetZPosition(_slideObject, Z_INV_MFRAME);
+		MultiSetAniXYZ(_slideObject,
+		               x + _TLwidth + 320 + _TRwidth - NM_BG_POS_X + NM_BG_SIZ_X - 2,
+		               _sliderYpos,
+		               Z_INV_MFRAME);
 	} else {
 		_sliderYpos = _sliderYmin = y + 9;
 		_sliderYmax = y + 134;
@@ -2788,53 +2748,44 @@ void Dialogs::ConstructInventory(InventoryType filling) {
 
 	// Draw the four corners
 	retObj[n] = AddObject(&pfilm->reels[_TL], _TL);
-	MultiSetAniXY(retObj[n], invX, invY);
-	MultiSetZPosition(retObj[n], zpos);
+	MultiSetAniXYZ(retObj[n], invX, invY, zpos);
 	n++;
 	retObj[n] = AddObject(&pfilm->reels[_TR], _TR);
-	MultiSetAniXY(retObj[n], invX + _TLwidth + eH, invY);
-	MultiSetZPosition(retObj[n], zpos);
+	MultiSetAniXYZ(retObj[n], invX + _TLwidth + eH, invY, zpos);
 	n++;
 	retObj[n] = AddObject(&pfilm->reels[_BL], _BL);
-	MultiSetAniXY(retObj[n], invX, invY + _TLheight + eV);
-	MultiSetZPosition(retObj[n], zpos);
+	MultiSetAniXYZ(retObj[n], invX, invY + _TLheight + eV, zpos);
 	n++;
 	retObj[n] = AddObject(&pfilm->reels[_BR], _BR);
-	MultiSetAniXY(retObj[n], invX + _TLwidth + eH, invY + _TLheight + eV);
-	MultiSetZPosition(retObj[n], zpos);
+	MultiSetAniXYZ(retObj[n], invX + _TLwidth + eH, invY + _TLheight + eV, zpos);
 	n++;
 
 	// Draw extra Top and bottom parts
 	if (_invD[_activeInv].NoofHicons > 1) {
 		// Top side
 		retObj[n] = AddObject(&pfilm->reels[hFillers[_invD[_activeInv].NoofHicons - 2]], -1);
-		MultiSetAniXY(retObj[n], invX + _TLwidth, invY + NM_TBT);
-		MultiSetZPosition(retObj[n], zpos);
+		MultiSetAniXYZ(retObj[n], invX + _TLwidth, invY + NM_TBT, zpos);
 		n++;
 
 		// Bottom of header box
 		if (filling == FULL) {
 			if (TinselVersion >= 2) {
 				retObj[n] = AddObject(&pfilm->reels[hFillers[_invD[_activeInv].NoofHicons - 2]], -1);
-				MultiSetAniXY(retObj[n], invX + _TLwidth, invY + NM_TBB);
-				MultiSetZPosition(retObj[n], zpos);
+				MultiSetAniXYZ(retObj[n], invX + _TLwidth, invY + NM_TBB, zpos);
 				n++;
 			} else {
 				retObj[n] = AddObject(&pfilm->reels[hFillers[_invD[_activeInv].NoofHicons - 2]], -1);
-				MultiSetAniXY(retObj[n], invX + _TLwidth, invY + M_TBB + 1);
-				MultiSetZPosition(retObj[n], zpos);
+				MultiSetAniXYZ(retObj[n], invX + _TLwidth, invY + M_TBB + 1, zpos);
 				n++;
 
 				// Extra bits for conversation - hopefully temporary
 				if (_activeInv == INV_CONV) {
 					retObj[n] = AddObject(&pfilm->reels[IX_H26], -1);
-					MultiSetAniXY(retObj[n], invX + _TLwidth - 2, invY + M_TBB + 1);
-					MultiSetZPosition(retObj[n], zpos);
+					MultiSetAniXYZ(retObj[n], invX + _TLwidth - 2, invY + M_TBB + 1, zpos);
 					n++;
 
 					retObj[n] = AddObject(&pfilm->reels[IX_H52], -1);
-					MultiSetAniXY(retObj[n], invX + eH - 10, invY + M_TBB + 1);
-					MultiSetZPosition(retObj[n], zpos);
+					MultiSetAniXYZ(retObj[n], invX + eH - 10, invY + M_TBB + 1, zpos);
 					n++;
 				}
 			}
@@ -2842,9 +2793,7 @@ void Dialogs::ConstructInventory(InventoryType filling) {
 
 		// Bottom side
 		retObj[n] = AddObject(&pfilm->reels[hFillers[_invD[_activeInv].NoofHicons - 2]], -1);
-		MultiSetAniXY(retObj[n], invX + _TLwidth, invY + _TLheight + eV + _BLheight + NM_BSY);
-
-		MultiSetZPosition(retObj[n], zpos);
+		MultiSetAniXYZ(retObj[n], invX + _TLwidth, invY + _TLheight + eV + _BLheight + NM_BSY, zpos);
 		n++;
 	}
 	if (_SuppH) {
@@ -2854,15 +2803,12 @@ void Dialogs::ConstructInventory(InventoryType filling) {
 
 		// Top side extra
 		retObj[n] = AddObject(&pfilm->reels[IX_H26], -1);
-		MultiSetAniXY(retObj[n], invX + offx, invY + NM_TBT);
-		MultiSetZPosition(retObj[n], zpos);
+		MultiSetAniXYZ(retObj[n], invX + offx, invY + NM_TBT, zpos);
 		n++;
 
 		// Bottom side extra
 		retObj[n] = AddObject(&pfilm->reels[IX_H26], -1);
-		MultiSetAniXY(retObj[n], invX + offx, invY + _TLheight + eV + _BLheight + NM_BSY);
-
-		MultiSetZPosition(retObj[n], zpos);
+		MultiSetAniXYZ(retObj[n], invX + offx, invY + _TLheight + eV + _BLheight + NM_BSY, zpos);
 		n++;
 	}
 
@@ -2870,8 +2816,7 @@ void Dialogs::ConstructInventory(InventoryType filling) {
 	if (_invD[_activeInv].NoofVicons > 1) {
 		// Left side
 		retObj[n] = AddObject(&pfilm->reels[vFillers[_invD[_activeInv].NoofVicons - 2]], -1);
-		MultiSetAniXY(retObj[n], invX + NM_LSX, invY + _TLheight);
-		MultiSetZPosition(retObj[n], zpos);
+		MultiSetAniXYZ(retObj[n], invX + NM_LSX, invY + _TLheight, zpos);
 		n++;
 
 		// Left side of scroll bar
@@ -2887,8 +2832,7 @@ void Dialogs::ConstructInventory(InventoryType filling) {
 
 		// Right side
 		retObj[n] = AddObject(&pfilm->reels[vFillers[_invD[_activeInv].NoofVicons - 2]], -1);
-		MultiSetAniXY(retObj[n], invX + _TLwidth + eH + _TRwidth + NM_RSX, invY + _TLheight);
-		MultiSetZPosition(retObj[n], zpos);
+		MultiSetAniXYZ(retObj[n], invX + _TLwidth + eH + _TRwidth + NM_RSX, invY + _TLheight, zpos);
 		n++;
 	}
 	if (_SuppV) {
@@ -2899,14 +2843,12 @@ void Dialogs::ConstructInventory(InventoryType filling) {
 
 		// Left side extra
 		retObj[n] = AddObject(&pfilm->reels[IX_V26], -1);
-		MultiSetAniXY(retObj[n], invX + NM_LSX, invY + offy);
-		MultiSetZPosition(retObj[n], zpos);
+		MultiSetAniXYZ(retObj[n], invX + NM_LSX, invY + offy, zpos);
 		n++;
 
 		// Right side extra
 		retObj[n] = AddObject(&pfilm->reels[IX_V26], -1);
-		MultiSetAniXY(retObj[n], invX + _TLwidth + eH + _TRwidth + NM_RSX, invY + offy);
-		MultiSetZPosition(retObj[n], zpos);
+		MultiSetAniXYZ(retObj[n], invX + _TLwidth + eH + _TRwidth + NM_RSX, invY + offy, zpos);
 		n++;
 	}
 
@@ -5063,7 +5005,7 @@ void Dialogs::RegisterIcons(void *cptr, int num) {
 		_invObjects = (INV_OBJECT *)MemoryDeref(node);
 		assert(_invObjects);
 		byte *srcP = (byte *)cptr;
-		INV_OBJECT *destP = (INV_OBJECT *)_invObjects;
+		INV_OBJECT *destP = _invObjects;
 
 		for (int i = 0; i < num; ++i, ++destP, srcP += 12) {
 			memmove(destP, srcP, 12);
@@ -5221,9 +5163,21 @@ void Dialogs::idec_inv2(SCNHANDLE text, int MaxContents,
 						int MinWidth, int MinHeight,
 						int StartWidth, int StartHeight,
 						int MaxWidth, int MaxHeight) {
+	int startx = 100;
+	int starty = 100;
+	if (TinselVersion == 3) {
+		MinWidth = 3;
+		MinHeight = 2;
+		StartWidth = 3;
+		StartHeight = 2;
+		MaxWidth = 3;
+		MaxHeight = 2;
+		startx = 0;
+		starty = 50;
+	}
 	idec_inv(INV_2, text, MaxContents, MinWidth, MinHeight,
-	         StartWidth, StartHeight, MaxWidth, MaxHeight,
-	         100, 100, true);
+			 StartWidth, StartHeight, MaxWidth, MaxHeight,
+			 startx, starty, true);
 }
 
 /**
@@ -5238,14 +5192,9 @@ void Dialogs::idec_invMain(SCNHANDLE text, int MaxContents) {
 	idec_inv(INV_4, text, MaxContents,3, 2, 3, 2, 3, 2, 39,
 			72, false);
 
-	warning("TODO: idec_invMain: implement language scene playback");
-	// This is not yet actived because playing the loadsceen scene
-	// currently produces an invalid corountine stack.
-#if 0
 	const char *fileName = _vm->getSceneFile(TextLanguage());
 	SCNHANDLE sceneHandle = _vm->_handle->FindLanguageSceneHandle(fileName);
 	DoHailScene(sceneHandle);
-#endif
 }
 
 /**
@@ -5474,12 +5423,12 @@ static void ButtonPress(CORO_PARAM, CONFBOX *box) {
 
 	// Replace highlight image with normal image
 	pfilm = _vm->_dialogs->GetWindowData();
-	if (_vm->_dialogs->_iconArray[HL1] != NULL)
-		MultiDeleteObject(_vm->_bg->GetPlayfieldList(FIELD_STATUS), _vm->_dialogs->_iconArray[HL1]);
+	MultiDeleteObjectIfExists(FIELD_STATUS, &_vm->_dialogs->_iconArray[HL1]);
 	pfilm = _vm->_dialogs->GetWindowData();
 	_vm->_dialogs->_iconArray[HL1] = _vm->_dialogs->AddObject(&pfilm->reels[box->bi + NORMGRAPH], -1);
-	MultiSetAniXY(_vm->_dialogs->_iconArray[HL1], _vm->_dialogs->CurrentInventoryX() + box->xpos, _vm->_dialogs->CurrentInventoryY() + box->ypos);
-	MultiSetZPosition(_vm->_dialogs->_iconArray[HL1], Z_INV_ICONS + 1);
+	MultiSetAniXYZ(_vm->_dialogs->_iconArray[HL1], _vm->_dialogs->CurrentInventoryX() + box->xpos,
+	               _vm->_dialogs->CurrentInventoryY() + box->ypos,
+	               Z_INV_ICONS + 1);
 
 	// Hold normal image for 1 frame
 	CORO_SLEEP(1);
@@ -5490,8 +5439,9 @@ static void ButtonPress(CORO_PARAM, CONFBOX *box) {
 	pfilm = _vm->_dialogs->GetWindowData();
 	MultiDeleteObject(_vm->_bg->GetPlayfieldList(FIELD_STATUS), _vm->_dialogs->_iconArray[HL1]);
 	_vm->_dialogs->_iconArray[HL1] = _vm->_dialogs->AddObject(&pfilm->reels[box->bi + DOWNGRAPH], -1);
-	MultiSetAniXY(_vm->_dialogs->_iconArray[HL1], _vm->_dialogs->CurrentInventoryX() + box->xpos, _vm->_dialogs->CurrentInventoryY() + box->ypos);
-	MultiSetZPosition(_vm->_dialogs->_iconArray[HL1], Z_INV_ICONS + 1);
+	MultiSetAniXYZ(_vm->_dialogs->_iconArray[HL1], _vm->_dialogs->CurrentInventoryX() + box->xpos,
+	               _vm->_dialogs->CurrentInventoryY() + box->ypos,
+	               Z_INV_ICONS + 1);
 
 	// Hold depressed image for 2 frames
 	CORO_SLEEP(2);
@@ -5502,8 +5452,9 @@ static void ButtonPress(CORO_PARAM, CONFBOX *box) {
 	pfilm = _vm->_dialogs->GetWindowData();
 	MultiDeleteObject(_vm->_bg->GetPlayfieldList(FIELD_STATUS), _vm->_dialogs->_iconArray[HL1]);
 	_vm->_dialogs->_iconArray[HL1] = _vm->_dialogs->AddObject(&pfilm->reels[box->bi + NORMGRAPH], -1);
-	MultiSetAniXY(_vm->_dialogs->_iconArray[HL1], _vm->_dialogs->CurrentInventoryX() + box->xpos, _vm->_dialogs->CurrentInventoryY() + box->ypos);
-	MultiSetZPosition(_vm->_dialogs->_iconArray[HL1], Z_INV_ICONS + 1);
+	MultiSetAniXYZ(_vm->_dialogs->_iconArray[HL1], _vm->_dialogs->CurrentInventoryX() + box->xpos,
+	               _vm->_dialogs->CurrentInventoryY() + box->ypos,
+	               Z_INV_ICONS + 1);
 
 	CORO_SLEEP(1);
 
@@ -5521,10 +5472,7 @@ static void ButtonToggle(CORO_PARAM, CONFBOX *box) {
 	assert((box->boxType == TOGGLE) || (box->boxType == TOGGLE1) || (box->boxType == TOGGLE2));
 
 	// Remove hilight image
-	if (_vm->_dialogs->_iconArray[HL1] != NULL) {
-		MultiDeleteObject(_vm->_bg->GetPlayfieldList(FIELD_STATUS), _vm->_dialogs->_iconArray[HL1]);
-		_vm->_dialogs->_iconArray[HL1] = nullptr;
-	}
+	MultiDeleteObjectIfExists(FIELD_STATUS, &_vm->_dialogs->_iconArray[HL1]);
 
 	// Hold normal image for 1 frame
 	CORO_SLEEP(1);
@@ -5534,8 +5482,10 @@ static void ButtonToggle(CORO_PARAM, CONFBOX *box) {
 	// Add depressed image
 	pfilm = _vm->_dialogs->GetWindowData();
 	_vm->_dialogs->_iconArray[HL1] = _vm->_dialogs->AddObject(&pfilm->reels[box->bi + DOWNGRAPH], -1);
-	MultiSetAniXY(_vm->_dialogs->_iconArray[HL1], _vm->_dialogs->CurrentInventoryX() + box->xpos, _vm->_dialogs->CurrentInventoryY() + box->ypos);
-	MultiSetZPosition(_vm->_dialogs->_iconArray[HL1], Z_INV_ICONS + 1);
+	MultiSetAniXYZ(_vm->_dialogs->_iconArray[HL1],
+	               _vm->_dialogs->CurrentInventoryX() + box->xpos,
+	               _vm->_dialogs->CurrentInventoryY() + box->ypos,
+	               Z_INV_ICONS + 1);
 
 	// Hold depressed image for 1 frame
 	CORO_SLEEP(1);
@@ -5552,11 +5502,12 @@ static void ButtonToggle(CORO_PARAM, CONFBOX *box) {
 
 	// New state, depressed image
 	pfilm = _vm->_dialogs->GetWindowData();
-	if (_vm->_dialogs->_iconArray[HL1] != NULL)
-		MultiDeleteObject(_vm->_bg->GetPlayfieldList(FIELD_STATUS), _vm->_dialogs->_iconArray[HL1]);
+	MultiDeleteObjectIfExists(FIELD_STATUS, &_vm->_dialogs->_iconArray[HL1]);
 	_vm->_dialogs->_iconArray[HL1] = _vm->_dialogs->AddObject(&pfilm->reels[box->bi + DOWNGRAPH], -1);
-	MultiSetAniXY(_vm->_dialogs->_iconArray[HL1], _vm->_dialogs->CurrentInventoryX() + box->xpos, _vm->_dialogs->CurrentInventoryY() + box->ypos);
-	MultiSetZPosition(_vm->_dialogs->_iconArray[HL1], Z_INV_ICONS + 1);
+	MultiSetAniXYZ(_vm->_dialogs->_iconArray[HL1],
+	               _vm->_dialogs->CurrentInventoryX() + box->xpos,
+	               _vm->_dialogs->CurrentInventoryY() + box->ypos,
+	               Z_INV_ICONS + 1);
 
 	// Hold new depressed image for 1 frame
 	CORO_SLEEP(1);
@@ -5564,8 +5515,7 @@ static void ButtonToggle(CORO_PARAM, CONFBOX *box) {
 		return;
 
 	// New state, normal
-	MultiDeleteObject(_vm->_bg->GetPlayfieldList(FIELD_STATUS), _vm->_dialogs->_iconArray[HL1]);
-	_vm->_dialogs->_iconArray[HL1] = nullptr;
+	MultiDeleteObjectIfExists(FIELD_STATUS, &_vm->_dialogs->_iconArray[HL1]);
 
 	// Hold normal image for 1 frame
 	CORO_SLEEP(1);
@@ -5574,11 +5524,12 @@ static void ButtonToggle(CORO_PARAM, CONFBOX *box) {
 
 	// New state, highlighted
 	pfilm = _vm->_dialogs->GetWindowData();
-	if (_vm->_dialogs->_iconArray[HL1] != NULL)
-		MultiDeleteObject(_vm->_bg->GetPlayfieldList(FIELD_STATUS), _vm->_dialogs->_iconArray[HL1]);
+	MultiDeleteObjectIfExists(FIELD_STATUS, &_vm->_dialogs->_iconArray[HL1]);
 	_vm->_dialogs->_iconArray[HL1] = _vm->_dialogs->AddObject(&pfilm->reels[box->bi + HIGRAPH], -1);
-	MultiSetAniXY(_vm->_dialogs->_iconArray[HL1], _vm->_dialogs->CurrentInventoryX() + box->xpos, _vm->_dialogs->CurrentInventoryY() + box->ypos);
-	MultiSetZPosition(_vm->_dialogs->_iconArray[HL1], Z_INV_ICONS + 1);
+	MultiSetAniXYZ(_vm->_dialogs->_iconArray[HL1],
+	               _vm->_dialogs->CurrentInventoryX() + box->xpos,
+	               _vm->_dialogs->CurrentInventoryY() + box->ypos,
+	               Z_INV_ICONS + 1);
 
 	CORO_END_CODE;
 }

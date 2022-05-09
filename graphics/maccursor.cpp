@@ -42,14 +42,14 @@ void MacCursor::clear() {
 	memset(_palette, 0, 256 * 3);
 }
 
-bool MacCursor::readFromStream(Common::SeekableReadStream &stream, bool forceMonochrome, byte monochromeInvertedPixelColor, bool allowOversizedCURS) {
+bool MacCursor::readFromStream(Common::SeekableReadStream &stream, bool forceMonochrome, byte monochromeInvertedPixelColor, bool forceCURSFormat) {
 	clear();
 
 	const int minCursSize = 32 * 2 + 4;
 
-	// Older Mac CURS monochrome cursors had a set size
+	// Older Mac CURS monochrome cursors had a set size, but sometimes contain extra unused bytes
 	// All crsr cursors are larger than this
-	if (stream.size() == minCursSize || (allowOversizedCURS && stream.size() > minCursSize))
+	if (stream.size() == minCursSize || (forceCURSFormat && stream.size() >= minCursSize))
 		return readFromCURS(stream, monochromeInvertedPixelColor);
 
 	return readFromCRSR(stream, forceMonochrome, monochromeInvertedPixelColor);

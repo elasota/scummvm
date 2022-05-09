@@ -55,6 +55,7 @@ enum {
 	INV_DEFAULT  	= 6,
 
 	// Noir constants
+	INV_3		 	= 3,
 	INV_4 		 	= 4,
 	NUM_INV_V3 	 	= 5,
 	INV_7NOINV 	 	= 7,
@@ -119,9 +120,11 @@ enum InvCursorFN { IC_AREA,
 #define SG_DESC_LEN 40   // Max. saved game description length
 
 // Number of objects that makes up an empty window
-#define MAX_WCOMP 21 // 4 corners + (3+3) sides + (2+2) extra sides
-	                 // + Bground + title + slider
-	                 // + more Needed for save game window
+#define MAX_WCOMP_T0 21 // 4 corners + (3+3) sides + (2+2) extra sides
+						// + Bground + title + slider
+	                    // + more Needed for save game window
+#define MAX_WCOMP_T3 84
+#define MAX_WCOMP (TinselVersion == 3 ? MAX_WCOMP_T3 : MAX_WCOMP_T0)
 
 #define MAX_ICONS MAXHICONS *MAXVICONS
 #define MAX_ININV_TOT 160
@@ -147,9 +150,15 @@ struct INV_OBJECT {
 	SCNHANDLE hScript;	// inventory objects event handling script
 	int32 attribute;		// inventory object's attribute
 
+	// TODO: Commented out because there are variables
+	// with this struct type that are cast from memory blobs,
+	// so this breaks DW1 and DW2. We need to read these
+	// struct members individually instead of casting the blobs
+	// to this struct
+
 	// Noir
-	int32 unknown;
-	int32 title;	// id of associated notebook title
+	//int32 unknown;
+	//int32 title;	// id of associated notebook title
 };
 
 struct INV_DEF {
@@ -503,8 +512,8 @@ private:
 
 	LANGUAGE _displayedLanguage;
 
-	OBJECT *_objArray[MAX_WCOMP];  // Current display objects (window)
-	OBJECT *_dispObjArray[MAX_WCOMP]; // Current display objects (re-sizing window)
+	OBJECT *_objArray[MAX_WCOMP_T3];  // Current display objects (window)
+	OBJECT *_dispObjArray[MAX_WCOMP_T3]; // Current display objects (re-sizing window)
 	ANIM _iconAnims[MAX_ICONS];
 
 	OBJECT *_rectObject, *_slideObject; // Current display objects, for reference

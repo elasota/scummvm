@@ -11,6 +11,7 @@ For a more comprehensive changelog of the latest experimental code, see:
    - Added support for Clandestiny.
    - Added support for Tender Loving Care (CD-ROM Editions).
    - Added support for Uncle Henry's Playhouse.
+   - Added support for Wetlands
 
  General:
    - The project license has been upgraded to GPLv3+.
@@ -81,6 +82,8 @@ For a more comprehensive changelog of the latest experimental code, see:
      in this setting instead.
    - Fixed some MIDI music looping when it shouldn't in EGA/VGA floppy versions
      of The Secret of Monkey Island.
+   - Fixed Full Throttle distorted graphics when Ben runs past the Corley
+     Motors entrance.
 
  Sherlock:
    - Fixed slowdown in Serrated Scalpel intro when playing the game from a small

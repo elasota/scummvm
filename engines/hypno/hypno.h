@@ -135,6 +135,8 @@ public:
 	SegmentShootsSequence parseShootList(const Common::String &name, const Common::String &data);
 	void loadArcadeLevel(const Common::String &current, const Common::String &nextWin, const Common::String &nextLose, const Common::String &prefix);
 	void loadSceneLevel(const Common::String &current, const Common::String &next, const Common::String &prefix);
+	void loadSceneLevel(const char *buf, const Common::String &name, const Common::String &next, const Common::String &prefix);
+
 	LibFile *loadLib(const Filename &prefix, const Filename &filename, bool encrypted);
 
 	// User input
@@ -168,6 +170,7 @@ public:
 
 	// Cursors
 	Common::String _defaultCursor;
+	uint32 _defaultCursorIdx;
 	void disableCursor();
 	void defaultCursor();
 	void changeCursor(const Common::String &cursor, uint32 n, bool centerCursor = false);
@@ -193,6 +196,7 @@ public:
 	void runWalN(WalN *a);
 	bool runGlobal(Global *a);
 	void runTalk(Talk *a);
+	void runSwapPointer(SwapPointer *a);
 	void runChangeLevel(ChangeLevel *a);
 	virtual void drawBackToMenu(Hotspot *h);
 
@@ -236,6 +240,7 @@ public:
 	// Sounds
 	Filename _soundPath;
 	Filename _music;
+	bool _doNotStopSounds;
 	void playSound(const Filename &filename, uint32 loops, uint32 sampleRate = 22050);
 	void stopSound();
 
@@ -260,6 +265,7 @@ public:
 	virtual byte *getTargetColor(Common::String name, int levelId);
 
 	// Segments
+	Segments _segments;
 	uint32 _segmentIdx;
 	uint32 _segmentOffset;
 	uint32 _segmentRepetition;
@@ -311,8 +317,15 @@ public:
 	int _score;
 	int _bonus;
 	int _lives;
+
+	Common::String _healthString;
+	Common::String _scoreString;
+	Common::String _objString;
+	Common::String _targetString;
+
 	Filename _shootSound;
 	Filename _hitSound;
+	Filename _additionalSound;
 	Shoots _shoots;
 	Frames _playerFrames;
 	int _playerFrameIdx;
@@ -360,6 +373,7 @@ struct chapterEntry {
 	int scorePos[2];
 	int objectivesPos[2];
 	int ammoPos[2];
+	int ammoOffset;
 	int targetColor;
 };
 
@@ -373,6 +387,7 @@ public:
 
 	void loadAssets() override;
 	void loadAssetsDemoDisc();
+	void loadAssetsGen4();
 	void loadAssetsPCW();
 	void loadAssetsPCG();
 	void loadAssetsFullGame();
@@ -414,6 +429,7 @@ public:
 	byte *getTargetColor(Common::String name, int levelId) override;
 
 private:
+	Common::String getLocalizedString(const Common::String name);
 	void runMainMenu(Code *code);
 	void runLevelMenu(Code *code);
 	void runCheckLives(Code *code);
@@ -423,6 +439,9 @@ private:
 
 	Frames _c33PlayerCursor;
 	Common::Point _c33PlayerPosition;
+	Common::List<PlayerPosition> _c33PlayerDirection;
+	bool _c33UseMouse;
+	void generateStaticEffect();
 
 	Common::BitArray _font05;
 	Common::BitArray _font08;
@@ -474,6 +493,10 @@ public:
 	void loadGame(const Common::String &nextLevel, int score, int puzzleDifficulty, int combatDifficulty) override;
 	Common::Error loadGameStream(Common::SeekableReadStream *stream) override;
 	Common::Error saveGameStream(Common::WriteStream *stream, bool isAutosave = false) override;
+	bool canSaveAutosaveCurrently() override {
+		return false; // No hypno engine should perform autosave using the default implementation
+	}
+
 	bool hasFeature(EngineFeature f) const override {
 		return (f == kSupportsSavingDuringRuntime || f == kSupportsLoadingDuringRuntime);
 	}
@@ -512,8 +535,11 @@ private:
 class BoyzEngine : public HypnoEngine {
 public:
 	BoyzEngine(OSystem *syst, const ADGameDescription *gd);
+	Common::String _name;
 	void loadAssets() override;
+	void runCode(Code *code) override;
 	Common::String findNextLevel(const Common::String &level) override;
+	Common::String findNextLevel(const Transition *trans) override;
 
 	void runBeforeArcade(ArcadeShooting *arc) override;
 	void runAfterArcade(ArcadeShooting *arc) override;
@@ -529,13 +555,22 @@ public:
 	void drawPlayer() override;
 	void findNextSegment(ArcadeShooting *arc) override;
 	void initSegment(ArcadeShooting *arc) override;
+	bool checkTransition(ArcadeTransitions &transitions, ArcadeShooting *arc) override;
+
+	void loadFonts() override;
+	void drawString(const Filename &name, const Common::String &str, int x, int y, int w, uint32 c) override;
 
 	private:
-	Graphics::Surface _healthBar[6];
-	Graphics::Surface _ammoBar[6];
-	Graphics::Surface _portrait[6];
+	void runMainMenu(Code *code);
 
-	Filename _weaponShootSound[6];
+	int _ammoTeam[6];
+	int _healthTeam[7];
+	Graphics::Surface _healthBar[7];
+	Graphics::Surface _ammoBar[7];
+	Graphics::Surface _portrait[7];
+
+	Filename _weaponShootSound[7];
+	int _weaponMaxAmmo[7];
 
 	byte *_crosshairsPalette;
 	Graphics::Surface _crosshairsInactive[8];
@@ -549,6 +584,8 @@ public:
 	uint32 _currentActor;
 	uint32 _currentWeapon;
 
+	Common::BitArray _font05;
+	Common::BitArray _font08;
 };
 
 } // End of namespace Hypno

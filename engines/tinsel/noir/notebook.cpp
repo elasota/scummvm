@@ -26,17 +26,21 @@
 namespace Tinsel {
 
 void Notebook::AddHyperlink(int32 id1, int32 id2) {
+#if 0
 	INV_OBJECT *invObject = _vm->_dialogs->GetInvObject(id1);
+
 	if (invObject->title != 0) {
 		error("A clue can only be hyperlinked if it only has one title!");
 		return;
 	}
 
 	invObject = _vm->_dialogs->GetInvObject(id2);
+
 	if (invObject->title != 0) {
 		error("A clue can only be hyperlinked if it only has one title!");
 		return;
 	}
+#endif
 
 	uint32 i;
 	for (i = 0; i < MAX_HYPERS; ++i) {
@@ -57,6 +61,15 @@ void Notebook::AddHyperlink(int32 id1, int32 id2) {
 
 	// No free hyperlink entry was found
 	error("Too many hyperlinks");
+}
+
+
+void Notebook::Show(bool isOpen) {
+	error("TODO: Implement Notebook::Show()");
+}
+
+bool Notebook::IsOpen() const {
+	return _state != BOOKSTATE::CLOSED;
 }
 
 } // End of namespace Tinsel

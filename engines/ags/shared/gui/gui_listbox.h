@@ -34,6 +34,7 @@ class GUIListBox : public GUIObject {
 public:
 	GUIListBox();
 
+	bool HasAlphaChannel() const override;
 	bool AreArrowsShown() const;
 	bool IsBorderShown() const;
 	bool IsSvgIndex() const;
@@ -43,6 +44,7 @@ public:
 	// Operations
 	int  AddItem(const String &text);
 	void Clear();
+	Rect CalcGraphicRect(bool clipped) override;
 	void Draw(Bitmap *ds, int x = 0, int y = 0) override;
 	int  InsertItem(int index, const String &text);
 	void RemoveItem(int index);

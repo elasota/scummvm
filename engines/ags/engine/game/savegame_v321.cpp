@@ -28,6 +28,7 @@
 //
 //=============================================================================
 
+#include "ags/lib/std/vector.h"
 #include "ags/shared/core/types.h"
 #include "ags/engine/ac/character_extras.h"
 #include "ags/shared/ac/common.h"
@@ -52,7 +53,7 @@
 #include "ags/plugins/ags_plugin.h"
 #include "ags/plugins/plugin_engine.h"
 #include "ags/engine/script/script.h"
-#include "ags/shared/script/cc_error.h"
+#include "ags/shared/script/cc_common.h"
 #include "ags/shared/util/aligned_stream.h"
 #include "ags/shared/util/string_utils.h"
 
@@ -154,21 +155,18 @@ static void restore_game_play_ex_data(Stream *in) {
 		_GP(play).do_once_tokens[i] = rbuffer;
 	}
 
-	in->ReadArrayOfInt32(&_GP(play).gui_draw_order[0], _GP(game).numgui);
+	in->Seek(_GP(game).numgui * sizeof(int32_t)); // gui_draw_order
 }
 
 static void restore_game_play(Stream *in, RestoredData &r_data) {
 	int screenfadedout_was = _GP(play).screen_is_faded_out;
 	int roomchanges_was = _GP(play).room_changes;
-	// make sure the pointer is preserved
-	int32_t *gui_draw_order_was = _GP(play).gui_draw_order;
 
 	ReadGameState_Aligned(in, r_data);
 	r_data.Cameras[0].Flags = r_data.Camera0_Flags;
 
 	_GP(play).screen_is_faded_out = screenfadedout_was;
 	_GP(play).room_changes = roomchanges_was;
-	_GP(play).gui_draw_order = gui_draw_order_was;
 
 	restore_game_play_ex_data(in);
 }
@@ -176,7 +174,7 @@ static void restore_game_play(Stream *in, RestoredData &r_data) {
 static void ReadMoveList_Aligned(Stream *in) {
 	AlignedStream align_s(in, Shared::kAligned_Read);
 	for (int i = 0; i < _GP(game).numcharacters + MAX_ROOM_OBJECTS + 1; ++i) {
-		_G(mls)[i].ReadFromFile_Legacy(&align_s);
+		_GP(mls)[i].ReadFromFile_Legacy(&align_s);
 
 		align_s.Reset();
 	}
@@ -190,7 +188,7 @@ static void ReadGameSetupStructBase_Aligned(Stream *in) {
 static void ReadCharacterExtras_Aligned(Stream *in) {
 	AlignedStream align_s(in, Shared::kAligned_Read);
 	for (int i = 0; i < _GP(game).numcharacters; ++i) {
-		_G(charextra)[i].ReadFromFile(&align_s);
+		_GP(charextra)[i].ReadFromFile(&align_s);
 		align_s.Reset();
 	}
 }
@@ -271,10 +269,13 @@ static void restore_game_ambientsounds(Stream *in, RestoredData &r_data) {
 	}
 }
 
-static void ReadOverlays_Aligned(Stream *in, size_t num_overs) {
+static void ReadOverlays_Aligned(Stream *in, std::vector<bool> &has_bitmap, size_t num_overs) {
 	AlignedStream align_s(in, Shared::kAligned_Read);
+	has_bitmap.resize(num_overs);
 	for (size_t i = 0; i < num_overs; ++i) {
-		_GP(screenover)[i].ReadFromFile(&align_s, 0);
+		bool has_bm;
+		_GP(screenover)[i].ReadFromFile(&align_s, has_bm, 0);
+		has_bitmap[i] = has_bm;
 		align_s.Reset();
 	}
 }
@@ -282,10 +283,11 @@ static void ReadOverlays_Aligned(Stream *in, size_t num_overs) {
 static void restore_game_overlays(Stream *in) {
 	size_t num_overs = in->ReadInt32();
 	_GP(screenover).resize(num_overs);
-	ReadOverlays_Aligned(in, num_overs);
+	std::vector<bool> has_bitmap;
+	ReadOverlays_Aligned(in, has_bitmap, num_overs);
 	for (size_t i = 0; i < num_overs; ++i) {
-		if (_GP(screenover)[i].hasSerializedBitmap)
-			_GP(screenover)[i].pic = read_serialized_bitmap(in);
+		if (has_bitmap[i])
+			_GP(screenover)[i].SetImage(read_serialized_bitmap(in));
 	}
 }
 
@@ -496,7 +498,7 @@ HSaveError restore_save_data_v321(Stream *in, const PreservedParams &pp, Restore
 
 	if (ccUnserializeAllObjects(in, &_GP(ccUnserializer))) {
 		return new SavegameError(kSvgErr_GameObjectInitFailed,
-		                         String::FromFormat("Managed pool deserialization failed: %s.", _G(ccErrorString).GetCStr()));
+		                         String::FromFormat("Managed pool deserialization failed: %s.", cc_get_error().ErrorString.GetCStr()));
 	}
 
 	// preserve legacy music type setting

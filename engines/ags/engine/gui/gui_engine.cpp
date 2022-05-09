@@ -30,6 +30,7 @@
 #include "ags/shared/font/fonts.h"
 #include "ags/shared/gui/gui_main.h"
 #include "ags/shared/gui/gui_button.h"
+#include "ags/shared/gui/gui_inv.h"
 #include "ags/shared/gui/gui_label.h"
 #include "ags/shared/gui/gui_listbox.h"
 #include "ags/shared/gui/gui_textbox.h"
@@ -101,8 +102,21 @@ bool GUIObject::IsClickable() const {
 	return (Flags & kGUICtrl_Clickable) != 0;
 }
 
+void GUIObject::MarkChanged() {
+	_hasChanged = true;
+	_GP(guis)[ParentId].MarkControlsChanged();
+}
+
 void GUIObject::NotifyParentChanged() {
-	_GP(guis)[ParentId].MarkChanged();
+	_GP(guis)[ParentId].MarkControlsChanged();
+}
+
+bool GUIObject::HasChanged() const {
+	return _hasChanged;
+}
+
+void GUIObject::ClearChanged() {
+	_hasChanged = false;
 }
 
 void GUILabel::PrepareTextToDraw() {

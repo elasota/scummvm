@@ -19,6 +19,7 @@
  *
  */
 
+#include "ags/lib/std/algorithm.h"
 #include "ags/shared/gui/gui_listbox.h"
 #include "ags/shared/ac/game_version.h"
 #include "ags/shared/font/fonts.h"
@@ -46,6 +47,10 @@ GUIListBox::GUIListBox() {
 	_scEventCount = 1;
 	_scEventNames[0] = "SelectionChanged";
 	_scEventArgs[0] = "GUIControl *control";
+}
+
+bool GUIListBox::HasAlphaChannel() const {
+	return is_font_antialiased(Font);
 }
 
 int GUIListBox::GetItemAt(int x, int y) const {
@@ -76,21 +81,51 @@ bool GUIListBox::IsInRightMargin(int x) const {
 	return 0;
 }
 
+Rect GUIListBox::CalcGraphicRect(bool clipped) {
+	if (clipped)
+		return RectWH(0, 0, Width, Height);
+	// TODO: need to find a way to text position, or there'll be some repetition
+	// have to precache text and size on some events:
+	// - translation change
+	// - macro value change (score, overhotspot etc)
+	Rect rc = RectWH(0, 0, Width, Height);
+	UpdateMetrics();
+	const int width = Width - 1;
+	const int pixel_size = get_fixed_pixel_size(1);
+	int right_hand_edge = width - pixel_size - 1;
+	// calculate the scroll bar's width if necessary
+	if (ItemCount > VisibleItemCount &&IsBorderShown() && AreArrowsShown())
+		right_hand_edge -= get_fixed_pixel_size(7);
+	Line max_line;
+	for (int item = 0; (item < VisibleItemCount) && (item + TopItem < ItemCount); ++item) {
+		int at_y = pixel_size + item * RowHeight;
+		int item_index = item + TopItem;
+		PrepareTextToDraw(Items[item_index]);
+		Line lpos = GUI::CalcTextPositionHor(_textToDraw.GetCStr(), Font, 1 + pixel_size, right_hand_edge, at_y + 1,
+			(FrameAlignment)TextAlignment);
+		max_line.X2 = MAX(max_line.X2, lpos.X2);
+	}
+	return SumRects(rc, RectWH(0, 0, max_line.X2 - max_line.X1 + 1, Height));
+}
+
 int GUIListBox::AddItem(const String &text) {
 	Items.push_back(text);
 	SavedGameIndex.push_back(-1);
 	ItemCount++;
-	NotifyParentChanged();
+	MarkChanged();
 	return ItemCount - 1;
 }
 
 void GUIListBox::Clear() {
+	if (Items.size() == 0)
+		return;
+
 	Items.clear();
 	SavedGameIndex.clear();
 	ItemCount = 0;
 	SelectedItem = 0;
 	TopItem = 0;
-	NotifyParentChanged();
+	MarkChanged();
 }
 
 void GUIListBox::Draw(Bitmap *ds, int x, int y) {
@@ -139,10 +174,7 @@ void GUIListBox::Draw(Bitmap *ds, int x, int y) {
 	Rect old_clip = ds->GetClip();
 	if (scrollbar && GUI::Options.ClipControls)
 		ds->SetClip(Rect(x, y, right_hand_edge + 1, y + Height - 1));
-	for (int item = 0; item < VisibleItemCount; ++item) {
-		if (item + TopItem >= ItemCount)
-			break;
-
+	for (int item = 0; (item < VisibleItemCount) && (item + TopItem < ItemCount); ++item) {
 		int at_y = y + pixel_size + item * RowHeight;
 		if (item + TopItem == SelectedItem) {
 			text_color = ds->GetCompatibleColor(SelectedTextColor);
@@ -177,7 +209,7 @@ int GUIListBox::InsertItem(int index, const String &text) {
 		SelectedItem++;
 
 	ItemCount++;
-	NotifyParentChanged();
+	MarkChanged();
 	return ItemCount - 1;
 }
 
@@ -193,23 +225,25 @@ void GUIListBox::RemoveItem(int index) {
 		SelectedItem--;
 	if (SelectedItem >= ItemCount)
 		SelectedItem = -1;
-	NotifyParentChanged();
+	MarkChanged();
 }
 
 void GUIListBox::SetShowArrows(bool on) {
+	if (on != ((ListBoxFlags & kListBox_ShowArrows) != 0))
+		MarkChanged();
 	if (on)
 		ListBoxFlags |= kListBox_ShowArrows;
 	else
 		ListBoxFlags &= ~kListBox_ShowArrows;
-	NotifyParentChanged();
 }
 
 void GUIListBox::SetShowBorder(bool on) {
+	if (on != ((ListBoxFlags & kListBox_ShowBorder) != 0))
+		MarkChanged();
 	if (on)
 		ListBoxFlags |= kListBox_ShowBorder;
 	else
 		ListBoxFlags &= ~kListBox_ShowBorder;
-	NotifyParentChanged();
 }
 
 void GUIListBox::SetSvgIndex(bool on) {
@@ -220,15 +254,17 @@ void GUIListBox::SetSvgIndex(bool on) {
 }
 
 void GUIListBox::SetFont(int font) {
+	if (Font == font)
+		return;
 	Font = font;
 	UpdateMetrics();
-	NotifyParentChanged();
+	MarkChanged();
 }
 
 void GUIListBox::SetItemText(int index, const String &text) {
-	if (index >= 0 && index < ItemCount) {
+	if ((index >= 0) && (index < ItemCount) && (text != Items[index])) {
 		Items[index] = text;
-		NotifyParentChanged();
+		MarkChanged();
 	}
 }
 
@@ -241,7 +277,7 @@ bool GUIListBox::OnMouseDown() {
 			top_item = TopItem + 1;
 		if (TopItem != top_item) {
 			TopItem = top_item;
-			NotifyParentChanged();
+			MarkChanged();
 		}
 		return false;
 	}
@@ -251,7 +287,7 @@ bool GUIListBox::OnMouseDown() {
 		return false;
 	if (sel != SelectedItem) {
 		SelectedItem = sel;
-		NotifyParentChanged();
+		MarkChanged();
 	}
 	IsActivated = true;
 	return false;
@@ -264,7 +300,7 @@ void GUIListBox::OnMouseMove(int x_, int y_) {
 
 void GUIListBox::OnResized() {
 	UpdateMetrics();
-	NotifyParentChanged();
+	MarkChanged();
 }
 
 void GUIListBox::UpdateMetrics() {

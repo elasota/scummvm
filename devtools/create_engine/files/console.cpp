@@ -19,22 +19,20 @@
  *
  */
 
-#ifndef AGS_ENGINE_AC_OBJECTCACHE_H
-#define AGS_ENGINE_AC_OBJECTCACHE_H
+#include "xyzzy/console.h"
 
-namespace AGS3 {
+namespace Xyzzy {
 
-// stores cached object info
-struct ObjectCache {
-	Shared::Bitmap *image = nullptr;
-	int   sppic = 0;
-	short tintredwas = 0, tintgrnwas = 0, tintbluwas = 0;
-	short tintamntwas = 0, tintlightwas = 0;
-	short lightlevwas = 0, mirroredWas = 0, zoomWas = 0;
-	// The following are used to determine if the character has moved
-	int   xwas, ywas;
-};
+Console::Console() : GUI::Debugger() {
+	registerCmd("test",   WRAP_METHOD(Console, Cmd_test));
+}
 
-} // namespace AGS3
+Console::~Console() {
+}
 
-#endif
+bool Console::Cmd_test(int argc, const char **argv) {
+	debugPrintf("Test\n");
+	return true;
+}
+
+} // namespace Xyzzy

@@ -27,7 +27,6 @@
 #include "ags/engine/ac/game_state.h"
 #include "ags/engine/ac/global_object.h"
 #include "ags/engine/ac/global_translation.h"
-#include "ags/engine/ac/object_cache.h"
 #include "ags/engine/ac/properties.h"
 #include "ags/engine/ac/room.h"
 #include "ags/engine/ac/room_status.h"
@@ -333,7 +332,7 @@ void Object_SetManualScaling(ScriptObject *objj, bool on) {
 	if (on) _G(objs)[objj->id].flags &= ~OBJF_USEROOMSCALING;
 	else _G(objs)[objj->id].flags |= OBJF_USEROOMSCALING;
 	// clear the cache
-	_G(objcache)[objj->id].ywas = -9999;
+	mark_object_changed(objj->id);
 }
 
 void Object_SetIgnoreScaling(ScriptObject *objj, int newval) {
@@ -439,8 +438,8 @@ void move_object(int objj, int tox, int toy, int spee, int ignwal) {
 	set_color_depth(_GP(game).GetColorDepth());
 	if (mslot > 0) {
 		_G(objs)[objj].moving = mslot;
-		_G(mls)[mslot].direct = ignwal;
-		convert_move_path_to_room_resolution(&_G(mls)[mslot]);
+		_GP(mls)[mslot].direct = ignwal;
+		convert_move_path_to_room_resolution(&_GP(mls)[mslot]);
 	}
 }
 

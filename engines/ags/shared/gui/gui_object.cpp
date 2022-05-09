@@ -38,7 +38,9 @@ GUIObject::GUIObject() {
 	Height = 0;
 	ZOrder = -1;
 	IsActivated = false;
+	_transparency = 0;
 	_scEventCount = 0;
+	_hasChanged = true;
 }
 
 String GUIObject::GetScriptName() const {
@@ -81,10 +83,6 @@ bool GUIObject::IsVisible() const {
 	return (Flags & kGUICtrl_Visible) != 0;
 }
 
-bool GUIObject::HasAlphaChannel() const {
-	return false;
-}
-
 void GUIObject::SetClickable(bool on) {
 	if (on)
 		Flags |= kGUICtrl_Clickable;
@@ -93,26 +91,37 @@ void GUIObject::SetClickable(bool on) {
 }
 
 void GUIObject::SetEnabled(bool on) {
+	if (on != ((Flags & kGUICtrl_Enabled) != 0))
+		MarkChanged();
 	if (on)
 		Flags |= kGUICtrl_Enabled;
 	else
 		Flags &= ~kGUICtrl_Enabled;
-	NotifyParentChanged();
 }
 
 void GUIObject::SetTranslated(bool on) {
+	if (on != ((Flags & kGUICtrl_Translated) != 0))
+		MarkChanged();
 	if (on)
 		Flags |= kGUICtrl_Translated;
 	else
 		Flags &= ~kGUICtrl_Translated;
-	NotifyParentChanged();
 }
 
 void GUIObject::SetVisible(bool on) {
+	if (on != ((Flags & kGUICtrl_Visible) != 0))
+		NotifyParentChanged(); // for software mode
 	if (on)
 		Flags |= kGUICtrl_Visible;
 	else
 		Flags &= ~kGUICtrl_Visible;
+}
+
+void GUIObject::SetTransparency(int trans) {
+	if (_transparency != trans) {
+		_transparency = trans;
+		NotifyParentChanged(); // for software mode
+	}
 }
 
 // TODO: replace string serialization with StrUtil::ReadString and WriteString
@@ -176,6 +185,12 @@ void GUIObject::ReadFromSavegame(Stream *in, GuiSvgVersion svg_ver) {
 	ZOrder = in->ReadInt32();
 	// Dynamic state
 	IsActivated = in->ReadBool() ? 1 : 0;
+	if (svg_ver >= kGuiSvgVersion_36023) {
+		_transparency = in->ReadInt32();
+		in->ReadInt32(); // reserve 3 ints
+		in->ReadInt32();
+		in->ReadInt32();
+	}
 }
 
 void GUIObject::WriteToSavegame(Stream *out) const {
@@ -188,6 +203,10 @@ void GUIObject::WriteToSavegame(Stream *out) const {
 	out->WriteInt32(ZOrder);
 	// Dynamic state
 	out->WriteBool(IsActivated != 0);
+	out->WriteInt32(_transparency);
+	out->WriteInt32(0); // reserve 3 ints
+	out->WriteInt32(0);
+	out->WriteInt32(0);
 }
 
 

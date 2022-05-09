@@ -20,6 +20,7 @@
  */
 
 #include "ags/lib/std/map.h"
+#include "ags/engine/game/savegame_components.h"
 #include "ags/shared/ac/audio_clip_type.h"
 #include "ags/shared/ac/common.h"
 #include "ags/shared/ac/dialog_topic.h"
@@ -41,7 +42,6 @@
 #include "ags/engine/ac/system.h"
 #include "ags/engine/ac/dynobj/cc_serializer.h"
 #include "ags/shared/debugging/out.h"
-#include "ags/engine/game/savegame_components.h"
 #include "ags/engine/game/savegame_internal.h"
 #include "ags/shared/gfx/bitmap.h"
 #include "ags/engine/gui/animating_gui_button.h"
@@ -54,7 +54,7 @@
 #include "ags/shared/gui/gui_textbox.h"
 #include "ags/plugins/ags_plugin.h"
 #include "ags/plugins/plugin_engine.h"
-#include "ags/shared/script/cc_error.h"
+#include "ags/shared/script/cc_common.h"
 #include "ags/engine/script/script.h"
 #include "ags/shared/util/file_stream.h" // TODO: needed only because plugins expect file handle
 #include "ags/engine/media/audio/audio_system.h"
@@ -483,12 +483,12 @@ HSaveError WriteCharacters(Stream *out) {
 	out->WriteInt32(_GP(game).numcharacters);
 	for (int i = 0; i < _GP(game).numcharacters; ++i) {
 		_GP(game).chars[i].WriteToFile(out);
-		_G(charextra)[i].WriteToFile(out);
+		_GP(charextra)[i].WriteToFile(out);
 		Properties::WriteValues(_GP(play).charProps[i], out);
 		if (_G(loaded_game_file_version) <= kGameVersion_272)
 			WriteTimesRun272(*_GP(game).intrChar[i], out);
 		// character movement path cache
-		_G(mls)[CHMLSOFFS + i].WriteToFile(out);
+		_GP(mls)[CHMLSOFFS + i].WriteToFile(out);
 	}
 	return HSaveError::None();
 }
@@ -499,12 +499,12 @@ HSaveError ReadCharacters(Stream *in, int32_t cmp_ver, const PreservedParams & /
 		return err;
 	for (int i = 0; i < _GP(game).numcharacters; ++i) {
 		_GP(game).chars[i].ReadFromFile(in);
-		_G(charextra)[i].ReadFromFile(in);
+		_GP(charextra)[i].ReadFromFile(in);
 		Properties::ReadValues(_GP(play).charProps[i], in);
 		if (_G(loaded_game_file_version) <= kGameVersion_272)
 			ReadTimesRun272(*_GP(game).intrChar[i], in);
 		// character movement path cache
-		err = _G(mls)[CHMLSOFFS + i].ReadFromFile(in, cmp_ver > 0 ? 1 : 0);
+		err = _GP(mls)[CHMLSOFFS + i].ReadFromFile(in, cmp_ver > 0 ? 1 : 0);
 		if (!err)
 			return err;
 	}
@@ -759,10 +759,10 @@ HSaveError ReadDynamicSprites(Stream *in, int32_t /*cmp_ver*/, const PreservedPa
 }
 
 HSaveError WriteOverlays(Stream *out) {
-	out->WriteInt32(_GP(screenover).size());
 	for (const auto &over : _GP(screenover)) {
 		over.WriteToFile(out);
-		serialize_bitmap(over.pic, out);
+		if (!over.IsSpriteReference())
+			serialize_bitmap(over.GetImage(), out);
 	}
 	return HSaveError::None();
 }
@@ -771,10 +771,15 @@ HSaveError ReadOverlays(Stream *in, int32_t cmp_ver, const PreservedParams & /*p
 	size_t over_count = in->ReadInt32();
 	for (size_t i = 0; i < over_count; ++i) {
 		ScreenOverlay over;
-		over.ReadFromFile(in, cmp_ver);
-		if (over.hasSerializedBitmap)
-			over.pic = read_serialized_bitmap(in);
-		_GP(screenover).push_back(over);
+		bool has_bitmap;
+		over.ReadFromFile(in, has_bitmap, cmp_ver);
+		if (has_bitmap)
+			over.SetImage(read_serialized_bitmap(in));
+		if (over.scaleWidth <= 0 || over.scaleHeight <= 0) {
+			over.scaleWidth = over.GetImage()->GetWidth();
+			over.scaleHeight = over.GetImage()->GetHeight();
+		}
+		_GP(screenover).push_back(std::move(over));
 	}
 	return HSaveError::None();
 }
@@ -915,7 +920,7 @@ HSaveError WriteThisRoom(Stream *out) {
 	// room object movement paths cache
 	out->WriteInt32(_GP(thisroom).ObjectCount + 1);
 	for (size_t i = 0; i < _GP(thisroom).ObjectCount + 1; ++i) {
-		_G(mls)[i].WriteToFile(out);
+		_GP(mls)[i].WriteToFile(out);
 	}
 
 	// room music volume
@@ -962,7 +967,7 @@ HSaveError ReadThisRoom(Stream *in, int32_t cmp_ver, const PreservedParams & /*p
 	if (!AssertCompatLimit(err, objmls_count, CHMLSOFFS, "room object move lists"))
 		return err;
 	for (int i = 0; i < objmls_count; ++i) {
-		err = _G(mls)[i].ReadFromFile(in, cmp_ver > 0 ? 1 : 0); // FIXME!!
+		err = _GP(mls)[i].ReadFromFile(in, cmp_ver > 0 ? 1 : 0); // FIXME!!
 		if (!err)
 			return err;
 	}
@@ -985,7 +990,7 @@ HSaveError WriteManagedPool(Stream *out) {
 HSaveError ReadManagedPool(Stream *in, int32_t cmp_ver, const PreservedParams & /*pp*/, RestoredData & /*r_data*/) {
 	if (ccUnserializeAllObjects(in, &_GP(ccUnserializer))) {
 		return new SavegameError(kSvgErr_GameObjectInitFailed,
-		                         String::FromFormat("Managed pool deserialization failed: %s", _G(ccErrorString).GetCStr()));
+		                         String::FromFormat("Managed pool deserialization failed: %s", cc_get_error().ErrorString.GetCStr()));
 	}
 	return HSaveError::None();
 }
@@ -1048,7 +1053,7 @@ ComponentHandler ComponentHandlers[] = {
 	},
 	{
 		"GUI",
-		kGuiSvgVersion_36020,
+		kGuiSvgVersion_36023,
 		kGuiSvgVersion_Initial,
 		WriteGUI,
 		ReadGUI
@@ -1083,7 +1088,7 @@ ComponentHandler ComponentHandlers[] = {
 	},
 	{
 		"Overlays",
-		2,
+		3,
 		0,
 		WriteOverlays,
 		ReadOverlays

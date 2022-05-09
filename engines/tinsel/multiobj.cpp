@@ -20,6 +20,7 @@
  * This file contains utilities to handle multi-part objects.
  */
 
+#include "tinsel/background.h"
 #include "tinsel/multiobj.h"
 #include "tinsel/handle.h"
 #include "tinsel/object.h"
@@ -122,6 +123,19 @@ void MultiDeleteObject(OBJECT **pObjList, OBJECT *pMultiObj) {
 		// next obj in list
 		pMultiObj = pMultiObj->pSlave;
 	} while (pMultiObj != NULL);
+}
+
+/**
+ * Deletes all the pieces of a multi-part object from the
+ * specified playfield's object list, then sets the pointer to nullptr.
+ * @param which				The playfield whos object list we delete from.
+ * @param pMultiObj			Multi-part object to be deleted
+ */
+void MultiDeleteObjectIfExists(unsigned int playfield, OBJECT **pMultiObj) {
+	if (*pMultiObj) {
+		MultiDeleteObject(_vm->_bg->GetPlayfieldList(playfield), *pMultiObj);
+		*pMultiObj = nullptr;
+	}
 }
 
 /**
@@ -280,6 +294,17 @@ void MultiSetAniXY(OBJECT *pMultiObj, int newAniX, int newAniY) {
 
 	// move all pieces by the difference
 	MultiMoveRelXY(pMultiObj, newAniX, newAniY);
+}
+
+/**
+ * Sets the x & y anim position of all pieces of a multi-part object, as well as the Z Position.
+ * @param pMultiObj			Multi-part object whose position is to be changed
+ * @param newAniX			New x animation position
+ * @param newAniY			New y animation position
+ */
+void MultiSetAniXYZ(OBJECT *pMultiObj, int newAniX, int newAniY, int zPosition) {
+	MultiSetAniXY(pMultiObj, newAniX, newAniY);
+	MultiSetZPosition(pMultiObj, zPosition);
 }
 
 /**
