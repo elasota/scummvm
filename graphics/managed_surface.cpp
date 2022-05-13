@@ -328,11 +328,11 @@ void ManagedSurface::blitFromInner(const Surface &src, const Common::Rect &srcRe
 
 
 	uint32 alphaMask = 0;
-	if (destFormat.bytesPerPixel == 1) {
+	if (srcFormat.bytesPerPixel == 1) {
 		alphaMask = 0xff000000u;
 	} else {
-		if (destFormat.aBits() > 0)
-			alphaMask = (((static_cast<uint32>(1) << (destFormat.aBits() - 1)) - 1) * 2 + 1) << destFormat.aShift;
+		if (srcFormat.aBits() > 0)
+			alphaMask = (((static_cast<uint32>(1) << (srcFormat.aBits() - 1)) - 1) * 2 + 1) << srcFormat.aShift;
 	}
 
 	const bool noScale = scaleX == SCALE_THRESHOLD && scaleY == SCALE_THRESHOLD;
@@ -386,7 +386,9 @@ void ManagedSurface::blitFromInner(const Surface &src, const Common::Rect &srcRe
 			const bool isOpaque = ((col & alphaMask) == alphaMask);
 
 			uint32 destPixel = 0;
-			if ((col & alphaMask) == 0) {
+
+			// Need to check isOpaque in case alpha mask is 0
+			if (!isOpaque && (col & alphaMask) == 0) {
 				// Completely transparent, so skip
 				continue;
 			} else if (isOpaque && isSameFormat) {
