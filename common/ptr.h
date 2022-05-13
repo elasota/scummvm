@@ -238,6 +238,24 @@ public:
 		return _pointer != r.get();
 	}
 
+	template<class T2>
+	bool operator==(T2 *ptr) const {
+		return _pointer == ptr;
+	}
+
+	template<class T2>
+	bool operator!=(T2 *ptr) const {
+		return _pointer != ptr;
+	}
+
+	bool operator==(std::nullptr_t) const {
+		return _pointer == nullptr;
+	}
+
+	bool operator!=(std::nullptr_t) const {
+		return _pointer != nullptr;
+	}
+
 	/**
 	 * Implicit conversion operator to bool for convenience, to make
 	 * checks like "if (sharedPtr) ..." possible.
