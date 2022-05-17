@@ -70,6 +70,12 @@ void parseSN(const char *sn, const char *path, const char *enc, const char *flag
 	} else if (Common::String("S5") == sn) {
 		g_parsedArc->additionalSound = path;
 		g_parsedArc->additionalSoundRate = sampleRate;
+	} else if (Common::String("S7") == sn) {
+		g_parsedArc->noAmmoSound = path;
+		g_parsedArc->noAmmoSoundRate = sampleRate;
+	} else if (Common::String("S8") == sn) {
+		g_parsedArc->additionalSound = path;
+		g_parsedArc->additionalSoundRate = sampleRate;
 	}
 	debugC(1, kHypnoDebugParser, "SN %s", path);
 }
@@ -166,7 +172,7 @@ hline: 	CTOK NUM {
 		debugC(1, kHypnoDebugParser, "ON %d", $2);
 	}
 	| TPTOK NONETOK NUM FILENAME {
-		ArcadeTransition at("NONE", $4, "", $3);
+		ArcadeTransition at("NONE", $4, "", 0, $3);
 		g_parsedArc->transitions.push_back(at);
 		debugC(1, kHypnoDebugParser, "Tp %s %d %s", "NONE", $3, $4);
 	}
@@ -174,21 +180,28 @@ hline: 	CTOK NUM {
 		debugC(1, kHypnoDebugParser, "Ts %s %d %d", $2, $3, $4);
 	}
 	| TPTOK FILENAME NUM FILENAME {
-		ArcadeTransition at($2, $4, "", $3);
+		ArcadeTransition at($2, $4, "", 0, $3);
 		g_parsedArc->transitions.push_back(at);
 		debugC(1, kHypnoDebugParser, "Tp %s %d %s", $2, $3, $4);
 	}
 	| TATOK NUM FILENAME flag enc {
-		ArcadeTransition at("", "", $3, $2);
+		uint32 sampleRate = 11025;
+		if (Common::String("22K") == $5 || Common::String("22k") == $5)
+			sampleRate = 22050;
+
+		ArcadeTransition at("", "", $3, sampleRate, $2);
 		g_parsedArc->transitions.push_back(at);
 		debugC(1, kHypnoDebugParser, "Ta %d %s", $2, $3);
 	}
 	| TTOK FILENAME NUM {
-		ArcadeTransition at($2, "", "", $3);
+		ArcadeTransition at($2, "", "", 0, $3);
 		g_parsedArc->transitions.push_back(at);
 		debugC(1, kHypnoDebugParser, "T %s %d", $2, $3);
 	}
-	| TTOK NONETOK NUM { debugC(1, kHypnoDebugParser, "T NONE %d", $3); }
+	| TTOK NONETOK NUM {
+		ArcadeTransition at("NONE", "", "", 0, $3);
+		g_parsedArc->transitions.push_back(at);
+		debugC(1, kHypnoDebugParser, "T NONE %d", $3); }
 	| NTOK FILENAME  {
 		g_parsedArc->backgroundVideo = $2;
 		debugC(1, kHypnoDebugParser, "N %s", $2);
@@ -318,12 +331,16 @@ bline: FNTOK FILENAME {
 		debugC(1, kHypnoDebugParser, "FN %s", $2);
 	}
 	| AVTOK NUM {
+		assert($2 == 0);
+		shoot->nonHostile = true;
 		debugC(1, kHypnoDebugParser, "AV %d", $2);
 	}
 	| ALTOK NUM {
 		debugC(1, kHypnoDebugParser, "AL %d", $2);
 	}
 	| ABTOK NUM {
+		assert($2 == 1);
+		shoot->playInteractionAudio = true;
 		debugC(1, kHypnoDebugParser, "AB %d", $2);
 	}
 	| DTOK LTOK  { debugC(1, kHypnoDebugParser, "D L");
@@ -515,6 +532,8 @@ bline: FNTOK FILENAME {
 			shoot->deathSound = $2;
 		else if (Common::String("S2") == $1)
 			shoot->hitSound = $2;
+		else if (Common::String("S4") == $1)
+			shoot->animalSound = $2;
 
 		debugC(1, kHypnoDebugParser, "SN %s", $2); }
 	| SNTOK {
@@ -526,9 +545,11 @@ bline: FNTOK FILENAME {
 		debugC(1, kHypnoDebugParser, "T %d %d %d", $2, $3, $4);
 	}
 	| TTOK NUM {
+		shoot->interactionFrame = $2;
 		debugC(1, kHypnoDebugParser, "T %d", $2);
 	}
 	| TTOK {
+		shoot->isAnimal = true;
 		debugC(1, kHypnoDebugParser, "T");
 	}
 	| MTOK {

@@ -59,6 +59,20 @@ HOTS /BBOX= 262 172 312 194\n\
 SOND pstlfire.raw\n\
 END\n";
 
+static const char *selectC3 = "\
+MENU preload\\slct_c3.smk\n\
+HOTS /BBOX= 143 78 286 138\n\
+SOND tollopz2.raw 22K\n\
+HOTS /BBOX=  159 141 319 197\n\
+SOND tolbuts3.raw 22K\n\
+HOTS /BBOX= 26 14 126 89\n\
+SOND tolvasq1.raw 22K\n\
+HOTS /BBOX= 24 114 126 190\n\
+SOND tolmons1.raw 22K\n\
+HOTS /BBOX= 190 4 292 76\n\
+SOND tollamb1.raw  22K\n\
+END\n";
+
 void BoyzEngine::loadAssets() {
 	LibFile *missions = loadLib("", "preload/missions.lib", true);
 	Common::ArchiveMemberList files;
@@ -79,15 +93,15 @@ void BoyzEngine::loadAssets() {
 	loadArcadeLevel("c19.mi_", "c11.mi_", "??", "");
 	loadArcadeLevel("c11.mi_", "c12.mi_", "??", "");
 	loadArcadeLevel("c12.mi_", "c14.mi_", "??", "");
-	loadArcadeLevel("c13.mi_", "??", "??", "");
-	loadArcadeLevel("c14.mi_", "c15.mi_", "??", "");
+	loadArcadeLevel("c14.mi_", "c13.mi_", "??", "");
+	loadArcadeLevel("c13.mi_", "c15.mi_", "??", "");
 	loadArcadeLevel("c15.mi_", "c16.mi_", "??", "");
 	loadArcadeLevel("c16.mi_", "c17.mi_", "??", "");
 	loadArcadeLevel("c17.mi_", "c18.mi_", "??", "");
 	loadArcadeLevel("c18.mi_", "c21.mi_", "??", "");
 
 	loadArcadeLevel("c21.mi_", "c22.mi_", "??", "");
-	loadArcadeLevel("c22.mi_", "c23.mi_", "??", "");
+	loadArcadeLevel("c22.mi_", "c31.mi_", "??", "");
 	loadArcadeLevel("c31.mi_", "c32.mi_", "??", "");
 	loadArcadeLevel("c32.mi_", "c33.mi_", "??", "");
 	loadArcadeLevel("c33.mi_", "c34.mi_", "??", "");
@@ -117,6 +131,8 @@ void BoyzEngine::loadAssets() {
 	ChangeLevel *cl = new ChangeLevel("c19.mi_");
 	sc->hots[7].actions.push_back(cl);
 
+	loadSceneLevel(selectC3, "<select_c3>", "", "");
+
 	loadLib("sound/", "misc/sound.lib", true);
 
 	_weaponShootSound[0] = "";
@@ -126,6 +142,22 @@ void BoyzEngine::loadAssets() {
 	_weaponShootSound[4] = "m16fire.raw";
 	_weaponShootSound[5] = "shotfire.raw";
 	_weaponShootSound[6] = "glm60fr.raw";
+
+	_weaponReloadSound[0] = "";
+	_weaponReloadSound[1] = "pstlload.raw";
+	_weaponReloadSound[2] = "ak47load.raw";
+	_weaponReloadSound[3] = "dblload.raw";
+	_weaponReloadSound[4] = "m16load.raw";
+	_weaponReloadSound[5] = "shotload.raw";
+	_weaponReloadSound[6] = "glm60rl.raw";
+
+	_heySound[0] = "";
+	_heySound[1] = "lopzheys.raw";
+	_heySound[2] = "lambheys.raw";
+	_heySound[3] = "vasqheyl.raw";
+	_heySound[4] = "butsheyl.raw";
+	_heySound[5] = "bropheys.raw";
+	_heySound[6] = "monsheys.raw";
 
 	Graphics::Surface *targets = decodeFrame("preload/targets.smk", 0, &_crosshairsPalette);
 
@@ -143,6 +175,19 @@ void BoyzEngine::loadAssets() {
 	cursorBox = Common::Rect(62, 70, 83, 90);
 	_crosshairsTarget[1].create(cursorBox.width(), cursorBox.height(), _pixelFormat);
 	_crosshairsTarget[1].copyRectToSurface(*targets, 0, 0, cursorBox);
+
+	// Double big crossair, shotgun?
+	cursorBox = Common::Rect(104, 7, 136, 25);
+	_crosshairsInactive[2].create(cursorBox.width(), cursorBox.height(), _pixelFormat);
+	_crosshairsInactive[2].copyRectToSurface(*targets, 0, 0, cursorBox);
+
+	cursorBox = Common::Rect(104, 39, 136, 57);
+	_crosshairsActive[2].create(cursorBox.width(), cursorBox.height(), _pixelFormat);
+	_crosshairsActive[2].copyRectToSurface(*targets, 0, 0, cursorBox);
+
+	cursorBox = Common::Rect(104, 71, 136, 83);
+	_crosshairsTarget[2].create(cursorBox.width(), cursorBox.height(), _pixelFormat);
+	_crosshairsTarget[2].copyRectToSurface(*targets, 0, 0, cursorBox);
 
 	cursorBox = Common::Rect(16, 8, 32, 24);
 	_crosshairsInactive[3].create(cursorBox.width(), cursorBox.height(), _pixelFormat);
@@ -233,6 +278,12 @@ void BoyzEngine::loadAssets() {
 	_weaponMaxAmmo[6] = 0;
 
 	_maxHealth = 100;
+	_civiliansShoot = 0;
+	_warningAnimals = "warnings/w01s.smk";
+	_warningCivilians.push_back("warnings/w02s.smk");
+	_warningCivilians.push_back("warnings/w03s.smk");
+	_warningCivilians.push_back("warnings/w04s.smk");
+	_warningCivilians.push_back("warnings/w05s.smk");
 
 	// Set initial health for the team
 	for (int i = 0; i < 7; i++) {
@@ -245,7 +296,7 @@ void BoyzEngine::loadAssets() {
 	loadLib("", "misc/fonts.lib", true);
 	loadFonts();
 
-	_nextLevel = "c11.mi_";
+	_nextLevel = "<start>";
 }
 
 void BoyzEngine::loadFonts() {

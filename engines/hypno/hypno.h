@@ -235,6 +235,7 @@ public:
 	Videos _videosPlaying;
 	Videos _videosLooping;
 	MVideo *_masks;
+	MVideo *_additionalVideo;
 	const Graphics::Surface *_mask;
 
 	// Sounds
@@ -258,7 +259,7 @@ public:
 	virtual bool clickedPrimaryShoot(const Common::Point &mousePos);
 	virtual bool clickedSecondaryShoot(const Common::Point &mousePos);
 	virtual void drawShoot(const Common::Point &mousePos);
-	virtual void shoot(const Common::Point &mousePos, ArcadeShooting *arc);
+	virtual bool shoot(const Common::Point &mousePos, ArcadeShooting *arc, bool secondary);
 	virtual void hitPlayer();
 	virtual void missedTarget(Shoot *s, ArcadeShooting *arc);
 	virtual void missNoTarget(ArcadeShooting *arc);
@@ -543,9 +544,11 @@ public:
 
 	void runBeforeArcade(ArcadeShooting *arc) override;
 	void runAfterArcade(ArcadeShooting *arc) override;
+	void pressedKey(const int keycode) override;
 	int detectTarget(const Common::Point &mousePos) override;
 	void drawCursorArcade(const Common::Point &mousePos) override;
-	void shoot(const Common::Point &mousePos, ArcadeShooting *arc) override;
+	bool shoot(const Common::Point &mousePos, ArcadeShooting *arc, bool secondary) override;
+	bool clickedSecondaryShoot(const Common::Point &mousePos) override;
 
 	void missedTarget(Shoot *s, ArcadeShooting *arc) override;
 	void drawHealth() override;
@@ -563,13 +566,15 @@ public:
 	private:
 	void runMainMenu(Code *code);
 
-	int _ammoTeam[6];
+	int _ammoTeam[7];
 	int _healthTeam[7];
 	Graphics::Surface _healthBar[7];
 	Graphics::Surface _ammoBar[7];
 	Graphics::Surface _portrait[7];
 
 	Filename _weaponShootSound[7];
+	Filename _weaponReloadSound[7];
+	Filename _heySound[7];
 	int _weaponMaxAmmo[7];
 
 	byte *_crosshairsPalette;
@@ -583,6 +588,9 @@ public:
 	ScriptMode _currentMode;
 	uint32 _currentActor;
 	uint32 _currentWeapon;
+	uint32 _civiliansShoot;
+	Filename _warningAnimals;
+	Common::Array<Filename> _warningCivilians;
 
 	Common::BitArray _font05;
 	Common::BitArray _font08;

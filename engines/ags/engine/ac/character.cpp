@@ -153,25 +153,32 @@ void Character_AddWaypoint(CharacterInfo *chaa, int x, int y) {
 
 }
 
-void Character_AnimateFrom(CharacterInfo *chaa, int loop, int delay, int repeat, int blocking, int direction, int sframe) {
-
+void Character_AnimateEx(CharacterInfo *chaa, int loop, int delay, int repeat,
+	int blocking, int direction, int sframe, int volume = -1) {
 	if (direction == FORWARDS)
 		direction = 0;
 	else if (direction == BACKWARDS)
 		direction = 1;
-	else
-		quit("!Character.Animate: Invalid DIRECTION parameter");
+	if (blocking == BLOCKING)
+		blocking = 1;
+	else if (blocking == IN_BACKGROUND)
+		blocking = 0;
 
-	animate_character(chaa, loop, delay, repeat, 0, direction, sframe);
+	if ((repeat < 0) || (repeat > 1))
+		quit("!Character.Animate: invalid repeat value");
+	if ((blocking < 0) || (blocking > 1))
+		quit("!Character.Animate: invalid blocking value");
+	if ((direction < 0) || (direction > 1))
+		quit("!Character.Animate: invalid direction");
 
-	if ((blocking == BLOCKING) || (blocking == 1))
+	animate_character(chaa, loop, delay, repeat, 0, direction, sframe, volume);
+
+	if (blocking != 0)
 		GameLoopUntilValueIsZero(&chaa->animating);
-	else if ((blocking != IN_BACKGROUND) && (blocking != 0))
-		quit("!Character.Animate: Invalid BLOCKING parameter");
 }
 
 void Character_Animate(CharacterInfo *chaa, int loop, int delay, int repeat, int blocking, int direction) {
-	Character_AnimateFrom(chaa, loop, delay, repeat, blocking, direction, 0);
+	Character_AnimateEx(chaa, loop, delay, repeat, blocking, direction, 0, -1);
 }
 
 void Character_ChangeRoomAutoPosition(CharacterInfo *chaa, int room, int newPos) {
@@ -259,7 +266,7 @@ void Character_ChangeView(CharacterInfo *chap, int vii) {
 	debug_script_log("%s: Change view to %d", chap->scrname, vii + 1);
 	chap->defview = vii;
 	chap->view = vii;
-	chap->animating = 0;
+	stop_character_anim(chap);
 	chap->frame = 0;
 	chap->wait = 0;
 	chap->walkwait = 0;
@@ -548,7 +555,7 @@ void Character_LockViewEx(CharacterInfo *chap, int vii, int stopMoving) {
 		Character_StopMoving(chap);
 	}
 	chap->view = vii;
-	chap->animating = 0;
+	stop_character_anim(chap);
 	FindReasonableLoopForCharacter(chap);
 	chap->frame = 0;
 	chap->wait = 0;
@@ -932,7 +939,7 @@ void Character_UnlockViewEx(CharacterInfo *chaa, int stopMoving) {
 			maxloop = 4;
 		FindReasonableLoopForCharacter(chaa);
 	}
-	chaa->animating = 0;
+	stop_character_anim(chaa);
 	chaa->idleleft = chaa->idletime;
 	chaa->pic_xoffs = 0;
 	chaa->pic_yoffs = 0;
@@ -1060,6 +1067,15 @@ void Character_SetAnimationSpeed(CharacterInfo *chaa, int newval) {
 	chaa->animspeed = newval;
 	if (_G(loaded_game_file_version) < kGameVersion_360_16)
 		chaa->idle_anim_speed = chaa->animspeed + 5;
+}
+
+int Character_GetAnimationVolume(CharacterInfo *chaa) {
+	return _GP(charextra)[chaa->index_id].anim_volume;
+}
+
+void Character_SetAnimationVolume(CharacterInfo *chaa, int newval) {
+
+	_GP(charextra)[chaa->index_id].anim_volume = std::min(newval, 100); // negative means default
 }
 
 int Character_GetBaseline(CharacterInfo *chaa) {
@@ -1585,7 +1601,7 @@ void walk_character(int chac, int tox, int toy, int ignwal, bool autoWalkAnims) 
 	}
 
 	if ((chin->animating) && (autoWalkAnims))
-		chin->animating = 0;
+		stop_character_anim(chin);
 
 	if (chin->idleleft < 0) {
 		ReleaseCharacterView(chac);
@@ -2013,13 +2029,14 @@ void setup_player_character(int charid) {
 	}
 }
 
-void animate_character(CharacterInfo *chap, int loopn, int sppd, int rept, int noidleoverride, int direction, int sframe) {
-
+void animate_character(CharacterInfo *chap, int loopn, int sppd, int rept,
+	int noidleoverride, int direction, int sframe, int volume) {
 	if ((chap->view < 0) || (chap->view > _GP(game).numviews)) {
 		quitprintf("!AnimateCharacter: you need to set the view number first\n"
-		           "(trying to animate '%s' using loop %d. View is currently %d).", chap->name, loopn, chap->view + 1);
+			"(trying to animate '%s' using loop %d. View is currently %d).", chap->name, loopn, chap->view + 1);
 	}
-	debug_script_log("%s: Start anim view %d loop %d, spd %d, repeat %d, frame: %d", chap->scrname, chap->view + 1, loopn, sppd, rept, sframe);
+	debug_script_log("%s: Start anim view %d loop %d, spd %d, repeat %d, frame: %d",
+		chap->scrname, chap->view + 1, loopn, sppd, rept, sframe);
 	if ((chap->idleleft < 0) && (noidleoverride == 0)) {
 		// if idle view in progress for the character (and this is not the
 		// "start idle animation" animate_character call), stop the idle anim
@@ -2046,30 +2063,41 @@ void animate_character(CharacterInfo *chap, int loopn, int sppd, int rept, int n
 			sframe = _GP(views)[chap->view].loops[loopn].numFrames - (-sframe);
 	}
 	chap->frame = sframe;
-
 	chap->wait = sppd + _GP(views)[chap->view].loops[loopn].frames[chap->frame].speed;
+	_GP(charextra)[chap->index_id].cur_anim_volume = std::min(100, volume);
+
 	CheckViewFrameForCharacter(chap);
 }
 
-void CheckViewFrameForCharacter(CharacterInfo *chi) {
+void stop_character_anim(CharacterInfo *chap) { // TODO: may expand with resetting more properties,
+  // but have to be careful to not break logic somewhere
+	chap->animating = 0;
+	_GP(charextra)[chap->index_id].cur_anim_volume = -1;
+}
 
-	int soundVolume = SCR_NO_VALUE;
-
+void CheckViewFrameForCharacter(CharacterInfo * chi) {
+	// We view the audio property relation as the relation of the entities:
+	// system -> audio type -> audio emitter (character) -> animation's audio
+	// therefore the sound volume is a multiplication of factors.
+	int frame_vol = 100; // default to full volume
+	// Try the active animation volume
+	if (_GP(charextra)[chi->index_id].cur_anim_volume >= 0)
+		frame_vol = _GP(charextra)[chi->index_id].cur_anim_volume;
+	// Try the character's own animation volume property
+	if (_GP(charextra)[chi->index_id].anim_volume >= 0)
+		frame_vol = frame_vol * _GP(charextra)[chi->index_id].anim_volume / 100;
+	// Try the character's zoom volume scaling (optional)
+	// NOTE: historically scales only in 0-100 range :/
 	if (chi->flags & CHF_SCALEVOLUME) {
-		// adjust the sound volume using the character's zoom level
 		int zoom_level = _GP(charextra)[chi->index_id].zoom;
-		if (zoom_level == 0)
+		if (zoom_level <= 0)
 			zoom_level = 100;
-
-		soundVolume = zoom_level;
-
-		if (soundVolume < 0)
-			soundVolume = 0;
-		if (soundVolume > 100)
-			soundVolume = 100;
+		else
+			zoom_level = std::min(zoom_level, 100);
+		frame_vol = frame_vol * zoom_level / 100;
 	}
 
-	CheckViewFrame(chi->view, chi->loop, chi->frame, soundVolume);
+	CheckViewFrame(chi->view, chi->loop, chi->frame, frame_vol);
 }
 
 Bitmap *GetCharacterImage(int charid, int *isFlipped) {
@@ -2696,7 +2724,7 @@ void _displayspeech(const char *texx, int aschar, int xx, int yy, int widd, int 
 		if (_G(loaded_game_file_version) > kGameVersion_272)
 			speakingChar->loop = oldloop;
 
-		speakingChar->animating = 0;
+		stop_character_anim(speakingChar);
 		speakingChar->frame = charFrameWas;
 		speakingChar->wait = 0;
 		speakingChar->idleleft = speakingChar->idletime;
@@ -2834,8 +2862,12 @@ RuntimeScriptValue Sc_Character_Animate(void *self, const RuntimeScriptValue *pa
 	API_OBJCALL_VOID_PINT5(CharacterInfo, Character_Animate);
 }
 
-RuntimeScriptValue Sc_Character_AnimateFrom(void *self, const RuntimeScriptValue *params, int32_t param_count) {
-	API_OBJCALL_VOID_PINT6(CharacterInfo, Character_AnimateFrom);
+RuntimeScriptValue Sc_Character_Animate6(void *self, const RuntimeScriptValue *params, int32_t param_count) {
+	API_OBJCALL_VOID_PINT6(CharacterInfo, Character_AnimateEx);
+}
+
+RuntimeScriptValue Sc_Character_Animate7(void *self, const RuntimeScriptValue *params, int32_t param_count) {
+	API_OBJCALL_VOID_PINT7(CharacterInfo, Character_AnimateEx);
 }
 
 // void | CharacterInfo *chaa, int room, int x, int y
@@ -3136,6 +3168,14 @@ RuntimeScriptValue Sc_Character_GetAnimationSpeed(void *self, const RuntimeScrip
 // void (CharacterInfo *chaa, int newval)
 RuntimeScriptValue Sc_Character_SetAnimationSpeed(void *self, const RuntimeScriptValue *params, int32_t param_count) {
 	API_OBJCALL_VOID_PINT(CharacterInfo, Character_SetAnimationSpeed);
+}
+
+RuntimeScriptValue Sc_Character_GetAnimationVolume(void *self, const RuntimeScriptValue *params, int32_t param_count) {
+	API_OBJCALL_INT(CharacterInfo, Character_GetAnimationVolume);
+}
+
+RuntimeScriptValue Sc_Character_SetAnimationVolume(void *self, const RuntimeScriptValue *params, int32_t param_count) {
+	API_OBJCALL_VOID_PINT(CharacterInfo, Character_SetAnimationVolume);
 }
 
 // int (CharacterInfo *chaa)
@@ -3545,7 +3585,8 @@ void RegisterCharacterAPI(ScriptAPIVersion base_api, ScriptAPIVersion /* compat_
 	ccAddExternalObjectFunction("Character::AddInventory^2",            Sc_Character_AddInventory);
 	ccAddExternalObjectFunction("Character::AddWaypoint^2",             Sc_Character_AddWaypoint);
 	ccAddExternalObjectFunction("Character::Animate^5",                 Sc_Character_Animate);
-	ccAddExternalObjectFunction("Character::Animate^6",                 Sc_Character_AnimateFrom);
+	ccAddExternalObjectFunction("Character::Animate^6",                 Sc_Character_Animate6);
+	ccAddExternalObjectFunction("Character::Animate^7",                 Sc_Character_Animate7);
 	ccAddExternalObjectFunction("Character::ChangeRoom^3",              Sc_Character_ChangeRoom);
 	ccAddExternalObjectFunction("Character::ChangeRoom^4",              Sc_Character_ChangeRoomSetLoop);
 	ccAddExternalObjectFunction("Character::ChangeRoomAutoPosition^2",  Sc_Character_ChangeRoomAutoPosition);
@@ -3606,6 +3647,8 @@ void RegisterCharacterAPI(ScriptAPIVersion base_api, ScriptAPIVersion /* compat_
 	ccAddExternalObjectFunction("Character::get_Animating",             Sc_Character_GetAnimating);
 	ccAddExternalObjectFunction("Character::get_AnimationSpeed",        Sc_Character_GetAnimationSpeed);
 	ccAddExternalObjectFunction("Character::set_AnimationSpeed",        Sc_Character_SetAnimationSpeed);
+	ccAddExternalObjectFunction("Character::get_AnimationVolume",       Sc_Character_GetAnimationVolume);
+	ccAddExternalObjectFunction("Character::set_AnimationVolume",       Sc_Character_SetAnimationVolume);
 	ccAddExternalObjectFunction("Character::get_Baseline",              Sc_Character_GetBaseline);
 	ccAddExternalObjectFunction("Character::set_Baseline",              Sc_Character_SetBaseline);
 	ccAddExternalObjectFunction("Character::get_BlinkInterval",         Sc_Character_GetBlinkInterval);

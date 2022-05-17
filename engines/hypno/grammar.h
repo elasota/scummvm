@@ -423,7 +423,12 @@ public:
 		explosionAnimation = "";
 		startFrame = 0;
 		lastFrame = 1024;
+		interactionFrame = 0;
 		noEnemySound = false;
+		isAnimal = false;
+		nonHostile = false;
+		playInteractionAudio = false;
+		animalSound = "";
 	}
 	Common::String name;
 	Filename animation;
@@ -451,6 +456,7 @@ public:
 	Filename enemySound;
 	Filename deathSound;
 	Filename hitSound;
+	Filename animalSound;
 
 	MVideo *video;
 	Common::List<uint32> attackFrames;
@@ -458,9 +464,13 @@ public:
 	Common::Array<FrameInfo> explosionFrames;
 	uint32 startFrame;
 	uint32 lastFrame;
+	uint32 interactionFrame;
 	Filename explosionAnimation;
+	bool playInteractionAudio;
 	bool destroyed;
 	bool noEnemySound;
+	bool nonHostile;
+	bool isAnimal;
 };
 
 typedef Common::Array<Shoot> Shoots;
@@ -515,16 +525,18 @@ typedef Common::Array<Segment> Segments;
 
 class ArcadeTransition {
 public:
-	ArcadeTransition(Filename video_, Filename palette_, Filename sound_, uint32 time_)  {
+	ArcadeTransition(Filename video_, Filename palette_, Filename sound_, uint32 soundRate_, uint32 time_)  {
 		video = video_;
 		palette = palette_;
 		sound = sound_;
+		soundRate = soundRate_;
 		time = time_;
 	}
 
 	Filename video;
 	Filename palette;
 	Filename sound;
+	uint32 soundRate;
 	uint32 time;
 };
 
@@ -568,6 +580,7 @@ public:
 		briefingVideo.clear();
 		additionalVideo.clear();
 		additionalSound.clear();
+		noAmmoSound.clear();
 		segments.clear();
 		script.clear();
 		objKillsRequired[0] = 0;
@@ -579,6 +592,7 @@ public:
 		shootSoundRate = 0;
 		enemySoundRate = 0;
 		hitSoundRate = 0;
+		noAmmoSoundRate = 0;
 	}
 
 	uint32 id;
@@ -628,6 +642,8 @@ public:
 	uint32 hitSoundRate;
 	Filename additionalSound;
 	uint32 additionalSoundRate;
+	Filename noAmmoSound;
+	uint32 noAmmoSoundRate;
 };
 
 class Transition : public Level {
