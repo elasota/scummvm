@@ -230,12 +230,17 @@ struct Event {
 	Common::Point relMouse;
 
 	/**
+	 * Number of mouse clicks within the multi-click interval.
+	 */
+	int clicks;
+
+	/**
 	 * Joystick data; only valid for joystick events (EVENT_JOYAXIS_MOTION,
 	 * EVENT_JOYBUTTON_DOWN and EVENT_JOYBUTTON_UP).
 	 */
 	JoystickState joystick;
 
-	Event() : type(EVENT_INVALID), kbdRepeat(false), customType(0) {
+	Event() : type(EVENT_INVALID), kbdRepeat(false), customType(0), clicks(0) {
 	}
 };
 

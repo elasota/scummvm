@@ -131,7 +131,7 @@ bool LegacySdlEventSource::handleKbdMouse(Common::Event &event) {
 		}
 
 		event.type = Common::EVENT_MOUSEMOVE;
-		return processMouseEvent(event, _km.x / MULTIPLIER, _km.y / MULTIPLIER);
+		return processMouseEvent(event, g_system->getMillis(true), _km.x / MULTIPLIER, _km.y / MULTIPLIER);
 	}
 
 	return false;

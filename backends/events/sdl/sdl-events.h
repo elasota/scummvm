@@ -67,6 +67,10 @@ protected:
 
 	bool _engineRunning;
 
+	uint32 _autoMultiClickStartTimestamp;
+	int _autoMultiClickClicks;
+	Common::EventType _autoMultiClickTriggerEventType;
+
 	int _mouseX;
 	int _mouseY;
 
@@ -105,6 +109,11 @@ protected:
 	 * Close the currently open joystick if any
 	 */
 	void closeJoystick();
+
+	/**
+	 * Returns the timestamp of an event, or the current time if it's not timestamped.
+	 */
+	static uint32 getEventTime(SDL_Event &ev);
 
 	/**
 	 * Pre process an event before it is dispatched.
@@ -151,8 +160,9 @@ protected:
 	 * Assigns the mouse coords to the mouse event. Furthermore notify the
 	 * graphics manager about the position change.
 	 * The parameters relx and rely for relative mouse movement
+	 * If clicks is 0 for a mouse button down event, then click count is determined automatically
 	 */
-	virtual bool processMouseEvent(Common::Event &event, int x, int y, int relx = 0, int rely = 0);
+	virtual bool processMouseEvent(Common::Event &event, uint32 timestamp, int x, int y, int relx = 0, int rely = 0, int clicks = 0);
 
 	/**
 	 * Remaps key events. This allows platforms to configure

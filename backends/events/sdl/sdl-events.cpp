@@ -72,7 +72,8 @@ void SdlEventSource::loadGameControllerMappingFile() {
 
 SdlEventSource::SdlEventSource()
 	: EventSource(), _scrollLock(false), _joystick(nullptr), _lastScreenID(0), _graphicsManager(nullptr), _queuedFakeMouseMove(false),
-	  _lastHatPosition(SDL_HAT_CENTERED), _mouseX(0), _mouseY(0), _engineRunning(false)
+	  _lastHatPosition(SDL_HAT_CENTERED), _mouseX(0), _mouseY(0), _engineRunning(false),
+	  _autoMultiClickStartTimestamp(0), _autoMultiClickClicks(0), _autoMultiClickTriggerEventType(Common::EVENT_LBUTTONDOWN)
 #if SDL_VERSION_ATLEAST(2, 0, 0)
 	  , _queuedFakeKeyUp(false), _fakeKeyUp(), _controller(nullptr)
 #endif
@@ -161,7 +162,7 @@ int SdlEventSource::mapKey(SDL_Keycode sdlKey, SDL_Keymod mod, Uint16 unicode) {
 	}
 }
 
-bool SdlEventSource::processMouseEvent(Common::Event &event, int x, int y, int relx, int rely) {
+bool SdlEventSource::processMouseEvent(Common::Event &event, uint32 timestamp, int x, int y, int relx, int rely, int clicks) {
 	_mouseX = x;
 	_mouseY = y;
 
@@ -169,6 +170,27 @@ bool SdlEventSource::processMouseEvent(Common::Event &event, int x, int y, int r
 	event.mouse.y = y;
 	event.relMouse.x = relx;
 	event.relMouse.y = rely;
+	event.clicks = clicks;
+
+	if (event.type == Common::EVENT_LBUTTONDOWN || event.type == Common::EVENT_MBUTTONDOWN || event.type == Common::EVENT_RBUTTONDOWN) {
+		const uint32 autoMultiClickInterval = 500;
+		if (clicks == 0 && timestamp < _autoMultiClickStartTimestamp + autoMultiClickInterval && event.type == _autoMultiClickTriggerEventType) {
+			// Automatic multi-click.
+			// This also handles the case where the user supplies a click in the first 500ms of program time.  In that case,
+			// because _autoMultiClickClicks is initialized to 0, this will only register as 1 click.
+			_autoMultiClickClicks++;
+			event.clicks = _autoMultiClickClicks;
+		} else {
+			// Single-click, or a click count was specified
+			_autoMultiClickClicks = 1;
+			_autoMultiClickTriggerEventType = event.type;
+			_autoMultiClickStartTimestamp = timestamp;
+
+			// In auto case, this is a single-click
+			if (clicks == 0)
+				event.clicks = 1;
+		}
+	}
 
 	if (_graphicsManager) {
 		return _graphicsManager->notifyMousePosition(event.mouse);
@@ -454,7 +476,7 @@ bool SdlEventSource::dispatchSDLEvent(SDL_Event &ev, Common::Event &event) {
 		// We want the mouse coordinates supplied with a mouse wheel event.
 		// However, SDL2 does not supply these, thus we use whatever we got
 		// last time.
-		if (!processMouseEvent(event, _mouseX, _mouseY)) {
+		if (!processMouseEvent(event, getEventTime(ev), _mouseX, _mouseY)) {
 			return false;
 		}
 		if (yDir < 0) {
@@ -680,7 +702,7 @@ bool SdlEventSource::handleKeyUp(SDL_Event &ev, Common::Event &event) {
 bool SdlEventSource::handleMouseMotion(SDL_Event &ev, Common::Event &event) {
 	event.type = Common::EVENT_MOUSEMOVE;
 
-	return processMouseEvent(event, ev.motion.x, ev.motion.y, ev.motion.xrel, ev.motion.yrel);
+	return processMouseEvent(event, getEventTime(ev), ev.motion.x, ev.motion.y, ev.motion.xrel, ev.motion.yrel);
 }
 
 bool SdlEventSource::handleMouseButtonDown(SDL_Event &ev, Common::Event &event) {
@@ -709,7 +731,13 @@ bool SdlEventSource::handleMouseButtonDown(SDL_Event &ev, Common::Event &event) 
 	else
 		return false;
 
-	return processMouseEvent(event, ev.button.x, ev.button.y);
+#if SDL_VERSION_ATLEAST(2, 0, 2)
+	const int clicks = ev.button.clicks;
+#else
+	const int clicks = 0;
+#endif
+
+	return processMouseEvent(event, getEventTime(ev), ev.button.x, ev.button.y, 0, 0, clicks);
 }
 
 bool SdlEventSource::handleMouseButtonUp(SDL_Event &ev, Common::Event &event) {
@@ -732,7 +760,7 @@ bool SdlEventSource::handleMouseButtonUp(SDL_Event &ev, Common::Event &event) {
 	else
 		return false;
 
-	return processMouseEvent(event, ev.button.x, ev.button.y);
+	return processMouseEvent(event, getEventTime(ev), ev.button.x, ev.button.y);
 }
 
 bool SdlEventSource::handleSysWMEvent(SDL_Event &ev, Common::Event &event) {
@@ -773,6 +801,14 @@ void SdlEventSource::closeJoystick() {
 		SDL_JoystickClose(_joystick);
 		_joystick = nullptr;
 	}
+}
+
+uint32 SdlEventSource::getEventTime(SDL_Event &ev) {
+#if SDL_VERSION_ATLEAST(2, 0, 0)
+	return ev.common.timestamp;
+#else
+	return g_system->getMillis(false);
+#endif
 }
 
 int SdlEventSource::mapSDLJoystickButtonToOSystem(Uint8 sdlButton) {

@@ -226,7 +226,7 @@ bool GPHEventSource::handleMouseButtonDown(SDL_Event &ev, Common::Event &event) 
 	_km.x = ev.button.x * MULTIPLIER;
 	_km.y = ev.button.y * MULTIPLIER;
 
-	return processMouseEvent(event, ev.button.x, ev.button.y);
+	return processMouseEvent(event, getEventTime(ev), ev.button.x, ev.button.y);
 }
 
 bool GPHEventSource::handleMouseButtonUp(SDL_Event &ev, Common::Event &event) {
@@ -249,7 +249,7 @@ bool GPHEventSource::handleMouseButtonUp(SDL_Event &ev, Common::Event &event) {
 	_km.x = ev.button.x * MULTIPLIER;
 	_km.y = ev.button.y * MULTIPLIER;
 
-	return processMouseEvent(event, ev.button.x, ev.button.y);
+	return processMouseEvent(event, getEventTime(ev), ev.button.x, ev.button.y);
 }
 
 /* Custom handleJoyButtonDown/handleJoyButtonUp to deal with the joystick buttons on GPH devices */
@@ -267,7 +267,7 @@ bool GPHEventSource::handleJoyButtonDown(SDL_Event &ev, Common::Event &event) {
 			_km.y_vel = -4 * MULTIPLIER;
 		}
 		event.type = Common::EVENT_MOUSEMOVE;
-		processMouseEvent(event, _km.x / MULTIPLIER, _km.y / MULTIPLIER);
+		processMouseEvent(event, getEventTime(ev), _km.x / MULTIPLIER, _km.y / MULTIPLIER);
 		break;
 	case BUTTON_DOWN:
 		if (_km.y_down_count != 2) {
@@ -277,7 +277,7 @@ bool GPHEventSource::handleJoyButtonDown(SDL_Event &ev, Common::Event &event) {
 			_km.y_vel = 4 * MULTIPLIER;
 		}
 		event.type = Common::EVENT_MOUSEMOVE;
-		processMouseEvent(event, _km.x / MULTIPLIER, _km.y / MULTIPLIER);
+		processMouseEvent(event, getEventTime(ev), _km.x / MULTIPLIER, _km.y / MULTIPLIER);
 		break;
 	case BUTTON_LEFT:
 		if (_km.x_down_count != 2) {
@@ -287,7 +287,7 @@ bool GPHEventSource::handleJoyButtonDown(SDL_Event &ev, Common::Event &event) {
 			_km.x_vel = -4 * MULTIPLIER;
 		}
 		event.type = Common::EVENT_MOUSEMOVE;
-		processMouseEvent(event, _km.x / MULTIPLIER, _km.y / MULTIPLIER);
+		processMouseEvent(event, getEventTime(ev), _km.x / MULTIPLIER, _km.y / MULTIPLIER);
 		break;
 	case BUTTON_RIGHT:
 		if (_km.x_down_count != 3) {
@@ -297,7 +297,7 @@ bool GPHEventSource::handleJoyButtonDown(SDL_Event &ev, Common::Event &event) {
 			_km.x_vel = 4 * MULTIPLIER;
 		}
 		event.type = Common::EVENT_MOUSEMOVE;
-		processMouseEvent(event, _km.x / MULTIPLIER, _km.y / MULTIPLIER);
+		processMouseEvent(event, getEventTime(ev), _km.x / MULTIPLIER, _km.y / MULTIPLIER);
 		break;
 	case BUTTON_UPLEFT:
 		if (_km.x_down_count != 2) {
@@ -313,7 +313,7 @@ bool GPHEventSource::handleJoyButtonDown(SDL_Event &ev, Common::Event &event) {
 			_km.y_vel = -4 * MULTIPLIER;
 		}
 		event.type = Common::EVENT_MOUSEMOVE;
-		processMouseEvent(event, _km.x / MULTIPLIER, _km.y / MULTIPLIER);
+		processMouseEvent(event, getEventTime(ev), _km.x / MULTIPLIER, _km.y / MULTIPLIER);
 		break;
 	case BUTTON_UPRIGHT:
 		if (_km.x_down_count != 2) {
@@ -329,7 +329,7 @@ bool GPHEventSource::handleJoyButtonDown(SDL_Event &ev, Common::Event &event) {
 			_km.y_vel = -4 * MULTIPLIER;
 		}
 		event.type = Common::EVENT_MOUSEMOVE;
-		processMouseEvent(event, _km.x / MULTIPLIER, _km.y / MULTIPLIER);
+		processMouseEvent(event, getEventTime(ev), _km.x / MULTIPLIER, _km.y / MULTIPLIER);
 		break;
 	case BUTTON_DOWNLEFT:
 		if (_km.x_down_count != 2) {
@@ -345,7 +345,7 @@ bool GPHEventSource::handleJoyButtonDown(SDL_Event &ev, Common::Event &event) {
 			_km.y_vel = 4 * MULTIPLIER;
 		}
 		event.type = Common::EVENT_MOUSEMOVE;
-		processMouseEvent(event, _km.x / MULTIPLIER, _km.y / MULTIPLIER);
+		processMouseEvent(event, getEventTime(ev), _km.x / MULTIPLIER, _km.y / MULTIPLIER);
 		break;
 	case BUTTON_DOWNRIGHT:
 		if (_km.x_down_count != 2) {
@@ -361,16 +361,16 @@ bool GPHEventSource::handleJoyButtonDown(SDL_Event &ev, Common::Event &event) {
 			_km.y_vel = 4 * MULTIPLIER;
 		}
 		event.type = Common::EVENT_MOUSEMOVE;
-		processMouseEvent(event, _km.x / MULTIPLIER, _km.y / MULTIPLIER);
+		processMouseEvent(event, getEventTime(ev), _km.x / MULTIPLIER, _km.y / MULTIPLIER);
 		break;
 	case BUTTON_B:
 	case BUTTON_CLICK:
 		event.type = Common::EVENT_LBUTTONDOWN;
-		processMouseEvent(event, _km.x / MULTIPLIER, _km.y / MULTIPLIER);
+		processMouseEvent(event, getEventTime(ev), _km.x / MULTIPLIER, _km.y / MULTIPLIER);
 		break;
 	case BUTTON_X:
 		event.type = Common::EVENT_RBUTTONDOWN;
-		processMouseEvent(event, _km.x / MULTIPLIER, _km.y / MULTIPLIER);
+		processMouseEvent(event, getEventTime(ev), _km.x / MULTIPLIER, _km.y / MULTIPLIER);
 		break;
 	case BUTTON_L:
 		_buttonStateL = true;
@@ -480,16 +480,16 @@ bool GPHEventSource::handleJoyButtonUp(SDL_Event &ev, Common::Event &event) {
 		_km.x_vel = 0;
 		_km.x_down_count = 0;
 		event.type = Common::EVENT_MOUSEMOVE;
-		processMouseEvent(event, _km.x / MULTIPLIER, _km.y / MULTIPLIER);
+		processMouseEvent(event, getEventTime(ev), _km.x / MULTIPLIER, _km.y / MULTIPLIER);
 		break;
 	case BUTTON_B:
 	case BUTTON_CLICK:
 		event.type = Common::EVENT_LBUTTONUP;
-		processMouseEvent(event, _km.x / MULTIPLIER, _km.y / MULTIPLIER);
+		processMouseEvent(event, getEventTime(ev), _km.x / MULTIPLIER, _km.y / MULTIPLIER);
 		break;
 	case BUTTON_X:
 		event.type = Common::EVENT_RBUTTONUP;
-		processMouseEvent(event, _km.x / MULTIPLIER, _km.y / MULTIPLIER);
+		processMouseEvent(event, getEventTime(ev), _km.x / MULTIPLIER, _km.y / MULTIPLIER);
 		break;
 	case BUTTON_L:
 		_buttonStateL = false;

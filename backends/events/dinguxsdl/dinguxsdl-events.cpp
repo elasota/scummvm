@@ -79,7 +79,7 @@ bool DINGUXSdlEventSource::remapKey(SDL_Event &ev, Common::Event &event) {
 		}
 
 		event.type = Common::EVENT_MOUSEMOVE;
-		processMouseEvent(event, _km.x / MULTIPLIER, _km.y / MULTIPLIER);
+		processMouseEvent(event, getEventTime(ev), _km.x / MULTIPLIER, _km.y / MULTIPLIER);
 
 		return true;
 	} else if (ev.key.keysym.sym == PAD_DOWN) {
@@ -92,7 +92,7 @@ bool DINGUXSdlEventSource::remapKey(SDL_Event &ev, Common::Event &event) {
 		}
 
 		event.type = Common::EVENT_MOUSEMOVE;
-		processMouseEvent(event, _km.x / MULTIPLIER, _km.y / MULTIPLIER);
+		processMouseEvent(event, getEventTime(ev), _km.x / MULTIPLIER, _km.y / MULTIPLIER);
 
 		return true;
 	} else if (ev.key.keysym.sym == PAD_LEFT) {
@@ -105,7 +105,7 @@ bool DINGUXSdlEventSource::remapKey(SDL_Event &ev, Common::Event &event) {
 		}
 
 		event.type = Common::EVENT_MOUSEMOVE;
-		processMouseEvent(event, _km.x / MULTIPLIER, _km.y / MULTIPLIER);
+		processMouseEvent(event, getEventTime(ev), _km.x / MULTIPLIER, _km.y / MULTIPLIER);
 
 		return true;
 	} else if (ev.key.keysym.sym == PAD_RIGHT) {
@@ -118,7 +118,7 @@ bool DINGUXSdlEventSource::remapKey(SDL_Event &ev, Common::Event &event) {
 		}
 
 		event.type = Common::EVENT_MOUSEMOVE;
-		processMouseEvent(event, _km.x / MULTIPLIER, _km.y / MULTIPLIER);
+		processMouseEvent(event, getEventTime(ev), _km.x / MULTIPLIER, _km.y / MULTIPLIER);
 
 		return true;
 	} else if (ev.key.keysym.sym == BUT_Y) { // left mouse button
@@ -128,7 +128,7 @@ bool DINGUXSdlEventSource::remapKey(SDL_Event &ev, Common::Event &event) {
 			event.type = Common::EVENT_LBUTTONUP;
 		}
 
-		processMouseEvent(event, _km.x / MULTIPLIER, _km.y / MULTIPLIER);
+		processMouseEvent(event, getEventTime(ev), _km.x / MULTIPLIER, _km.y / MULTIPLIER);
 
 		return true;
 	} else if (ev.key.keysym.sym == BUT_B) { // right mouse button
@@ -138,7 +138,7 @@ bool DINGUXSdlEventSource::remapKey(SDL_Event &ev, Common::Event &event) {
 			event.type = Common::EVENT_RBUTTONUP;
 		}
 
-		processMouseEvent(event, _km.x / MULTIPLIER, _km.y / MULTIPLIER);
+		processMouseEvent(event, getEventTime(ev), _km.x / MULTIPLIER, _km.y / MULTIPLIER);
 
 		return true;
 	} else if (ev.key.keysym.sym == BUT_X) { // '.' skip dialogue

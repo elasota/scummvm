@@ -29,7 +29,7 @@
 #include "graphics/surface.h"
 #include "graphics/scaler.h"
 
-#define RECORD_VERSION 1
+#define RECORD_VERSION 2
 
 namespace Common {
 
@@ -133,6 +133,7 @@ bool PlaybackFile::checkPlaybackFileVersion() {
 	_version = _readStream->readUint32BE();
 	switch (_version) {
 	case 1:
+	case 2:
 		break;
 	default:
 		warning("Unknown playback file version %d. Maximum supported version is %d.", _version, RECORD_VERSION);
@@ -420,6 +421,13 @@ void PlaybackFile::readEvent(RecorderEvent& event) {
 			event.time = _tmpPlaybackFile.readUint32BE();
 			event.mouse.x = _tmpPlaybackFile.readSint16BE();
 			event.mouse.y = _tmpPlaybackFile.readSint16BE();
+			if (event.type == EVENT_LBUTTONDOWN || event.type == EVENT_MBUTTONDOWN || event.type == EVENT_RBUTTONDOWN) {
+				if (_version >= 2)
+					event.clicks = _tmpPlaybackFile.readSint32BE();
+				else
+					event.clicks = 1;
+			}
+
 			break;
 		case EVENT_CUSTOM_BACKEND_ACTION_START:
 		case EVENT_CUSTOM_BACKEND_ACTION_END:
@@ -609,6 +617,9 @@ void PlaybackFile::writeEvent(const RecorderEvent &event) {
 			_tmpRecordFile.writeUint32BE(event.time);
 			_tmpRecordFile.writeSint16BE(event.mouse.x);
 			_tmpRecordFile.writeSint16BE(event.mouse.y);
+
+			if (event.type == EVENT_LBUTTONDOWN || event.type == EVENT_MBUTTONDOWN || event.type == EVENT_RBUTTONDOWN)
+				_tmpRecordFile.writeSint32BE(event.clicks);
 			break;
 		case EVENT_CUSTOM_BACKEND_ACTION_START:
 		case EVENT_CUSTOM_BACKEND_ACTION_END:
