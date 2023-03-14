@@ -401,6 +401,17 @@ int8 MixerImpl::getChannelBalance(SoundHandle handle) {
 	return _channels[index]->getBalance();
 }
 
+void MixerImpl::setChannelVolumeAndBalance(SoundHandle handle, byte volume, int8 balance) {
+	Common::StackLock lock(_mutex);
+
+	const int index = handle._val % NUM_CHANNELS;
+	if (!_channels[index] || _channels[index]->getHandle()._val != handle._val)
+		return;
+
+	_channels[index]->setVolume(volume);
+	_channels[index]->setBalance(balance);
+}
+
 uint32 MixerImpl::getSoundElapsedTime(SoundHandle handle) {
 	return getElapsedTime(handle).msecs();
 }

@@ -246,6 +246,18 @@ public:
 	virtual void setChannelBalance(SoundHandle handle, int8 balance) = 0;
 
 	/**
+	 * Set the channel volume and balance for the given handle.  This is an atomic
+	 * operation, so unlike separate calls to setChannelVolume and setChannelBalance,
+	 * it can not cause audible artifacts from audio being mixed between the calls.
+	 *
+	 * @param handle   The sound to affect.
+	 * @param volume   The new channel volume, in the range 0 - kMaxChannelVolume.
+	 * @param balance  The new channel balance:
+	 *                 (-127 ... 0 ... 127) corresponds to (left ... center ... right)
+	 */
+	virtual void setChannelVolumeAndBalance(SoundHandle handle, byte volume, int8 balance) = 0;
+
+	/**
 	 * Get the channel balance for the given handle.
 	 *
 	 * @param handle  The sound to affect.

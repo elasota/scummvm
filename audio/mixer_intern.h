@@ -118,6 +118,7 @@ public:
 	virtual byte getChannelVolume(SoundHandle handle);
 	virtual void setChannelBalance(SoundHandle handle, int8 balance);
 	virtual int8 getChannelBalance(SoundHandle handle);
+	virtual void setChannelVolumeAndBalance(SoundHandle handle, byte volume, int8 balance);
 
 	virtual uint32 getSoundElapsedTime(SoundHandle handle);
 	virtual Timestamp getElapsedTime(SoundHandle handle);
