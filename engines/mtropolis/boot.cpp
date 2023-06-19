@@ -1215,6 +1215,93 @@ const Game games[] = {
 
 } // End of namespace Boot
 
+struct BootMacro {
+	Common::Array<Common::String> lines;
+};
+
+static bool readLineFromStream(Common::ReadStream *stream, Common::String &outStr) {
+	outStr.clear();
+
+	byte b = 0;
+	for (;;) {
+		uint32 numRead = stream->read(&b, 1);
+		if (!numRead)
+			return false;
+
+		if (b == '\n') {
+			if (outStr.hasSuffix("\r"))
+				outStr = outStr.substr(0, outStr.size() - 1);
+
+			return true;
+		}
+
+		outStr += static_cast<char>(b);
+	}
+}
+
+static void tokenizeLine(const Common::String &str, Common::Array<Common::String> &outTokens) {
+	uint pos = 0;
+
+	for (;;) {
+		if (pos == str.size())
+			return;
+
+		// Skip whitespace
+		char c = str[pos];
+		while ((c & 0x80) == 0 && c <= ' ') {
+			pos++;
+			if (pos == str.size())
+				return;
+
+			c = str[pos];
+		}
+
+		Common::String token;
+		if (c == '\"') {
+			pos++;
+
+			while (pos < str.size()) {
+				c = str[pos];
+
+				if (c == '\"')
+					break;
+
+				if (c == '\\') {
+					pos++;
+					if (pos == str.size())
+						error("Boot script contained an unterminated string");
+
+					char escapeChar = str[pos];
+					if (escapeChar == '\"')
+						token += '\"';
+					else
+						error("Unrecognized escape char %c", escapeChar);
+				} else
+					token += c;
+
+				pos++;
+			}
+
+			if (pos == str.size())
+				error("Boot script contained an unterminated string");
+
+			pos++;
+		} else {
+			while (pos < str.size()) {
+				c = str[pos];
+
+				if ((c & 0x80) == 0 && c <= ' ')
+					break;
+
+				token += c;
+				pos++;
+			}
+		}
+
+		outTokens.push_back(token);
+	}
+}
+
 Common::SharedPtr<ProjectDescription> bootProject(const MTropolisGameDescription &gameDesc) {
 	Common::SharedPtr<ProjectDescription> desc;
 
@@ -1231,6 +1318,50 @@ Common::SharedPtr<ProjectDescription> bootProject(const MTropolisGameDescription
 	Common::String linesTablePath;
 	Common::String assetMappingTablePath;
 	Common::String modifierMappingTablePath;
+
+	Common::HashMap<Common::String, Common::SharedPtr<BootMacro> > bootMacros;
+
+	Common::SharedPtr<BootMacro> rootMacro(new BootMacro());
+	Common::SharedPtr<BootMacro> currentMacro = rootMacro;
+
+	// Try to find a boot script
+	Common::ReadStream *bootScriptStream = nullptr;
+
+	Common::File mtBootFile;
+	if (mtBootFile.open("mtboot.txt")) {
+		debug(1, "Using mtboot.txt as boot script");
+		bootScriptStream = &mtBootFile;
+	}
+
+	if (bootScriptStream) {
+		Common::String lineStr;
+		while (readLineFromStream(bootScriptStream, lineStr)) {
+			Common::Array<Common::String> lineTokens;
+			tokenizeLine(lineStr, lineTokens);
+
+			if (lineTokens.size() == 0)
+				continue;
+
+			if (lineTokens[0] == "macro") {
+				if (currentMacro != rootMacro)
+					error("Boot script contains 'macro' inside of a macro");
+
+				currentMacro.reset(new BootMacro());
+
+				if (lineTokens.size() != 2)
+					error("Boot script macro def contains too many tokens");
+
+				bootMacros[lineTokens[1]] = currentMacro;
+			} else if (lineTokens[0] == "endMacro") {
+				if (currentMacro == rootMacro)
+					error("Boot script contains 'endMacro' outside of a macro");
+
+				currentMacro = rootMacro;
+			} else {
+				currentMacro->lines.push_back(lineStr);
+			}
+		}
+	}
 
 	const Boot::Game *bootGame = nullptr;
 	for (const Boot::Game &bootGameCandidate : Boot::Games::games) {
