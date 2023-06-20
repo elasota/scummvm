@@ -29,16 +29,20 @@
 
 namespace Common {
 
-GenericArchiveMember::GenericArchiveMember(const String &name, const Archive *parent)
-	: _parent(parent), _name(name) {
+GenericArchiveMember::GenericArchiveMember(const Path &path, const Archive *parent)
+	: _parent(parent), _path(path) {
 }
 
 String GenericArchiveMember::getName() const {
-	return _name;
+	return _path.getLastComponent().toString();
+}
+
+Path GenericArchiveMember::getPathInArchive() const {
+	return _path;
 }
 
 SeekableReadStream *GenericArchiveMember::createReadStream() const {
-	return _parent->createReadStreamForMember(_name);
+	return _parent->createReadStreamForMember(_path);
 }
 
 
@@ -47,15 +51,22 @@ int Archive::listMatchingMembers(ArchiveMemberList &list, const Path &pattern, b
 	ArchiveMemberList allNames;
 	listMembers(allNames);
 
-	String patternString = pattern.toString();
+	String patternString = pattern.toString(getPathSeparator());
 	int matches = 0;
-	const char *wildcardExclusions = matchPathComponents ? NULL : "/";
+	const char *wildcardExclusions = nullptr;
+
+	char exclusionsStr[2] = {0, 0};
+
+	if (!matchPathComponents) {
+		exclusionsStr[0] = getPathSeparator();
+		wildcardExclusions = exclusionsStr;
+	}
 
 	ArchiveMemberList::const_iterator it = allNames.begin();
 	for (; it != allNames.end(); ++it) {
 		// TODO: We match case-insenstivie for now, our API does not define whether that's ok or not though...
 		// For our use case case-insensitive is probably what we want to have though.
-		if ((*it)->getName().matchString(patternString, true, wildcardExclusions)) {
+		if ((*it)->getPathInArchive().toString(getPathSeparator()).matchString(patternString, true, wildcardExclusions)) {
 			list.push_back(*it);
 			matches++;
 		}

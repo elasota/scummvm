@@ -59,6 +59,7 @@ public:
 	virtual ~ArchiveMember() { }
 	virtual SeekableReadStream *createReadStream() const = 0; /*!< Create a read stream. */
 	virtual String getName() const = 0; /*!< Get the name of the archive member. */
+	virtual Path getPathInArchive() const { return Path(getName()); } /*!< Get the full path of the archive member relative to the archive. */
 	virtual U32String getDisplayName() const { return getName(); } /*!< Get the display name of the archive member. */
 };
 
@@ -86,12 +87,16 @@ class Archive;
  * is destroyed.
  */
 class GenericArchiveMember : public ArchiveMember {
-	const Archive *_parent;
-	const String _name;
 public:
-	GenericArchiveMember(const String &name, const Archive *parent); /*!< Create a generic archive member that belongs to the @p parent archive. */
-	String getName() const; /*!< Get the name of a generic archive member. */
-	SeekableReadStream *createReadStream() const; /*!< Create a read stream. */
+	GenericArchiveMember(const Path &path, const Archive *parent); /*!< Create a generic archive member that belongs to the @p parent archive. */
+
+	String getName() const override; /*!< Get the name of a generic archive member. */
+	Path getPathInArchive() const override; /*!< Get the full path of the archive member relative to the archive. */
+	SeekableReadStream *createReadStream() const override; /*!< Create a read stream. */
+
+private:
+	const Archive *_parent;
+	const Path _path;
 };
 
 
