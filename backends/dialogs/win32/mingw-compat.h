@@ -43,7 +43,9 @@
 
 // Dialog GUID definitions
 DEFINE_GUID(CLSID_FileOpenDialog, 0xdc1c5a9c, 0xe88a, 0x4dde, 0xa5,0xa1, 0x60,0xf8,0x2a,0x20,0xae,0xf7);
+DEFINE_GUID(CLSID_FileSaveDialog, 0xc0b4e2f3, 0xba21, 0x4773, 0x8d,0xba, 0x33,0x5e,0xc9,0x46,0xeb,0x8b);
 DEFINE_GUID(IID_IFileOpenDialog, 0xd57c7288, 0xd4ad, 0x4768, 0xbe,0x02, 0x9d,0x96,0x95,0x32,0xd9,0x60);
+DEFINE_GUID(IID_IFileSaveDialog, 0x84bccd23, 0x5fde, 0x4cdb, 0xae,0xa4, 0xaf,0x64,0xb8,0x3d,0x78,0xab);
 DEFINE_GUID(IID_IShellItem, 0x43826d1e, 0xe718, 0x42ee, 0xbc,0x55, 0xa1,0xe2,0x61,0xc3,0x7b,0xfe);
 
 typedef enum _SIGDN {
@@ -159,6 +161,47 @@ DECLARE_INTERFACE_(IFileOpenDialog, IUnknown) {
 	// IFileOpenDialog
 	STDMETHOD (GetResults) (THIS_ IShellItemArray **ppenum) PURE;
 	STDMETHOD (GetSelectedItems) (THIS_ IShellItemArray **ppsai) PURE;
+};
+#undef INTERFACE
+
+#define INTERFACE IFileSaveDialog
+DECLARE_INTERFACE_(IFileSaveDialog, IUnknown) {
+	// IUnknown
+	STDMETHOD(QueryInterface) (THIS_ REFIID riid, void **ppv) PURE;
+	STDMETHOD_(ULONG,AddRef) (THIS) PURE;
+	STDMETHOD_(ULONG,Release) (THIS) PURE;
+	// IModalWindow
+	STDMETHOD (Show) (THIS_ HWND hwndOwner) PURE;
+	// IFileDialog
+	STDMETHOD (SetFileTypes) (THIS_ UINT cFileTypes, const COMDLG_FILTERSPEC *rgFilterSpec) PURE;
+	STDMETHOD (SetFileTypeIndex) (THIS_ UINT iFileType) PURE;
+	STDMETHOD (GetFileTypeIndex) (THIS_ UINT *piFileType) PURE;
+	STDMETHOD (Advise) (THIS_ IFileDialogEvents *pfde, DWORD *pdwCookie) PURE;
+	STDMETHOD (Unadvise) (THIS_ DWORD dwCookie) PURE;
+	STDMETHOD (SetOptions) (THIS_ FILEOPENDIALOGOPTIONS fos) PURE;
+	STDMETHOD (GetOptions) (THIS_ FILEOPENDIALOGOPTIONS *pfos) PURE;
+	STDMETHOD (SetDefaultFolder) (THIS_ IShellItem *psi) PURE;
+	STDMETHOD (SetFolder) (THIS_ IShellItem *psi) PURE;
+	STDMETHOD (GetFolder) (THIS_ IShellItem **ppsi) PURE;
+	STDMETHOD (GetCurrentSelection) (THIS_ IShellItem **ppsi) PURE;
+	STDMETHOD (SetFileName) (THIS_ LPCWSTR pszName) PURE;
+	STDMETHOD (GetFileName) (THIS_ LPWSTR *pszName) PURE;
+	STDMETHOD (SetTitle) (THIS_ LPCWSTR pszTitle) PURE;
+	STDMETHOD (SetOkButtonLabel) (THIS_ LPCWSTR pszText) PURE;
+	STDMETHOD (SetFileNameLabel) (THIS_ LPCWSTR pszLabel) PURE;
+	STDMETHOD (GetResult) (THIS_ IShellItem **ppsi) PURE;
+	STDMETHOD (AddPlace) (THIS_ IShellItem *psi, FDAP fdap) PURE;
+	STDMETHOD (SetDefaultExtension) (THIS_ LPCWSTR pszDefaultExtension) PURE;
+	STDMETHOD (Close) (THIS_ HRESULT hr) PURE;
+	STDMETHOD (SetClientGuid) (THIS_ REFGUID guid) PURE;
+	STDMETHOD (ClearClientData) (THIS) PURE;
+	STDMETHOD (SetFilter) (THIS_ IShellItemFilter *pFilter) PURE;
+	//IFileSaveDialog
+	STDMETHOD (SetSaveAsItem) (THIS_ IShellItem *psi) PURE;
+	STDMETHOD (SetProperties) (THIS_ IPropertyStore *psi) PURE;
+	STDMETHOD (SetCollectedProperties) (THIS_ IPropertyDescriptionList *pList, BOOL fAppendDefault) PURE;
+	STDMETHOD (GetProperties) (THIS_ IPropertyStore **ppStore) PURE;
+	STDMETHOD (ApplyProperties) (THIS_ IShellItem *psi, IPropertyStore *pStore, HWND hwnd, IFileOperationProgressSink *pSink) PURE;
 };
 #undef INTERFACE
 
