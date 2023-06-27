@@ -35,6 +35,8 @@ public:
 	Win32DialogManager(SdlWindow_Win32 *window);
 	virtual ~Win32DialogManager();
 	DialogResult showFileBrowser(const Common::U32String &title, Common::FSNode &choice, bool isDirBrowser) override;
+	DialogResult showFileSaveBrowser(const Common::U32String &title, const Common::U32String &defaultName, const Common::U32String &fileTypeDescription, const Common::U32String &preferredExtension, Common::FormatInfo::FormatID fileFormat, Common::SeekableWriteStream *&outWriteStream) override;
+	Common::FormatInfo::FormatSupportLevel getSaveFormatSupportLevel(Common::FormatInfo::FormatID fileFormat) const override;
 
 private:
 	SdlWindow_Win32 *_window;

@@ -189,4 +189,127 @@ Common::DialogManager::DialogResult Win32DialogManager::showFileBrowser(const Co
 	return result;
 }
 
+Common::DialogManager::DialogResult Win32DialogManager::showFileSaveBrowser(const Common::U32String &title, const Common::U32String &defaultName, const Common::U32String &fileTypeDescription, const Common::U32String &preferredExtension, Common::FormatInfo::FormatID format, Common::SeekableWriteStream *&outWriteStream) {
+	DialogResult result = kDialogError;
+	outWriteStream = nullptr;
+
+	// Do nothing if not running on Windows Vista or later
+	if (!Win32::confirmWindowsVersion(6, 0))
+		return result;
+
+	IFileSaveDialog *dialog = nullptr;
+	HRESULT hr = CoCreateInstance(CLSID_FileSaveDialog,
+								  nullptr,
+								  CLSCTX_INPROC_SERVER,
+								  IID_IFileSaveDialog,
+								  reinterpret_cast<void **>(&(dialog)));
+
+	if (SUCCEEDED(hr)) {
+		beginDialog();
+
+		// Customize dialog
+		bool showHidden = ConfMan.getBool("gui_browser_show_hidden", Common::ConfigManager::kApplicationDomain);
+
+		DWORD dwOptions;
+		hr = dialog->GetOptions(&dwOptions);
+		if (SUCCEEDED(hr)) {
+			if (showHidden)
+				dwOptions |= FOS_FORCESHOWHIDDEN;
+			hr = dialog->SetOptions(dwOptions);
+		}
+
+		if (preferredExtension.size() > 0) {
+			Common::U32String filterDesc = fileTypeDescription + Common::String(" (*.").decode() + preferredExtension + Common::String(")").decode();
+			LPWSTR filterDescU16 = reinterpret_cast<LPWSTR>(filterDesc.encodeUTF16Native());
+
+			Common::U32String spec = Common::String("*.").decode() + preferredExtension;
+			LPWSTR specU16 = reinterpret_cast<LPWSTR>(spec.encodeUTF16Native());
+
+			COMDLG_FILTERSPEC filterSpec;
+			filterSpec.pszSpec = specU16;
+			filterSpec.pszName = filterDescU16;
+
+			dialog->SetFileTypes(1, &filterSpec);
+
+			free(specU16);
+			free(filterDescU16);
+		}
+
+		LPWSTR defaultNameU16 = reinterpret_cast<LPWSTR>(defaultName.encodeUTF16Native());
+		dialog->SetFileName(defaultNameU16);
+		free(defaultNameU16);
+
+
+		LPWSTR dialogTitle = (LPWSTR)title.encodeUTF16Native();
+		hr = dialog->SetTitle(dialogTitle);
+		free(dialogTitle);
+
+		LPWSTR okTitle = (LPWSTR)_("Save").encodeUTF16Native();
+		hr = dialog->SetOkButtonLabel(okTitle);
+		free(okTitle);
+
+		LPWSTR str;
+		if (ConfMan.hasKey("browser_lastpath")) {
+			str = Win32::ansiToUnicode(ConfMan.get("browser_lastpath").c_str());
+			IShellItem *item = nullptr;
+			hr = winCreateItemFromParsingName(str, nullptr, IID_IShellItem, reinterpret_cast<void **>(&(item)));
+			if (SUCCEEDED(hr)) {
+				hr = dialog->SetDefaultFolder(item);
+			}
+			free(str);
+		}
+
+		// Show dialog
+		hr = dialog->Show(_window->getHwnd());
+
+		if (SUCCEEDED(hr)) {
+			// Get the selection from the user
+			IShellItem *selectedItem = nullptr;
+			hr = dialog->GetResult(&selectedItem);
+			if (SUCCEEDED(hr)) {
+				Common::String path;
+				hr = getShellPath(selectedItem, path);
+				if (SUCCEEDED(hr)) {
+					Common::SeekableWriteStream *writeStream = Common::FSNode(path).createWriteStream();
+					outWriteStream = writeStream;
+					result = writeStream ? kDialogOk : kDialogError;
+				}
+				selectedItem->Release();
+			}
+
+			// Save last path
+			IShellItem *lastFolder = nullptr;
+			hr = dialog->GetFolder(&lastFolder);
+			if (SUCCEEDED(hr)) {
+				Common::String path;
+				hr = getShellPath(lastFolder, path);
+				if (SUCCEEDED(hr)) {
+					ConfMan.set("browser_lastpath", path);
+				}
+				lastFolder->Release();
+			}
+		} else if (hr == HRESULT_FROM_WIN32(ERROR_CANCELLED)) {
+			result = kDialogCancel;
+		}
+
+		dialog->Release();
+
+		endDialog();
+	}
+
+	return result;
+}
+
+Common::FormatInfo::FormatSupportLevel Win32DialogManager::getSaveFormatSupportLevel(Common::FormatInfo::FormatID fileFormat) const {
+	switch (fileFormat) {
+	case Common::FormatInfo::kBMP:
+		return Common::FormatInfo::kFormatSupportLevelSupported;
+	case Common::FormatInfo::kPNG:
+	case Common::FormatInfo::kJPEG:
+		return Common::FormatInfo::kFormatSupportLevelPreferred;
+	default:
+		return Common::FormatInfo::getDefaultFormatSupportLevel(fileFormat);
+	}
+}
+
 #endif
