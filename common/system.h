@@ -546,6 +546,12 @@ public:
 		kFeatureSystemBrowserDialog,
 
 		/**
+		 * Support for using the native file save browser dialog
+		 * through the DialogManager.
+		 */
+		kFeatureSystemSaveFileDialog,
+
+		/**
 		* For platforms that should not have a Quit button.
 		*/
 		kFeatureNoQuit

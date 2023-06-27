@@ -26,11 +26,15 @@
 
 #if defined(USE_SYSDIALOGS)
 
+#include "common/formats/formatinfo.h"
 #include "common/fs.h"
+#include "common/str.h"
 #include "common/system.h"
 #include "common/events.h"
 
 namespace Common {
+
+class SeekableWriteStream;
 
 /**
  * @defgroup common_dialogs Dialog Manager
@@ -50,9 +54,10 @@ public:
 	 * Values representing the user response to a dialog.
 	 */
 	enum DialogResult {
-		kDialogError = -1,	///< Dialog could not be displayed.
-		kDialogCancel = 0,	///< User cancelled the dialog (Cancel/No/Close buttons).
-		kDialogOk = 1		///< User confirmed the dialog (OK/Yes buttons).
+		kDialogError = -1,		///< Dialog could not be displayed.
+		kDialogCancel = 0,		///< User cancelled the dialog (Cancel/No/Close buttons).
+		kDialogOk = 1,			///< User confirmed the dialog (OK/Yes buttons).
+		kDialogDeferred = 2,	///< The function succeeded, but the dialog will display later
 	};
 
 	DialogManager() : _wasFullscreen(false) {}
@@ -66,7 +71,32 @@ public:
 	 * @param isDirBrowser Restrict selection to directories.
 	 * @return The dialog result.
 	 */
-	virtual DialogResult showFileBrowser(const Common::U32String &title, FSNode &choice, bool isDirBrowser = false) { return kDialogError; }
+	virtual DialogResult showFileBrowser(const Common::U32String &title, Common::FSNode &choice, bool isDirBrowser = false) { return kDialogError; }
+
+	/**
+	 * Display a dialog for saving or sharing a file and outputs a write stream to an empty file at the selected location on success.
+	 *
+	 * If this returns kDialogDeferred, then the dialog was not displayed and will display when the output write stream is closed instead.
+	 *
+	 * If a backend supports this, then its OSystem::hasFeature override should return "true" for kFeatureSystemSaveFileDialog.
+	 *
+	 * @param title               Dialog title.
+	 * @param defaultName         The default name of the file.
+	 * @param fileTypeDescription A string containing a human-readable description of the file type being saved.
+	 * @param preferredExtension  The preferred file extension of the file.
+	 * @param fileFormat          The file format ID of the supplied file.  @see Common::FormatInfo::FormatID
+	 * @param outWriteStream      A write stream to the created or overwritten file.
+	 * @return                    The dialog result.
+	 */
+	virtual DialogResult showFileSaveBrowser(const Common::U32String &title, const Common::U32String &defaultName, const Common::U32String &fileTypeDescription, const Common::U32String &preferredExtension, Common::FormatInfo::FormatID fileFormat, SeekableWriteStream *&outWriteStream) { return kDialogError; }
+
+	/**
+	 * Returns the support level of a file format. 
+	 *
+	 * @param fileFormat  The file format to check the support level of.
+	 * @return The support level of the format.
+	 */
+	virtual Common::FormatInfo::FormatSupportLevel getSaveFormatSupportLevel(Common::FormatInfo::FormatID fileFormat) const { return Common::FormatInfo::kFormatSupportLevelNone; }
 
 protected:
 	bool _wasFullscreen;
