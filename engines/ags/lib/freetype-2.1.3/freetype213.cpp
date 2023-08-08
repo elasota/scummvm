@@ -30,6 +30,8 @@
 #include "engines/ags/lib/freetype-2.1.3/ft213build.h"
 #include "engines/ags/lib/freetype-2.1.3/freetype.h"
 #include "engines/ags/lib/freetype-2.1.3/ftglyph.h"
+#include "engines/ags/lib/freetype-2.1.3/ftmodule.h"
+#include "engines/ags/lib/freetype-2.1.3/ftobjs.h"
 
 namespace AGS3 {
 namespace FreeType213 {
@@ -38,8 +40,36 @@ FT_Error Init_FreeType(FT_Library *alibrary) {
 	return FT_Init_FreeType(alibrary);
 }
 
+FT_Error Init_FreeType_With_Mem(FT_Library *alibrary, FT_Memory *amem) {
+	FT_Memory mem = FT_New_Memory();
+	if (!mem)
+		return FT_Err_Out_Of_Memory;
+
+	FT_Error error = FT_New_Library(mem, alibrary);
+	if (!error) {
+		(*alibrary)->version_major = FREETYPE213_MAJOR;
+		(*alibrary)->version_minor = FREETYPE213_MINOR;
+		(*alibrary)->version_patch = FREETYPE213_PATCH;
+
+		FT_Add_Default_Modules(*alibrary);
+
+		*amem = mem;
+	} else {
+		FT_Done_Memory(mem);
+	}
+
+	return error;
+}
+
 FT_Error Done_FreeType(FT_Library library) {
 	return FT_Done_FreeType(library);
+}
+
+FT_Error Done_FreeType_With_Mem(FT_Library library, FT_Memory mem) {
+	FT_Error error = FT_Done_Library(library);
+	FT_Done_Memory(mem);
+
+	return error;
 }
 
 FT_Error Load_Glyph(FT_Face face, FT_UInt glyph_index, FT_Int32 load_flags) {

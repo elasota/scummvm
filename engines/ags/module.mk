@@ -78,6 +78,12 @@ MODULE_OBJS = \
 	lib/freetype-2.1.3/modules/type1/t1driver.o \
 	lib/freetype-2.1.3/modules/type1/t1gload.o \
 	lib/freetype-2.1.3/modules/type1/t1afm.o \
+	lib/ftah213/ahangles213.o \
+	lib/ftah213/ahglyph213.o \
+	lib/ftah213/ahglobal213.o \
+	lib/ftah213/ahhint213.o \
+	lib/ftah213/ftgloadr213.o \
+	lib/ftah213/ftutil213.o \
 	lib/std/std.o \
 	lib/system/datetime.o \
 	shared/ac/dynobj/script_audio_clip.o \

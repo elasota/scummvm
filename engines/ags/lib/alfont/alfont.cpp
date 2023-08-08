@@ -55,6 +55,8 @@
 #include "ags/lib/freetype-2.1.3/freetype213.h"
 #else
 #include "graphics/fonts/freetype.h"
+
+#include "ags/lib/ftah213/ahhint.h"
 #endif
 
 namespace AGS3 {
@@ -68,6 +70,7 @@ using FreeType213::FT_FaceRec;
 using FreeType213::FT_Glyph;
 using FreeType213::FT_Bitmap;
 using FreeType213::FT_BitmapGlyph;
+using FreeType213::FT_Memory;
 
 using FreeType213::FT_GLYPH_FORMAT_BITMAP;
 using FreeType213::FT_RENDER_MODE_MONO;
@@ -76,7 +79,9 @@ using FreeType213::FT_PIXEL_MODE_MONO;
 using FreeType213::FT_PIXEL_MODE_GRAY;
 
 using FreeType213::Init_FreeType;
+using FreeType213::Init_FreeType_With_Mem;
 using FreeType213::Done_FreeType;
+using FreeType213::Done_FreeType_With_Mem;
 using FreeType213::Load_Glyph;
 using FreeType213::Get_Glyph;
 using FreeType213::Glyph_Copy;
@@ -92,7 +97,9 @@ using FreeType213::Get_Kerning;
 #else
 
 using Graphics::FreeType::Init_FreeType;
+using Graphics::FreeType::Init_FreeType_With_Mem;
 using Graphics::FreeType::Done_FreeType;
+using Graphics::FreeType::Done_FreeType_With_Mem;
 using Graphics::FreeType::Load_Glyph;
 using Graphics::FreeType::Get_Glyph;
 using Graphics::FreeType::Glyph_Copy;
@@ -157,6 +164,11 @@ struct ALFONT_FONT {
 /* global vars */
 BITMAP *default_bmp; //Draw Font on default BITMAP;
 static FT_Library ft_library;
+static FT_Memory ft_memory;
+#ifndef USE_FREETYPE2_213
+static FreeTypeAH213::AH_Hinter ft_hinter;
+#endif
+
 static int alfont_textmode = 0;
 static int alfont_inited = 0;
 
@@ -335,7 +347,38 @@ static void _alfont_cache_glyph(ALFONT_FONT *f, int glyph_number) {
 	if (!f->cached_glyphs[glyph_number].is_cached) {
 		FT_Glyph new_glyph;
 		/* load the font glyph */
-		Load_Glyph(f->face, glyph_number, FT_LOAD_DEFAULT);
+
+		FT_Int32 load_flags = FT_LOAD_DEFAULT;
+
+#ifdef USE_FREETYPE2_213
+		Load_Glyph(f->face, glyph_number, load_flags);
+#else
+		FT_GlyphSlot slot = f->face->glyph;
+
+		FreeTypeAH213::ah_hinter_load_glyph(ft_hinter, slot, f->face->size, glyph_number, load_flags);
+
+#if 1
+		/* compute the advance */
+		if (load_flags & FT_LOAD_VERTICAL_LAYOUT) {
+			slot->advance.x = 0;
+			slot->advance.y = slot->metrics.vertAdvance;
+		} else {
+			slot->advance.x = slot->metrics.horiAdvance;
+			slot->advance.y = 0;
+		}
+
+		/* compute the linear advance in 16.16 pixels */
+		if ((load_flags & FT_LOAD_LINEAR_DESIGN) == 0) {
+			FT_UInt EM = f->face->units_per_EM;
+			FT_Size_Metrics *metrics = &f->face->size->metrics;
+
+			slot->linearHoriAdvance = FT_MulDiv(slot->linearHoriAdvance, (FT_Long)metrics->x_ppem << 16, EM);
+
+			slot->linearVertAdvance = FT_MulDiv(slot->linearVertAdvance, (FT_Long)metrics->y_ppem << 16, EM);
+		}
+#endif
+
+#endif
 		Get_Glyph(f->face->glyph, &new_glyph);
 
 		/* ok, this glyph is now cached */
@@ -600,7 +643,10 @@ int alfont_get_font_real_height(ALFONT_FONT *f) {
 void alfont_exit(void) {
 	if (alfont_inited) {
 		alfont_inited = 0;
-		Done_FreeType(ft_library);
+#ifndef USE_FREETYPE2_213
+		FreeTypeAH213::ah_hinter_done(ft_hinter);
+#endif
+		Done_FreeType_With_Mem(ft_library, ft_memory);
 		memset(&ft_library, 0, sizeof(ft_library));
 	}
 }
@@ -612,10 +658,21 @@ int alfont_init(void) {
 	else {
 		int error;
 		memset(&ft_library, 0, sizeof(ft_library));
-		error = Init_FreeType(&ft_library);
 
-		if (!error)
-			alfont_inited = 1;
+		error = Init_FreeType_With_Mem(&ft_library, &ft_memory);
+
+		if (!error) {
+#ifndef USE_FREETYPE2_213
+			error = FreeTypeAH213::ah_hinter_new(ft_memory, &ft_hinter);
+			if (error) {
+				Done_FreeType_With_Mem(ft_library, ft_memory);
+			}
+#endif
+
+			if (!error) {
+				alfont_inited = 1;
+			}
+		}
 
 		return error;
 	}
