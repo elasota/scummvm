@@ -39,19 +39,30 @@
 #define SAMPLES_PER_SEC 44100
 #endif
 
+SdlMixerManager::SdlMixerManager() {
+	_audioIsOpen = false;
+	_subsystemInitialized = false;
+}
+
 SdlMixerManager::~SdlMixerManager() {
-	_mixer->setReady(false);
+	if (_mixer)
+		_mixer->setReady(false);
 
-	SDL_CloseAudio();
+	if (_audioIsOpen)
+		SDL_CloseAudio();
 
-	SDL_QuitSubSystem(SDL_INIT_AUDIO);
+	if (_subsystemInitialized)
+		SDL_QuitSubSystem(SDL_INIT_AUDIO);
 }
 
 void SdlMixerManager::init() {
 	// Start SDL Audio subsystem
 	if (SDL_InitSubSystem(SDL_INIT_AUDIO) == -1) {
-		error("Could not initialize SDL: %s", SDL_GetError());
+		warning("Could not initialize SDL audio subsystem: %s", SDL_GetError());
+		return;
 	}
+
+	_subsystemInitialized = true;
 
 #if SDL_VERSION_ATLEAST(2, 0, 0)
 	const char *sdlDriverName = SDL_GetCurrentAudioDriver();
@@ -73,9 +84,6 @@ void SdlMixerManager::init() {
 	// Start SDL audio with the desired specs
 	if (SDL_OpenAudio(&fmt, &_obtained) != 0) {
 		warning("Could not open audio device: %s", SDL_GetError());
-
-		// The mixer is not marked as ready
-		_mixer = new Audio::MixerImpl(desired.freq, desired.channels >= 2, desired.samples);
 		return;
 	}
 
@@ -88,14 +96,13 @@ void SdlMixerManager::init() {
 
 		if (SDL_OpenAudio(&fmt, nullptr) != 0) {
 			warning("Could not open audio device: %s", SDL_GetError());
-
-			// The mixer is not marked as ready
-			_mixer = new Audio::MixerImpl(desired.freq, desired.channels >= 2, desired.samples);
 			return;
 		}
 
 		_obtained = desired;
 	}
+
+	_audioIsOpen = true;
 
 	debug(1, "Output sample rate: %d Hz", _obtained.freq);
 	if (_obtained.freq != desired.freq)

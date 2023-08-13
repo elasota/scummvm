@@ -22,6 +22,7 @@
 #define FORBIDDEN_SYMBOL_ALLOW_ALL
 
 #include "backends/platform/sdl/sdl.h"
+#include "backends/mixer/null/null-mixer.h"
 #include "common/config-manager.h"
 #include "gui/EventRecorder.h"
 #include "common/taskbar.h"
@@ -287,6 +288,13 @@ void OSystem_SDL::initBackend() {
 		_mixerManager = new SdlMixerManager();
 		// Setup and start mixer
 		_mixerManager->init();
+
+		if (!_mixerManager->getMixer()) {
+			// Something went wrong.  This can happen in particular if there are no (working) audio output devices.
+			delete _mixerManager;
+			_mixerManager = new NullMixerManager();
+			_mixerManager->init();
+		}
 	}
 
 #ifdef ENABLE_EVENTRECORDER

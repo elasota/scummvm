@@ -179,7 +179,8 @@ MODULE_OBJS += \
 	graphics/surfacesdl/surfacesdl-graphics.o \
 	mixer/sdl/sdl-mixer.o \
 	mutex/sdl/sdl-mutex.o \
-	timer/sdl/sdl-timer.o
+	timer/sdl/sdl-timer.o \
+	mixer/null/null-mixer.o
 
 ifndef RISCOS
 ifndef KOLIBRIOS
